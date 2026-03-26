@@ -132,6 +132,15 @@ textarea {
   pointer-events: none;
 }
 
+.hero-emblem {
+  position: absolute;
+  right: 3.5rem;
+  top: 3.75rem;
+  opacity: 0.14;
+  pointer-events: none;
+  filter: blur(0.2px);
+}
+
 .orb-ring {
   position: absolute;
   border-radius: 9999px;

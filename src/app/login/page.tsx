@@ -24,6 +24,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <section className="hero-panel soft-grid relative flex flex-col justify-between rounded-[40px] p-8 lg:p-10">
           <div className="diamond-shape right-24 top-28 h-28 w-28 opacity-90" />
           <div className="orb-ring right-40 top-20 h-32 w-32" />
+          <BrandMark className="hero-emblem h-72 w-72 text-[var(--brand)]" />
           <BrandMark className="watermark-logo h-32 w-32 text-[var(--brand)]" />
           <div className="relative space-y-6">
             <div className="brand-chip">Fy-fit Academy</div>
