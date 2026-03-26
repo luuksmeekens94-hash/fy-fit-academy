@@ -128,8 +128,9 @@ textarea {
   position: absolute;
   right: 2rem;
   bottom: 1.5rem;
-  opacity: 0.16;
+  opacity: 0.22;
   pointer-events: none;
+  z-index: 0;
 }
 
 .orb-ring {
@@ -149,6 +150,23 @@ textarea {
   position: absolute;
   transform: rotate(45deg);
   background: var(--brand);
+}
+
+.diamond-soft {
+  position: absolute;
+  transform: rotate(45deg);
+  background: rgba(216, 146, 46, 0.12);
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 2;
+}
+
+.hero-art {
+  position: relative;
+  min-height: 220px;
+  z-index: 1;
 }
 
 .frost-panel {
