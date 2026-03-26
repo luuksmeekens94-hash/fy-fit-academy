@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fff8f2;
+  --foreground: #1f2937;
+  --card: #ffffff;
+  --card-strong: #fff0e2;
+  --muted: #667085;
+  --border: #f1d2bd;
+  --brand: #f27000;
+  --brand-deep: #d95d00;
+  --brand-soft: #fff1e6;
+  --teal: #0f7c82;
+  --teal-soft: #e8f8f7;
+  --ink-soft: #344054;
+  --success: #0a7f50;
+  --success-soft: #e8f7f0;
+  --warning: #9a6700;
+  --warning-soft: #fff6da;
+  --danger: #b42318;
+  --danger-soft: #feeceb;
+  --shadow: 0 16px 40px rgba(217, 93, 0, 0.08);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background:
+    radial-gradient(circle at top left, rgba(242, 112, 0, 0.18), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(15, 124, 130, 0.14), transparent 22%),
+    var(--background);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.card-surface {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 248, 242, 0.98));
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.display-font {
+  font-family: var(--font-display), serif;
+}
+
+.hero-panel {
+  background:
+    linear-gradient(135deg, rgba(242, 112, 0, 0.96), rgba(217, 93, 0, 0.98)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0));
+}
+
+.soft-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
