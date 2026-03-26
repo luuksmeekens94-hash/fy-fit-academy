@@ -22,29 +22,23 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <main className="min-h-screen bg-transparent px-4 py-8">
       <div className="mx-auto grid min-h-[92vh] max-w-6xl gap-6 lg:grid-cols-[1.05fr_0.95fr]">
         <section className="hero-panel soft-grid relative flex flex-col justify-between rounded-[40px] p-8 lg:p-10">
-          <BrandMark className="watermark-logo h-36 w-36 text-[var(--brand)]" />
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_300px] lg:items-start">
-            <div className="hero-copy space-y-6">
-              <div className="brand-chip">Fy-fit Academy</div>
-              <div className="accent-line" />
-              <div className="space-y-4">
-                <p className="text-lg font-semibold text-[var(--brand)]">Gebroken wit, zacht en duidelijk</p>
-                <h1 className="max-w-3xl text-5xl font-semibold leading-tight text-[var(--foreground)]">
-                  Een interne academy die onboarding en ontwikkeling laat landen
-                </h1>
-                <p className="max-w-2xl text-lg leading-8 text-[var(--ink-soft)]">
-                  Deze demo laat zien hoe nieuwe collega&apos;s, teamleiders en beheerders in dezelfde omgeving werken aan kwaliteit, kennisdeling en persoonlijke groei.
-                </p>
-              </div>
-            </div>
-            <div className="hero-art hidden lg:block">
-              <div className="diamond-soft right-4 top-0 h-44 w-44" />
-              <div className="orb-ring left-5 top-20 h-40 w-40" />
-              <div className="diamond-shape right-12 top-24 h-32 w-32 opacity-78" />
-              <BrandMark className="absolute bottom-10 right-6 h-24 w-24 text-[var(--brand)] opacity-[0.14]" />
+          <div className="diamond-shape right-24 top-28 h-28 w-28 opacity-90" />
+          <div className="orb-ring right-40 top-20 h-32 w-32" />
+          <BrandMark className="watermark-logo h-32 w-32 text-[var(--brand)]" />
+          <div className="relative space-y-6">
+            <div className="brand-chip">Fy-fit Academy</div>
+            <div className="accent-line" />
+            <div className="space-y-4">
+              <p className="text-lg font-semibold text-[var(--brand)]">Gebroken wit, zacht en duidelijk</p>
+              <h1 className="max-w-3xl text-5xl font-semibold leading-tight text-[var(--foreground)]">
+                Een interne academy die onboarding en ontwikkeling laat landen
+              </h1>
+              <p className="max-w-2xl text-lg leading-8 text-[var(--ink-soft)]">
+                Deze demo laat zien hoe nieuwe collega&apos;s, teamleiders en beheerders in dezelfde omgeving werken aan kwaliteit, kennisdeling en persoonlijke groei.
+              </p>
             </div>
           </div>
-          <div className="hero-copy relative grid gap-4 sm:grid-cols-3">
+          <div className="relative grid gap-4 sm:grid-cols-3">
             <div className="card-surface rounded-[22px] p-5">
               <p className="text-3xl font-semibold text-[var(--foreground)]">10</p>
               <p className="mt-2 text-sm text-[var(--ink-soft)]">onboardingstappen in de basisflow</p>

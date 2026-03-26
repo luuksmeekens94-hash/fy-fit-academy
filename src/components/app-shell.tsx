@@ -16,10 +16,10 @@ export function AppShell({ user, children }: AppShellProps) {
     <div className="min-h-screen bg-transparent">
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col px-4 py-4 lg:px-6">
         <div className="hero-panel soft-grid rounded-[36px] px-6 py-6 text-[var(--foreground)] lg:px-8">
-          <BrandMark className="watermark-logo h-32 w-32 text-[var(--brand)]" />
+          <BrandMark className="watermark-logo h-28 w-28 text-[var(--brand)]" />
           <div className="relative flex flex-col gap-6">
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_340px] lg:items-start">
-              <div className="hero-copy space-y-5">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-5">
                 <div className="brand-chip">Fy-fit Academy MVP</div>
                 <div className="accent-line" />
                 <div className="space-y-3">
@@ -32,31 +32,27 @@ export function AppShell({ user, children }: AppShellProps) {
                   </p>
                 </div>
               </div>
-              <div className="hero-art">
-                <div className="diamond-soft right-10 top-3 h-36 w-36" />
-                <div className="orb-ring left-6 top-10 h-32 w-32" />
-                <div className="glass-orb bottom-5 right-4 h-28 w-28" />
-                <BrandMark className="absolute bottom-2 right-2 h-20 w-20 text-[var(--brand)] opacity-20" />
-                <div className="frost-panel relative z-10 mt-20 overflow-hidden rounded-[30px] px-5 py-5">
-                  <div className="relative flex items-center gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-soft)] font-semibold text-[var(--brand)]">
-                      {initials(user.name)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-base font-semibold text-[var(--foreground)]">{user.name}</p>
-                      <p className="text-sm text-[var(--ink-soft)]">
-                        {user.title} · {user.location}
-                      </p>
-                    </div>
-                    <form action={logoutAction}>
-                      <button
-                        type="submit"
-                        className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
-                      >
-                        Uitloggen
-                      </button>
-                    </form>
+              <div className="frost-panel relative overflow-hidden rounded-[30px] px-5 py-5">
+                <div className="orb-ring right-14 top-0 h-28 w-28" />
+                <div className="glass-orb bottom-4 right-0 h-28 w-28" />
+                <div className="relative flex items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-soft)] font-semibold text-[var(--brand)]">
+                    {initials(user.name)}
                   </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-semibold text-[var(--foreground)]">{user.name}</p>
+                    <p className="text-sm text-[var(--ink-soft)]">
+                      {user.title} · {user.location}
+                    </p>
+                  </div>
+                  <form action={logoutAction}>
+                    <button
+                      type="submit"
+                      className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
+                    >
+                      Uitloggen
+                    </button>
+                  </form>
                 </div>
               </div>
             </div>
