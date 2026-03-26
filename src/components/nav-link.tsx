@@ -20,9 +20,10 @@ export function NavLink({ href, label }: NavLinkProps) {
       className={cn(
         "rounded-full px-4 py-2 text-sm font-semibold transition",
         active
-          ? "bg-white text-[var(--brand-deep)] shadow-sm"
-          : "text-white/82 hover:bg-white/10 hover:text-white",
+          ? "bg-[var(--brand)] text-white shadow-sm"
+          : "bg-white/75 text-[var(--ink-soft)] hover:border-[var(--brand)] hover:text-[var(--foreground)]",
       )}
+      style={{ border: active ? "1px solid var(--brand)" : "1px solid var(--border)" }}
     >
       {label}
     </Link>

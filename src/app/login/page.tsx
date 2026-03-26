@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { loginAction } from "@/app/actions";
+import { BrandMark } from "@/components/brand-mark";
 import { getSessionUser } from "@/lib/auth";
 
 type LoginPageProps = {
@@ -20,32 +21,35 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <main className="min-h-screen bg-transparent px-4 py-8">
       <div className="mx-auto grid min-h-[92vh] max-w-6xl gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="hero-panel soft-grid flex flex-col justify-between rounded-[40px] p-8 text-white lg:p-10">
-          <div className="space-y-5">
-            <div className="inline-flex rounded-full bg-white/12 px-4 py-1 text-sm font-medium">
-              Fy-fit Academy
-            </div>
-            <div className="space-y-3">
-              <h1 className="display-font max-w-xl text-5xl font-semibold leading-tight">
+        <section className="hero-panel soft-grid relative flex flex-col justify-between rounded-[40px] p-8 lg:p-10">
+          <div className="diamond-shape right-24 top-28 h-28 w-28 opacity-90" />
+          <div className="orb-ring right-40 top-20 h-32 w-32" />
+          <BrandMark className="watermark-logo h-32 w-32 text-[var(--brand)]" />
+          <div className="relative space-y-6">
+            <div className="brand-chip">Fy-fit Academy</div>
+            <div className="accent-line" />
+            <div className="space-y-4">
+              <p className="text-lg font-semibold text-[var(--brand)]">Gebroken wit, zacht en duidelijk</p>
+              <h1 className="max-w-3xl text-5xl font-semibold leading-tight text-[var(--foreground)]">
                 Een interne academy die onboarding en ontwikkeling laat landen
               </h1>
-              <p className="max-w-2xl text-base leading-8 text-white/88">
+              <p className="max-w-2xl text-lg leading-8 text-[var(--ink-soft)]">
                 Deze demo laat zien hoe nieuwe collega&apos;s, teamleiders en beheerders in dezelfde omgeving werken aan kwaliteit, kennisdeling en persoonlijke groei.
               </p>
             </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-[28px] bg-white/12 p-5 backdrop-blur-sm">
-              <p className="text-3xl font-semibold">10</p>
-              <p className="mt-2 text-sm text-white/80">onboardingstappen in de basisflow</p>
+          <div className="relative grid gap-4 sm:grid-cols-3">
+            <div className="card-surface rounded-[22px] p-5">
+              <p className="text-3xl font-semibold text-[var(--foreground)]">10</p>
+              <p className="mt-2 text-sm text-[var(--ink-soft)]">onboardingstappen in de basisflow</p>
             </div>
-            <div className="rounded-[28px] bg-white/12 p-5 backdrop-blur-sm">
-              <p className="text-3xl font-semibold">3</p>
-              <p className="mt-2 text-sm text-white/80">voorbeeldmodules voor academy en kernboodschap</p>
+            <div className="card-surface rounded-[22px] p-5">
+              <p className="text-3xl font-semibold text-[var(--foreground)]">3</p>
+              <p className="mt-2 text-sm text-[var(--ink-soft)]">voorbeeldmodules voor academy en kernboodschap</p>
             </div>
-            <div className="rounded-[28px] bg-white/12 p-5 backdrop-blur-sm">
-              <p className="text-3xl font-semibold">2</p>
-              <p className="mt-2 text-sm text-white/80">testmedewerkers met POP en monitoring</p>
+            <div className="card-surface rounded-[22px] p-5">
+              <p className="text-3xl font-semibold text-[var(--foreground)]">2</p>
+              <p className="mt-2 text-sm text-[var(--ink-soft)]">testmedewerkers met POP en monitoring</p>
             </div>
           </div>
         </section>
@@ -53,10 +57,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <section className="card-surface flex flex-col justify-center rounded-[40px] p-8 lg:p-10">
           <div className="mx-auto w-full max-w-md space-y-6">
             <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--teal)]">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]">
                 Demo login
               </p>
-              <h2 className="display-font text-4xl font-semibold tracking-tight text-slate-950">
+              <h2 className="text-4xl font-semibold tracking-tight text-slate-950">
                 Welkom terug
               </h2>
               <p className="text-sm leading-7 text-[var(--ink-soft)]">
@@ -104,7 +108,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               </button>
             </form>
 
-            <div className="space-y-3 rounded-[28px] border border-[var(--border)] bg-white/75 p-5">
+            <div className="space-y-3 rounded-[28px] border border-[var(--border)] bg-[var(--card-strong)]/75 p-5">
               <p className="text-sm font-semibold text-slate-900">Snelle demo-accounts</p>
               <ul className="space-y-2 text-sm text-[var(--ink-soft)]">
                 <li>Heidi, beheerder: `heidi@fy-fitacademy.demo`</li>
