@@ -1,6 +1,23 @@
-import { PrismaClient, Role, ModuleStatus, LearningGoalStatus, OnboardingContentType, ModuleSectionType, DocumentType, Visibility } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import {
+  PrismaClient,
+  Role,
+  ModuleStatus,
+  LearningGoalStatus,
+  OnboardingContentType,
+  ModuleSectionType,
+  DocumentType,
+  Visibility,
+} from "@prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({
+    connectionString:
+      process.env.DIRECT_URL ??
+      process.env.DATABASE_URL ??
+      "postgresql://placeholder:placeholder@localhost:5432/fyfitacademy?schema=public",
+  }),
+});
 
 async function main() {
   await prisma.moduleProgress.deleteMany();

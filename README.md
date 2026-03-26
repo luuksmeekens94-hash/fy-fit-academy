@@ -34,6 +34,15 @@ DATABASE_URL="postgresql://user:password@host:5432/fyfitacademy?schema=public"
 
 ### 2. Prisma initialiseren tegen Neon
 
+Zet bij voorkeur beide variabelen:
+
+```env
+DATABASE_URL="postgresql://..."
+DIRECT_URL="postgresql://..."
+```
+
+Gebruik voor `DIRECT_URL` het liefst de unpooled variant uit Vercel/Neon, bijvoorbeeld `DATABASE_URL_UNPOOLED` of `POSTGRES_URL_NON_POOLING`.
+
 ```bash
 npm run db:generate
 npm run db:push
