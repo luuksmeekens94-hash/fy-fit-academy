@@ -148,8 +148,7 @@ textarea {
 .diamond-shape {
   position: absolute;
   transform: rotate(45deg);
-  background: var(--brand);
-  opacity: 0.58;
+  background: rgba(216, 146, 46, 0.38);
 }
 
 .frost-panel {
