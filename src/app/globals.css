@@ -149,6 +149,7 @@ textarea {
   position: absolute;
   transform: rotate(45deg);
   background: var(--brand);
+  opacity: 0.58;
 }
 
 .frost-panel {
