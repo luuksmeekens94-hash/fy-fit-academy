@@ -19,11 +19,10 @@ export function AppShell({ user, children }: AppShellProps) {
           <BrandMark className="watermark-logo h-28 w-28 text-[var(--brand)]" />
           <div className="relative flex flex-col gap-6">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-5">
-                <div className="brand-chip">Fy-fit Academy MVP</div>
+              <div className="space-y-5 lg:flex-1">
+                <div className="brand-chip">Fy-fit Academy</div>
                 <div className="accent-line" />
                 <div className="space-y-3">
-                  <p className="text-lg font-semibold text-[var(--brand)]">Persoonlijke groei en praktijkkennis</p>
                   <h1 className="max-w-4xl text-4xl font-semibold tracking-tight text-[var(--foreground)] lg:text-6xl">
                     Een rustige leeromgeving die onboarding en ontwikkeling laat landen
                   </h1>
@@ -32,7 +31,7 @@ export function AppShell({ user, children }: AppShellProps) {
                   </p>
                 </div>
               </div>
-              <div className="frost-panel relative overflow-hidden rounded-[30px] px-5 py-5">
+              <div className="frost-panel relative z-10 overflow-hidden rounded-[30px] px-5 py-5 lg:min-w-[320px]">
                 <div className="orb-ring right-14 top-0 h-28 w-28" />
                 <div className="glass-orb bottom-4 right-0 h-28 w-28" />
                 <div className="relative flex items-center gap-4">
@@ -48,7 +47,7 @@ export function AppShell({ user, children }: AppShellProps) {
                   <form action={logoutAction}>
                     <button
                       type="submit"
-                      className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
+                      className="cursor-pointer rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]"
                     >
                       Uitloggen
                     </button>
@@ -58,12 +57,12 @@ export function AppShell({ user, children }: AppShellProps) {
             </div>
             <div className="relative flex flex-wrap gap-3">
               <NavLink href="/" label="Dashboard" />
-              <NavLink href="/academy" label="Academy" />
-              <NavLink href="/bibliotheek" label="Bibliotheek" />
-              <NavLink href="/ontwikkeling" label="Mijn Ontwikkeling" />
+              <NavLink href="/academy" label="Fy-fit Academy" />
+              <NavLink href="/ontwikkeling" label="Mijn ontwikkeling" />
               {user.isOnboarding || user.role !== "MEDEWERKER" ? (
                 <NavLink href="/onboarding" label="Onboarding" />
               ) : null}
+              <NavLink href="/bibliotheek" label="Praktijkbibliotheek" />
               {user.role !== "MEDEWERKER" ? <NavLink href="/team" label="Team" /> : null}
               {user.role === "BEHEERDER" ? <NavLink href="/admin" label="Admin" /> : null}
             </div>
