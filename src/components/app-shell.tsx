@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { logoutAction } from "@/app/actions";
-import { BrandMark } from "@/components/brand-mark";
 import { NavLink } from "@/components/nav-link";
 import { initials } from "@/lib/utils";
 import type { User } from "@/lib/types";
@@ -16,7 +15,6 @@ export function AppShell({ user, children }: AppShellProps) {
     <div className="min-h-screen bg-transparent">
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col px-4 py-4 lg:px-6">
         <div className="hero-panel soft-grid rounded-[36px] px-6 py-6 text-[var(--foreground)] lg:px-8">
-          <BrandMark className="watermark-logo h-28 w-28 text-[var(--brand)]" />
           <div className="relative flex flex-col gap-6">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-5 lg:flex-1">
@@ -24,16 +22,13 @@ export function AppShell({ user, children }: AppShellProps) {
                 <div className="accent-line" />
                 <div className="space-y-3">
                   <h1 className="max-w-4xl text-4xl font-semibold tracking-tight text-[var(--foreground)] lg:text-6xl">
-                    Een rustige leeromgeving die onboarding en ontwikkeling laat landen
+                    Welkom bij jouw persoonlijke omgeving.
                   </h1>
-                  <p className="max-w-3xl text-base leading-8 text-[var(--ink-soft)]">
-                    Geen hard LMS-gevoel, maar een zachte, merkvaste omgeving voor modules, bibliotheek, POP en teambegeleiding.
-                  </p>
                 </div>
               </div>
               <div className="frost-panel relative z-10 overflow-hidden rounded-[30px] px-5 py-5 lg:min-w-[320px]">
                 <div className="orb-ring right-14 top-0 h-28 w-28" />
-                <div className="glass-orb bottom-4 right-0 h-28 w-28" />
+                <div className="diamond-shape right-6 top-8 h-24 w-24 opacity-40" />
                 <div className="relative flex items-center gap-4">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-soft)] font-semibold text-[var(--brand)]">
                     {initials(user.name)}
