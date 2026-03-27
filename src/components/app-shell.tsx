@@ -28,7 +28,7 @@ export function AppShell({ user, children }: AppShellProps) {
                   </h1>
                 </div>
               </div>
-              <div className="frost-panel relative z-10 overflow-hidden rounded-[30px] px-5 py-5 lg:min-w-[320px]">
+              <div className="frost-panel relative z-10 overflow-hidden rounded-[30px] px-5 py-5 lg:min-w-[320px] flex flex-col justify-between">
                 <div className="relative flex items-center gap-4">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-soft)] font-semibold text-[var(--brand)]">
                     {initials(user.name)}
@@ -39,15 +39,15 @@ export function AppShell({ user, children }: AppShellProps) {
                       {user.title} · {user.location}
                     </p>
                   </div>
-                  <form action={logoutAction}>
-                    <button
-                      type="submit"
-                      className="cursor-pointer rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]"
-                    >
-                      Uitloggen
-                    </button>
-                  </form>
                 </div>
+                <form action={logoutAction} className="text-right pt-4">
+                  <button
+                    type="submit"
+                    className="cursor-pointer rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]"
+                  >
+                    Uitloggen
+                  </button>
+                </form>
               </div>
             </div>
             <div className="relative flex flex-wrap gap-3">
