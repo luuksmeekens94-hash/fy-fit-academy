@@ -69,24 +69,6 @@ export function AppShell({ user, children }: AppShellProps) {
             <main className="space-y-6">{children}</main>
             <aside className="space-y-6">
               <div className="card-surface rounded-[28px] p-6">
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
-                  Actief profiel
-                </p>
-                <h2 className="mt-3 text-xl font-semibold text-slate-950">{user.name}</h2>
-                <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{user.bio}</p>
-                <div className="mt-5 space-y-3 text-sm text-[var(--ink-soft)]">
-                  <p>
-                    <span className="font-semibold text-slate-950">Rol:</span> {user.role}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-950">Locatie:</span> {user.location}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-950">E-mail:</span> {user.email}
-                  </p>
-                </div>
-              </div>
-              <div className="card-surface rounded-[28px] p-6">
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand)]">
                   Ritme
                 </p>

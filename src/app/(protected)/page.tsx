@@ -37,7 +37,7 @@ export default async function DashboardPage() {
       <PageHeader
         eyebrow="Dashboard"
         title={`Goed om je te zien, ${user.name.split(" ")[0]}`}
-        description="Je startscherm bundelt leerdoelen, onboarding, modules en teamontwikkeling in een rustige workflow."
+        description="Hieronder staat jouw persoonlijke dashboard. Krijg direct inzicht in je openstaande modules, actieve leerdoelen, onboardingvoortgang en de onderdelen waarmee je vandaag verder kunt."
       />
 
       <section className="grid gap-4 md:grid-cols-3">
