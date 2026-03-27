@@ -35,9 +35,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <h1 className="text-4xl font-semibold tracking-tight text-[var(--foreground)] sm:text-5xl">
                 Inloggen
               </h1>
-              <p className="mx-auto max-w-2xl text-base leading-8 text-[var(--ink-soft)] sm:text-lg">
-                Een rustige, heldere omgeving voor onboarding, academymodules en ontwikkeling binnen Fy-fit.
-              </p>
             </div>
 
             <div className="frost-panel mt-8 w-full rounded-[34px] p-6 text-left sm:p-8">
@@ -46,7 +43,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                   Welkom terug
                 </p>
                 <p className="text-sm leading-7 text-[var(--ink-soft)]">
-                  Log in met je toegewezen demo-account. Voor deze demonstratie gebruiken alle accounts het wachtwoord <strong>fyfit-demo</strong>.
+                  Log in met je persoonlijke account.
                 </p>
               </div>
 
