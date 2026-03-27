@@ -15,8 +15,8 @@ export function AppShell({ user, children }: AppShellProps) {
     <div className="min-h-screen bg-transparent">
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col px-4 py-4 lg:px-6">
         <div className="hero-panel soft-grid rounded-[36px] px-6 py-6 text-[var(--foreground)] lg:px-8">
-          <div className="diamond-shape right-16 top-10 h-24 w-24 opacity-80" />
-          <div className="orb-ring right-28 top-0 h-32 w-32" />
+          <div className="diamond-shape right-16 top-10 h-24 w-24 opacity-35" />
+          <div className="orb-ring right-28 top-0 h-32 w-32 opacity-60" />
           <div className="relative flex flex-col gap-6">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-5 lg:flex-1">
