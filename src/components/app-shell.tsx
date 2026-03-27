@@ -28,26 +28,57 @@ export function AppShell({ user, children }: AppShellProps) {
                   </h1>
                 </div>
               </div>
-              <div className="frost-panel relative z-10 overflow-hidden rounded-[30px] px-5 py-5 lg:min-w-[320px] flex flex-col justify-between">
-                <div className="relative flex items-center gap-4">
+              <div className="group relative z-20 self-start">
+                <div className="frost-panel flex items-center gap-3 rounded-[30px] px-5 py-4 lg:min-w-[340px]">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-soft)] font-semibold text-[var(--brand)]">
                     {initials(user.name)}
                   </div>
-                  <div className="min-w-0">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full border border-dashed border-[var(--border)] bg-white/90 text-xs font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
+                    foto
+                  </div>
+                  <div className="min-w-0 flex-1">
                     <p className="truncate text-base font-semibold text-[var(--foreground)]">{user.name}</p>
-                    <p className="text-sm text-[var(--ink-soft)]">
-                      {user.title} · {user.location}
-                    </p>
+                    <p className="text-sm text-[var(--ink-soft)]">Profielmenu</p>
                   </div>
                 </div>
-                <form action={logoutAction} className="text-right pt-4">
-                  <button
-                    type="submit"
-                    className="cursor-pointer rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)] hover:bg-[var(--brand-soft)]"
-                  >
-                    Uitloggen
-                  </button>
-                </form>
+
+                <div className="pointer-events-none absolute right-0 top-full mt-3 w-72 translate-y-2 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                  <div className="card-surface rounded-[28px] p-3">
+                    <nav className="space-y-1">
+                      <Link href="/" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
+                        Dashboard
+                      </Link>
+                      <Link href="/academy" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
+                        Fy-fit Academy
+                      </Link>
+                      <Link href="/ontwikkeling" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
+                        Mijn ontwikkeling
+                      </Link>
+                      {user.isOnboarding || user.role !== "MEDEWERKER" ? (
+                        <Link href="/onboarding" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
+                          Onboarding
+                        </Link>
+                      ) : null}
+                      <Link href="/bibliotheek" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
+                        Praktijkbibliotheek
+                      </Link>
+                      <Link href="/mijn-gegevens" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
+                        Mijn gegevens
+                      </Link>
+                    </nav>
+
+                    <div className="mt-3 border-t border-[var(--border)] pt-3">
+                      <form action={logoutAction}>
+                        <button
+                          type="submit"
+                          className="block w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]"
+                        >
+                          Uitloggen
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="relative flex flex-wrap gap-3">
