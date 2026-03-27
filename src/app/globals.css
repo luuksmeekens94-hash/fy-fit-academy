@@ -134,11 +134,11 @@ textarea {
 
 .hero-emblem {
   position: absolute;
-  right: 8rem;
-  top: 4rem;
-  opacity: 0.28;
+  right: 3.5rem;
+  top: 3.75rem;
+  opacity: 0.14;
   pointer-events: none;
-  filter: drop-shadow(0 0 36px rgba(216, 146, 46, 0.14));
+  filter: blur(0.2px);
 }
 
 .orb-ring {
