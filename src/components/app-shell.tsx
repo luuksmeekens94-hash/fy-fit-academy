@@ -14,7 +14,8 @@ export function AppShell({ user, children }: AppShellProps) {
   return (
     <div className="min-h-screen bg-transparent">
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col px-4 py-4 lg:px-6">
-        <div className="hero-panel soft-grid rounded-[36px] px-6 py-6 text-[var(--foreground)] lg:px-8">
+        <div className="hero-panel rounded-[36px] px-6 py-6 text-[var(--foreground)] lg:px-8">
+          <div className="soft-grid absolute inset-0 rounded-[36px]" />
           <div className="diamond-shape right-16 top-10 h-24 w-24 opacity-35" />
           <div className="orb-ring right-28 top-0 h-32 w-32 opacity-60" />
           <div className="relative flex flex-col gap-6">
@@ -96,30 +97,7 @@ export function AppShell({ user, children }: AppShellProps) {
         </div>
 
         <div className="flex-1 py-6 lg:py-8">
-          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-            <main className="space-y-6">{children}</main>
-            <aside className="space-y-6">
-              <div className="card-surface rounded-[28px] p-6">
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand)]">
-                  Ritme
-                </p>
-                <div className="mt-4 space-y-4 text-sm leading-6 text-[var(--ink-soft)]">
-                  <p>Deze MVP schuift weg van dashboard-drukte en voelt meer als een merkgebonden leercanvas.</p>
-                  <p>
-                    Klaar voor uitbreiding naar echte data: routes, rollen en domeinmodellen staan onder de huid al stevig.
-                  </p>
-                  {user.role === "BEHEERDER" ? (
-                    <Link
-                      href="/admin"
-                      className="inline-flex rounded-full bg-[var(--brand)] px-4 py-2 font-semibold text-white transition hover:opacity-90"
-                    >
-                      Bekijk beheer
-                    </Link>
-                  ) : null}
-                </div>
-              </div>
-            </aside>
-          </div>
+          <main className="space-y-6">{children}</main>
         </div>
       </div>
     </div>
