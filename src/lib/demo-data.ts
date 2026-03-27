@@ -13,8 +13,8 @@ import {
 const users: User[] = [
   {
     id: "user-admin",
-    name: "Heidi Staring",
-    email: "heidi@fy-fitacademy.demo",
+    name: "Marion Brouwer",
+    email: "marion@fysiotherapienijmegen.nl",
     role: "BEHEERDER",
     title: "Praktijkmanager",
     location: "Nijmegen",
@@ -24,8 +24,8 @@ const users: User[] = [
   },
   {
     id: "user-teamlead",
-    name: "Dave van Perlo",
-    email: "dave@fy-fitacademy.demo",
+    name: "Sjoerd Hendriks",
+    email: "sjoerd@fysiotherapienijmegen.nl",
     role: "TEAMLEIDER",
     title: "Sportfysiotherapeut",
     location: "Lankforst",
@@ -35,8 +35,8 @@ const users: User[] = [
   },
   {
     id: "user-medewerker-1",
-    name: "Ryan Wessels",
-    email: "ryan@fy-fitacademy.demo",
+    name: "Luuk Smeekens",
+    email: "luuk@fysiotherapienijmegen.nl",
     role: "MEDEWERKER",
     title: "Algemeen fysiotherapeut",
     location: "Weezenhof",
@@ -48,8 +48,8 @@ const users: User[] = [
   },
   {
     id: "user-medewerker-2",
-    name: "Fleur Frieling",
-    email: "fleur@fy-fitacademy.demo",
+    name: "Bram Heldens",
+    email: "bram@fysiotherapienijmegen.nl",
     role: "MEDEWERKER",
     title: "Algemeen fysiotherapeut",
     location: "Meijhorst",
@@ -459,7 +459,7 @@ const developmentDocuments: DevelopmentDocument[] = [
     id: "dev-2",
     userId: "user-medewerker-2",
     title: "Bewijsmap consultvoering",
-    description: "Notities uit intervisie, feedback van Dave en twee uitgewerkte casussen.",
+    description: "Notities uit intervisie, feedback van Sjoerd en twee uitgewerkte casussen.",
     category: "Bewijs",
     visibility: "TEAM",
     updatedAt: "2026-03-23",
