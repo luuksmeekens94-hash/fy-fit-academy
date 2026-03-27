@@ -43,7 +43,7 @@ export function AppShell({ user, children }: AppShellProps) {
                   </div>
                 </div>
 
-                <div className="pointer-events-none absolute right-0 top-full mt-3 w-72 translate-y-2 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <div className="pointer-events-none absolute right-0 top-full pt-3 w-72 translate-y-2 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
                   <div className="card-surface rounded-[28px] p-3">
                     <nav className="space-y-1">
                       <Link href="/" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
