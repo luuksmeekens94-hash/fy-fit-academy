@@ -1,20 +1,35 @@
+import "server-only";
+
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { getStore, getUserById } from "@/lib/demo-data";
+import { getSessionUserById } from "@/lib/data";
+import { decodeSession, encodeSession, getSessionCookieOptions, SESSION_COOKIE } from "@/lib/session";
 import type { Role } from "@/lib/types";
 
-export const SESSION_COOKIE = "fyfit-demo-session";
+export async function createSession(userId: string) {
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE, encodeSession({ userId }), getSessionCookieOptions());
+}
+
+export async function clearSession() {
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE, "", {
+    ...getSessionCookieOptions(),
+    maxAge: 0,
+  });
+}
 
 export async function getSessionUser() {
   const cookieStore = await cookies();
-  const userId = cookieStore.get(SESSION_COOKIE)?.value;
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  const payload = decodeSession(token);
 
-  if (!userId) {
+  if (!payload?.userId) {
     return null;
   }
 
-  return getUserById(userId) ?? null;
+  return getSessionUserById(payload.userId);
 }
 
 export async function requireUser() {
@@ -35,19 +50,4 @@ export async function requireRole(roles: Role[]) {
   }
 
   return user;
-}
-
-export function validateDemoCredentials(email: string, password: string) {
-  const store = getStore();
-  const user = store.users.find((entry) => entry.email === email);
-
-  if (!user) {
-    return null;
-  }
-
-  const account = store.demoAccounts.find(
-    (entry) => entry.userId === user.id && entry.password === password,
-  );
-
-  return account ? user : null;
 }

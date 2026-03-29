@@ -1,3 +1,4 @@
+import { changePasswordAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
 import { requireUser } from "@/lib/auth";
 import { initials } from "@/lib/utils";
@@ -58,6 +59,38 @@ export default async function MijnGegevensPage() {
               <p className="mt-2 text-lg font-semibold text-slate-950">{user.location}</p>
             </div>
           </div>
+          <form action={changePasswordAction} className="mt-6 grid gap-3 rounded-[28px] bg-[var(--brand-soft)] p-5">
+            <h2 className="text-lg font-semibold text-slate-950">Wachtwoord wijzigen</h2>
+            <input
+              name="currentPassword"
+              type="password"
+              placeholder="Huidig wachtwoord"
+              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+              required
+            />
+            <input
+              name="newPassword"
+              type="password"
+              placeholder="Nieuw wachtwoord"
+              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+              required
+              minLength={8}
+            />
+            <input
+              name="confirmPassword"
+              type="password"
+              placeholder="Herhaal nieuw wachtwoord"
+              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+              required
+              minLength={8}
+            />
+            <button
+              type="submit"
+              className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
+            >
+              Wachtwoord opslaan
+            </button>
+          </form>
         </div>
       </section>
     </div>

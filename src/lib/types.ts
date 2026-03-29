@@ -1,4 +1,5 @@
 export type Role = "MEDEWERKER" | "TEAMLEIDER" | "BEHEERDER";
+export type ModulePublicationStatus = "CONCEPT" | "GEPUBLICEERD" | "GEARCHIVEERD";
 
 export type OnboardingContentType =
   | "TEXT"
@@ -23,18 +24,15 @@ export type User = {
   name: string;
   email: string;
   role: Role;
+  team?: string | null;
   title: string;
   location: string;
   buddyId?: string;
   teamleaderId?: string;
+  isActive: boolean;
   isOnboarding: boolean;
   bio: string;
   avatarColor: string;
-};
-
-export type DemoAccount = {
-  userId: string;
-  password: string;
 };
 
 export type Category = {
@@ -67,8 +65,8 @@ export type AcademyModule = {
   title: string;
   description: string;
   categoryId: string;
-  thumbnailLabel: string;
-  status: "CONCEPT" | "GEPUBLICEERD" | "GEARCHIVEERD";
+  thumbnailLabel?: string | null;
+  status: ModulePublicationStatus;
   isRequired: boolean;
   estimatedMinutes: number;
   authorId: string;
@@ -124,7 +122,7 @@ export type LibraryDocument = {
   isPublished: boolean;
   updatedAt: string;
   summary: string;
-  content: string[];
+  content: string;
   tags: string[];
 };
 
@@ -146,17 +144,4 @@ export type DevelopmentDocument = {
   category: string;
   visibility: Visibility;
   updatedAt: string;
-};
-
-export type DemoStore = {
-  users: User[];
-  demoAccounts: DemoAccount[];
-  categories: Category[];
-  modules: AcademyModule[];
-  moduleProgress: ModuleProgress[];
-  onboardingPath: OnboardingPath;
-  onboardingProgress: OnboardingProgress[];
-  documents: LibraryDocument[];
-  learningGoals: LearningGoal[];
-  developmentDocuments: DevelopmentDocument[];
 };

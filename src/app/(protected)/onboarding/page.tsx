@@ -2,26 +2,38 @@ import { toggleOnboardingStepAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
-import { getOnboardingProgressForUser, getStore, getUserById } from "@/lib/demo-data";
+import {
+  getActiveOnboardingPath,
+  getOnboardingProgressForUser,
+  getTeamMembers,
+  getUserById,
+  listUsers,
+} from "@/lib/data";
 import { formatDate, getOnboardingCompletion } from "@/lib/utils";
 
 export default async function OnboardingPage() {
   const user = await requireUser();
-  const store = getStore();
-  const targetUser =
+  const [path, teamMembers] = await Promise.all([
+    getActiveOnboardingPath(),
     user.role === "MEDEWERKER"
-      ? user
-      : getUserById("user-medewerker-1") ?? user;
-  const progress = getOnboardingProgressForUser(targetUser.id);
-  const completion = getOnboardingCompletion(store.onboardingPath.steps, progress);
-  const buddy = targetUser.buddyId ? getUserById(targetUser.buddyId) : null;
+      ? Promise.resolve([])
+      : user.role === "BEHEERDER"
+        ? listUsers()
+        : getTeamMembers(user.id),
+  ]);
+  const targetUser = user.role === "MEDEWERKER" ? user : teamMembers.find((member) => member.isOnboarding) ?? user;
+  const [progress, buddy] = await Promise.all([
+    getOnboardingProgressForUser(targetUser.id),
+    targetUser.buddyId ? getUserById(targetUser.buddyId) : Promise.resolve(null),
+  ]);
+  const completion = getOnboardingCompletion(path?.steps ?? [], progress);
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Onboarding"
-        title={`${store.onboardingPath.name} voor ${targetUser.name.split(" ")[0]}`}
-        description={store.onboardingPath.description}
+        title={`${path?.name ?? "Onboarding"} voor ${targetUser.name.split(" ")[0]}`}
+        description={path?.description ?? "Er is nog geen actief onboardingpad ingesteld."}
       />
 
       <section className="card-surface rounded-[32px] p-6">
@@ -45,7 +57,7 @@ export default async function OnboardingPage() {
       </section>
 
       <section className="space-y-4">
-        {store.onboardingPath.steps
+        {(path?.steps ?? [])
           .sort((a, b) => a.order - b.order)
           .map((step) => {
             const entry = progress.find((progressItem) => progressItem.stepId === step.id);

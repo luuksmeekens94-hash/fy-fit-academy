@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { QuizCard } from "@/components/quiz-card";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
-import { getModuleById, getModuleProgressForUser, getStore } from "@/lib/demo-data";
+import { getModuleById, getModuleProgressForUser, listCategories } from "@/lib/data";
 import { getStatusTone } from "@/lib/utils";
 
 type ModuleDetailPageProps = {
@@ -15,17 +15,24 @@ type ModuleDetailPageProps = {
 export default async function ModuleDetailPage({ params }: ModuleDetailPageProps) {
   const user = await requireUser();
   const { id } = await params;
-  const store = getStore();
-  const academyModule = getModuleById(id);
+  const [academyModule, progressEntries, categories] = await Promise.all([
+    getModuleById(id),
+    getModuleProgressForUser(user.id),
+    listCategories(),
+  ]);
 
   if (!academyModule) {
     notFound();
   }
 
-  const progress = getModuleProgressForUser(user.id).find(
+  if (academyModule.status !== "GEPUBLICEERD" && user.role !== "BEHEERDER") {
+    notFound();
+  }
+
+  const progress = progressEntries.find(
     (entry) => entry.moduleId === academyModule.id,
   );
-  const category = store.categories.find((entry) => entry.id === academyModule.categoryId);
+  const category = categories.find((entry) => entry.id === academyModule.categoryId);
 
   return (
     <div className="space-y-6">

@@ -7,15 +7,29 @@ import {
   getTeamMembers,
   getVisibleDevelopmentDocuments,
   getVisibleGoals,
-} from "@/lib/demo-data";
+  listUsers,
+} from "@/lib/data";
 import { formatDate, getStatusTone } from "@/lib/utils";
 
 export default async function DevelopmentPage() {
   const user = await requireUser();
-  const goals = getVisibleGoals(user.id, user.id);
-  const documents = getVisibleDevelopmentDocuments(user.id, user.id);
-  const moduleProgress = getModuleProgressForUser(user.id);
-  const teamMembers = user.role === "MEDEWERKER" ? [] : getTeamMembers(user.id);
+  const [goals, documents, moduleProgress, teamMembers] = await Promise.all([
+    getVisibleGoals(user.id, user.id),
+    getVisibleDevelopmentDocuments(user.id, user.id),
+    getModuleProgressForUser(user.id),
+    user.role === "MEDEWERKER"
+      ? Promise.resolve([])
+      : user.role === "BEHEERDER"
+        ? listUsers().then((entries) => entries.filter((entry) => entry.role !== "BEHEERDER"))
+        : getTeamMembers(user.id),
+  ]);
+  const teamSnapshots = await Promise.all(
+    teamMembers.map(async (member) => ({
+      member,
+      goals: await getVisibleGoals(user.id, member.id),
+      documents: await getVisibleDevelopmentDocuments(user.id, member.id),
+    })),
+  );
 
   return (
     <div className="space-y-6">
@@ -204,10 +218,7 @@ export default async function DevelopmentPage() {
             Ontwikkeling van je team in vogelvlucht
           </h2>
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
-            {teamMembers.map((member) => {
-              const memberGoals = getVisibleGoals(user.id, member.id);
-              const memberDocuments = getVisibleDevelopmentDocuments(user.id, member.id);
-
+            {teamSnapshots.map(({ member, goals: memberGoals, documents: memberDocuments }) => {
               return (
                 <div
                   key={member.id}

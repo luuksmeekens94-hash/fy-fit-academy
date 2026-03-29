@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { SESSION_COOKIE } from "@/lib/auth";
-import { getUserById } from "@/lib/demo-data";
+import { decodeSession, SESSION_COOKIE } from "@/lib/session";
 
 const PROTECTED_PREFIXES = [
   "/",
@@ -28,10 +27,9 @@ export function proxy(request: NextRequest) {
   const isProtected = PROTECTED_PREFIXES.some((prefix) =>
     prefix === "/" ? pathname === "/" : pathname.startsWith(prefix),
   );
-  const sessionUserId = request.cookies.get(SESSION_COOKIE)?.value;
-  const sessionUser = sessionUserId ? getUserById(sessionUserId) : null;
+  const session = decodeSession(request.cookies.get(SESSION_COOKIE)?.value);
 
-  if (pathname === "/login" && sessionUser) {
+  if (pathname === "/login" && session) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
@@ -39,16 +37,8 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!sessionUser) {
+  if (!session) {
     return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  if (pathname.startsWith("/team") && sessionUser.role === "MEDEWERKER") {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  if (pathname.startsWith("/admin") && sessionUser.role !== "BEHEERDER") {
-    return NextResponse.redirect(new URL("/", request.url));
   }
 
   return NextResponse.next();

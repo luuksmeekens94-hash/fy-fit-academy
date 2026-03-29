@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
-import { getStore } from "@/lib/demo-data";
+import { listCategories, listDocuments, listUsers } from "@/lib/data";
 
 type LibraryPageProps = {
   searchParams: Promise<{ q?: string; category?: string; type?: string }>;
@@ -12,12 +12,16 @@ type LibraryPageProps = {
 export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   await requireUser();
   const params = await searchParams;
-  const store = getStore();
+  const [categories, documents, users] = await Promise.all([
+    listCategories(),
+    listDocuments({ publishedOnly: true }),
+    listUsers(),
+  ]);
   const query = params.q?.toLowerCase() ?? "";
   const selectedType = params.type ?? "all";
   const selectedCategory = params.category ?? "all";
 
-  const filteredDocuments = store.documents.filter((document) => {
+  const filteredDocuments = documents.filter((document) => {
     const matchesQuery =
       document.title.toLowerCase().includes(query) ||
       document.summary.toLowerCase().includes(query) ||
@@ -64,7 +68,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
             className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
           >
             <option value="all">Alle categorieen</option>
-            {store.categories.map((category) => (
+            {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
               </option>
@@ -81,8 +85,8 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
 
       <section className="grid gap-5 xl:grid-cols-2">
         {filteredDocuments.map((document) => {
-          const owner = store.users.find((entry) => entry.id === document.ownerId);
-          const category = store.categories.find((entry) => entry.id === document.categoryId);
+          const owner = users.find((entry) => entry.id === document.ownerId);
+          const category = categories.find((entry) => entry.id === document.categoryId);
 
           return (
             <Link

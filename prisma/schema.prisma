@@ -12,6 +12,12 @@ enum Role {
   BEHEERDER
 }
 
+enum ModulePublicationStatus {
+  CONCEPT
+  GEPUBLICEERD
+  GEARCHIVEERD
+}
+
 enum ModuleStatus {
   NIET_GESTART
   BEZIG
@@ -55,12 +61,15 @@ enum Visibility {
 model User {
   id                 String                @id @default(cuid())
   email              String                @unique
+  passwordHash       String
   name               String
   role               Role
+  team               String?
   title              String
   location           String
   bio                String
   avatarColor        String
+  isActive           Boolean               @default(true)
   isOnboarding       Boolean               @default(false)
   buddyId            String?
   teamleaderId       String?
@@ -90,7 +99,7 @@ model Module {
   title            String
   description      String
   thumbnailLabel   String?
-  status           String
+  status           ModulePublicationStatus @default(CONCEPT)
   isRequired       Boolean          @default(false)
   estimatedMinutes Int              @default(0)
   authorId         String
@@ -122,6 +131,8 @@ model ModuleProgress {
   completedAt DateTime?
   user        User         @relation(fields: [userId], references: [id])
   module      Module       @relation(fields: [moduleId], references: [id])
+
+  @@unique([userId, moduleId])
 }
 
 model OnboardingPath {
@@ -155,6 +166,8 @@ model OnboardingProgress {
   notes         String?
   user          User             @relation(fields: [userId], references: [id])
   step          OnboardingStep   @relation(fields: [stepId], references: [id])
+
+  @@unique([userId, stepId])
 }
 
 model Document {
@@ -162,7 +175,8 @@ model Document {
   title       String
   type        DocumentType
   summary     String
-  content     Json
+  content     String
+  tags        String[]
   version     String
   isPublished Boolean      @default(false)
   updatedAt   DateTime     @updatedAt

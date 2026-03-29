@@ -4,22 +4,36 @@ import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth";
 import {
+  getActiveOnboardingPath,
   getModuleProgressForUser,
   getOnboardingProgressForUser,
-  getStore,
   getTeamMembers,
   getVisibleGoals,
   listUsers,
-} from "@/lib/demo-data";
+  listModules,
+} from "@/lib/data";
 import { getOnboardingCompletion, getTeamMetricLabel } from "@/lib/utils";
 
 export default async function TeamPage() {
   const user = await requireRole(["TEAMLEIDER", "BEHEERDER"]);
-  const store = getStore();
-  const members =
+  const [members, onboardingPath, modules] = await Promise.all([
     user.role === "BEHEERDER"
-      ? listUsers().filter((entry) => entry.role !== "BEHEERDER")
-      : getTeamMembers(user.id);
+      ? listUsers().then((entries) => entries.filter((entry) => entry.role !== "BEHEERDER"))
+      : getTeamMembers(user.id),
+    getActiveOnboardingPath(),
+    listModules({ publishedOnly: true }),
+  ]);
+  const memberSnapshots = await Promise.all(
+    members.map(async (member) => ({
+      member,
+      moduleProgress: await getModuleProgressForUser(member.id),
+      onboarding: getOnboardingCompletion(
+        onboardingPath?.steps ?? [],
+        await getOnboardingProgressForUser(member.id),
+      ),
+      goals: await getVisibleGoals(user.id, member.id),
+    })),
+  );
 
   return (
     <div className="space-y-6">
@@ -30,14 +44,7 @@ export default async function TeamPage() {
       />
 
       <section className="grid gap-5">
-        {members.map((member) => {
-          const moduleProgress = getModuleProgressForUser(member.id);
-          const onboarding = getOnboardingCompletion(
-            store.onboardingPath.steps,
-            getOnboardingProgressForUser(member.id),
-          );
-          const goals = getVisibleGoals(user.id, member.id);
-
+        {memberSnapshots.map(({ member, moduleProgress, onboarding, goals }) => {
           return (
             <Link
               key={member.id}
@@ -63,7 +70,7 @@ export default async function TeamPage() {
                       Modules
                     </p>
                     <p className="mt-2 text-lg font-semibold text-slate-950">
-                      {moduleProgress.filter((entry) => entry.status === "AFGEROND").length}/{store.modules.length}
+                      {moduleProgress.filter((entry) => entry.status === "AFGEROND").length}/{modules.length}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-[var(--teal-soft)] px-4 py-3">

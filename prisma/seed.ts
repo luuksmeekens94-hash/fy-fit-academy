@@ -1,14 +1,19 @@
+import { config } from "dotenv";
+config({ path: ".env.local" });
+config();
+
 import { PrismaPg } from "@prisma/adapter-pg";
 import {
+  DocumentType,
+  LearningGoalStatus,
+  ModulePublicationStatus,
+  ModuleSectionType,
   PrismaClient,
   Role,
-  ModuleStatus,
-  LearningGoalStatus,
-  OnboardingContentType,
-  ModuleSectionType,
-  DocumentType,
   Visibility,
 } from "@prisma/client";
+
+import { hashPassword } from "../src/lib/password";
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({
@@ -32,70 +37,81 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.user.deleteMany();
 
-  const [organisatie, communicatie, rug] = await Promise.all([
-    prisma.category.create({
-      data: { name: "Organisatie", icon: "Structuur", order: 1 },
-    }),
-    prisma.category.create({
-      data: { name: "Communicatie", icon: "Gesprek", order: 2 },
-    }),
-    prisma.category.create({
-      data: { name: "Lage rug", icon: "Rug", order: 3 },
-    }),
+  const passwordHash = await hashPassword("fyfit-demo");
+
+  const categories = await Promise.all([
+    prisma.category.create({ data: { name: "Organisatie", icon: "Structuur", order: 1 } }),
+    prisma.category.create({ data: { name: "Communicatie", icon: "Gesprek", order: 2 } }),
+    prisma.category.create({ data: { name: "Lage rug", icon: "Rug", order: 3 } }),
+    prisma.category.create({ data: { name: "Onboarding", icon: "Start", order: 4 } }),
   ]);
+
+  const [organisatie, communicatie, rug] = categories;
 
   const admin = await prisma.user.create({
     data: {
-      name: "Heidi Staring",
-      email: "heidi@fy-fitacademy.demo",
+      email: "marion@fysiotherapienijmegen.nl",
+      passwordHash,
+      name: "Marion Brouwer",
       role: Role.BEHEERDER,
+      team: "Academy",
       title: "Praktijkmanager",
       location: "Nijmegen",
       bio: "Stuurt de Academy aan en bewaakt de kwaliteit van onboarding, bibliotheek en teamontwikkeling.",
-      avatarColor: "brand",
+      avatarColor: "bg-[var(--brand)]",
       isOnboarding: false,
+      isActive: true,
     },
   });
 
   const teamlead = await prisma.user.create({
     data: {
-      name: "Dave van Perlo",
-      email: "dave@fy-fitacademy.demo",
+      email: "sjoerd@fysiotherapienijmegen.nl",
+      passwordHash,
+      name: "Sjoerd Hendriks",
       role: Role.TEAMLEIDER,
+      team: "Sport",
       title: "Sportfysiotherapeut",
       location: "Lankforst",
       bio: "Begeleidt teamleden op sportrevalidatie, casuistiek en persoonlijke ontwikkeling.",
-      avatarColor: "teal",
+      avatarColor: "bg-[var(--teal)]",
       isOnboarding: false,
+      isActive: true,
     },
   });
 
   const medewerker1 = await prisma.user.create({
     data: {
-      name: "Ryan Wessels",
-      email: "ryan@fy-fitacademy.demo",
+      email: "luuk@fysiotherapienijmegen.nl",
+      passwordHash,
+      name: "Luuk Smeekens",
       role: Role.MEDEWERKER,
+      team: "Algemeen",
       title: "Algemeen fysiotherapeut",
       location: "Weezenhof",
-      teamleaderId: teamlead.id,
-      buddyId: teamlead.id,
       bio: "Bouwt aan een stevige basis in behandelvisie, communicatie en het werken met de Fy-fit standaarden.",
-      avatarColor: "amber",
+      avatarColor: "bg-amber-500",
+      buddyId: teamlead.id,
+      teamleaderId: teamlead.id,
       isOnboarding: true,
+      isActive: true,
     },
   });
 
   const medewerker2 = await prisma.user.create({
     data: {
-      name: "Fleur Frieling",
-      email: "fleur@fy-fitacademy.demo",
+      email: "bram@fysiotherapienijmegen.nl",
+      passwordHash,
+      name: "Bram Heldens",
       role: Role.MEDEWERKER,
+      team: "Algemeen",
       title: "Algemeen fysiotherapeut",
       location: "Meijhorst",
-      teamleaderId: teamlead.id,
       bio: "Werkt actief aan consultvoering, geriatrische casuistiek en POP-doelen voor het komende kwartaal.",
-      avatarColor: "sky",
+      avatarColor: "bg-sky-500",
+      teamleaderId: teamlead.id,
       isOnboarding: false,
+      isActive: true,
     },
   });
 
@@ -105,7 +121,7 @@ async function main() {
       description:
         "Een compacte introductie in de manier waarop Fy-fit persoonlijke benadering, educatie en activeren met elkaar verbindt.",
       thumbnailLabel: "Visie",
-      status: "GEPUBLICEERD",
+      status: ModulePublicationStatus.GEPUBLICEERD,
       isRequired: true,
       estimatedMinutes: 18,
       authorId: admin.id,
@@ -123,7 +139,8 @@ async function main() {
             order: 2,
             title: "Video: zo klinkt de Fy-fit stijl",
             type: ModuleSectionType.VIDEO,
-            content: "Vervang dit later door een echte video-embed of branded still.",
+            content:
+              "Gebruik hier later een echte video-embed of branded still die laat zien hoe een consult in toon en ritme wordt opgebouwd.",
           },
           {
             order: 3,
@@ -132,13 +149,15 @@ async function main() {
             content: "Kies per vraag het antwoord dat het beste aansluit bij de Fy-fit aanpak.",
             quizData: [
               {
-                question: "Wat staat centraal in het eerste consult?",
+                id: "q1",
+                question: "Wat staat in het eerste consult centraal?",
                 options: [
-                  "Veel oefeningen meegeven",
-                  "De patiënt actief meenemen in het verhaal en plan",
-                  "Volledig standaardiseren zonder nuance",
+                  "Zoveel mogelijk oefeningen direct meegeven",
+                  "De patiënt actief meenemen in het verhaal achter de klacht en het plan",
+                  "De intake standaard afwerken zonder nuance",
                 ],
                 correctIndex: 1,
+                explanation: "De Fy-fit toon combineert duidelijkheid, uitleg en gezamenlijke regie.",
               },
             ],
           },
@@ -153,7 +172,7 @@ async function main() {
       description:
         "Praktische richtlijnen voor verwachtingsmanagement, samenvatten en heldere uitleg in een consult.",
       thumbnailLabel: "Gesprek",
-      status: "GEPUBLICEERD",
+      status: ModulePublicationStatus.GEPUBLICEERD,
       isRequired: true,
       estimatedMinutes: 22,
       authorId: teamlead.id,
@@ -165,27 +184,27 @@ async function main() {
             title: "Van intake naar gezamenlijk plan",
             type: ModuleSectionType.TEXT,
             content:
-              "Een goed gesprek bij Fy-fit is warm, concreet en richtinggevend.",
+              "Een goed gesprek bij Fy-fit is warm, concreet en richtinggevend. De patiënt moet begrijpen wat je onderzoekt en welke volgende stap logisch is.",
           },
           {
             order: 2,
             title: "Voorbeeldzinnen die werken",
             type: ModuleSectionType.IMAGE,
             content:
-              "Gebruik korte, rustige taal en maak verwachtingen concreet.",
+              "Gebruik korte, rustige taal. Bijvoorbeeld: 'Ik vat even samen wat ik tot nu toe hoor' of 'We kiezen nu eerst voor een stap die jou vandaag al helpt'.",
           },
         ],
       },
     },
   });
 
-  await prisma.module.create({
+  const lageRugModule = await prisma.module.create({
     data: {
       title: "Kernboodschap lage rugpijn",
       description:
         "Een korte module over consistente uitleg en geruststelling bij aspecifieke lage rugpijn.",
       thumbnailLabel: "Rug",
-      status: "GEPUBLICEERD",
+      status: ModulePublicationStatus.GEPUBLICEERD,
       isRequired: false,
       estimatedMinutes: 14,
       authorId: teamlead.id,
@@ -197,14 +216,14 @@ async function main() {
             title: "Wat willen we dat patiënten meenemen?",
             type: ModuleSectionType.TEXT,
             content:
-              "Patiënten moeten zich serieus genomen voelen en weten dat bewegen meestal helpend blijft.",
+              "Bij lage rugpijn willen we dat patiënten zich serieus genomen voelen, begrijpen dat bewegen meestal helpend blijft en weten welke signalen extra alertheid vragen.",
           },
           {
             order: 2,
             title: "Toon en framing",
             type: ModuleSectionType.TEXT,
             content:
-              "Gebruik taal die normaliseert zonder te bagatelliseren.",
+              "Gebruik taal die normaliseert zonder te bagatelliseren. Sluit aan bij zorgen, benoem herstelkansen en maak verwachtingen concreet.",
           },
         ],
       },
@@ -222,47 +241,53 @@ async function main() {
           {
             order: 1,
             title: "Welkom bij Fy-fit",
-            description: "Start met de introductie en leer de toon van Fy-fit kennen.",
-            contentType: OnboardingContentType.VIDEO,
-            content: "Bekijk de korte welkomstvideo.",
+            description: "Start met de introductievideo en leer hoe Fy-fit persoonlijke aandacht combineert met innovatieve zorg.",
+            contentType: "VIDEO",
+            content: "Bekijk de korte welkomstvideo en noteer twee dingen die je direct opvallen aan de Fy-fit benadering.",
             isRequired: true,
           },
           {
             order: 2,
             title: "Missie, visie en merkbelofte",
-            description: "Leer de kernboodschap kennen.",
-            contentType: OnboardingContentType.TEXT,
-            content: "Fy-fit staat voor innovatieve behandelingen met een persoonlijke benadering.",
+            description: "Leer de kernboodschap kennen die in consulten, intake en teamoverleg terugkomt.",
+            contentType: "TEXT",
+            content: "Fy-fit staat voor innovatieve behandelingen met een persoonlijke benadering. Koppel dit aan jouw eigen manier van werken.",
             isRequired: true,
           },
           {
             order: 3,
             title: "Jouw buddy en eerste week",
-            description: "Plan een eerste evaluatiemoment met je buddy.",
-            contentType: OnboardingContentType.CHECKLIST,
-            content: "Plan een evaluatiemoment van 20 minuten met je buddy.",
+            description: "Stem met je buddy af wat je deze week observeert en welke vragen je meeneemt.",
+            contentType: "CHECKLIST",
+            content: "Plan een eerste evaluatiemoment van 20 minuten met je buddy aan het einde van je eerste week.",
             isRequired: true,
           },
           {
             order: 4,
             title: "Praktische werkafspraken",
-            description: "Neem de basale afspraken door.",
-            contentType: OnboardingContentType.DOCUMENT,
-            content: "Lees de documenten in de bibliotheek.",
+            description: "Neem de basale afspraken door over verslaglegging, overdracht en patiëntcontact.",
+            contentType: "DOCUMENT",
+            content: "Lees de documenten in de bibliotheek en bevestig dat je weet waar je de actuele versies vindt.",
             isRequired: true,
           },
           {
             order: 5,
             title: "Behandelvisie module",
-            description: "Volg de eerste academy-module.",
-            contentType: OnboardingContentType.MODULE_LINK,
+            description: "Volg de eerste academy-module over de Fy-fit behandelvisie.",
+            contentType: "MODULE_LINK",
             content: behandelvisie.id,
             isRequired: true,
           },
         ],
       },
     },
-    include: { steps: true },
+    include: {
+      steps: {
+        orderBy: {
+          order: "asc",
+        },
+      },
+    },
   });
 
   await prisma.document.createMany({
@@ -272,13 +297,25 @@ async function main() {
         type: DocumentType.WERKAFSPRAAK,
         summary:
           "Heldere afspraken voor ontvangst, intake, verwachtingsmanagement en afsluiting van het eerste consult.",
-        content: [
-          "Start elk consult met een korte check-in.",
-          "Vat in gewone taal samen wat je hebt gezien en wat de vervolgstap is.",
-        ],
+        content:
+          "<p>Start elk consult met een korte check-in en maak direct duidelijk wat de patiënt van dit moment kan verwachten.</p><p>Vat na het onderzoek in gewone taal samen wat je hebt gezien, welke hypotheses logisch zijn en welke vervolgstap je voorstelt.</p><p>Sluit af met één concrete afspraak voor thuis en een heldere verwachting voor het volgende contactmoment.</p>",
+        tags: ["consult", "communicatie", "intake"],
         version: "1.4",
         ownerId: admin.id,
         categoryId: communicatie.id,
+        isPublished: true,
+      },
+      {
+        title: "Kernboodschap aspecifieke lage rugpijn",
+        type: DocumentType.KERNBOODSCHAP,
+        summary:
+          "Een compacte richtlijn voor consistente uitleg, geruststelling en activatie bij lage rugpijn.",
+        content:
+          "<p>Normaliseer de klacht waar passend, zonder de ervaring van de patiënt te verkleinen.</p><p>Benoem dat bewegen vaak onderdeel van herstel is en koppel het advies direct aan de hulpvraag.</p><p>Gebruik geruststelling in combinatie met een duidelijk plan: wat doen we nu, wat verwachten we de komende week en wanneer schalen we op?</p>",
+        tags: ["rug", "educatie", "patiëntuitleg"],
+        version: "0.9",
+        ownerId: teamlead.id,
+        categoryId: rug.id,
         isPublished: true,
       },
       {
@@ -286,10 +323,9 @@ async function main() {
         type: DocumentType.FORMAT,
         summary:
           "Basisformat om leerdoelen, bewijsstukken en evaluatievragen in één lijn te houden.",
-        content: [
-          "Beschrijf één inhoudelijk doel en één procesdoel.",
-          "Gebruik concrete observaties en feedbackmomenten als bewijs.",
-        ],
+        content:
+          "<p>Beschrijf één inhoudelijk doel, één procesdoel en het bewijs dat laat zien dat je vooruitgang boekt.</p><p>Maak het klein genoeg om binnen één kwartaal te bespreken en groot genoeg om zichtbaar verschil te maken in je werk.</p><p>Gebruik concrete observaties, casussen of feedbackmomenten om je voortgang te onderbouwen.</p>",
+        tags: ["pop", "ontwikkeling", "gesprek"],
         version: "1.1",
         ownerId: admin.id,
         categoryId: organisatie.id,
@@ -303,34 +339,41 @@ async function main() {
       {
         userId: medewerker1.id,
         moduleId: behandelvisie.id,
-        status: ModuleStatus.BEZIG,
+        status: "BEZIG",
         score: 80,
         startedAt: new Date("2026-03-22"),
       },
       {
+        userId: medewerker1.id,
+        moduleId: communicatieModule.id,
+        status: "NIET_GESTART",
+        startedAt: new Date("2026-03-23"),
+      },
+      {
         userId: medewerker2.id,
         moduleId: behandelvisie.id,
-        status: ModuleStatus.AFGEROND,
+        status: "AFGEROND",
         score: 100,
         startedAt: new Date("2026-03-15"),
         completedAt: new Date("2026-03-16"),
       },
       {
-        userId: medewerker1.id,
-        moduleId: communicatieModule.id,
-        status: ModuleStatus.NIET_GESTART,
-        startedAt: new Date("2026-03-23"),
+        userId: medewerker2.id,
+        moduleId: lageRugModule.id,
+        status: "BEZIG",
+        startedAt: new Date("2026-03-24"),
       },
     ],
   });
 
   await prisma.onboardingProgress.createMany({
-    data: onboardingPath.steps.slice(0, 3).map((step) => ({
+    data: onboardingPath.steps.slice(0, 4).map((step, index) => ({
       userId: medewerker1.id,
       stepId: step.id,
       completed: true,
-      completedAt: new Date("2026-03-20"),
+      completedAt: new Date(`2026-03-${20 + index}`),
       completedById: teamlead.id,
+      notes: index === 2 ? "Buddygesprek ingepland voor vrijdagmiddag." : null,
     })),
   });
 
@@ -352,6 +395,14 @@ async function main() {
         status: LearningGoalStatus.OPEN,
         targetDate: new Date("2026-05-01"),
       },
+      {
+        userId: medewerker2.id,
+        title: "POP bewijs verzamelen voor kwartaalgesprek",
+        description:
+          "Ik wil drie praktijkvoorbeelden en feedbackmomenten bundelen in mijn ontwikkelmap.",
+        status: LearningGoalStatus.BEZIG,
+        targetDate: new Date("2026-04-08"),
+      },
     ],
   });
 
@@ -368,21 +419,21 @@ async function main() {
       {
         userId: medewerker2.id,
         title: "Bewijsmap consultvoering",
-        description: "Notities uit intervisie, feedback en twee uitgewerkte casussen.",
+        description: "Notities uit intervisie, feedback van Sjoerd en twee uitgewerkte casussen.",
         category: "Bewijs",
         visibility: Visibility.TEAM,
       },
       {
         userId: medewerker2.id,
         title: "Persoonlijke reflectienotitie",
-        description: "Korte notitie over energieverdeling en ritme in de week.",
+        description: "Korte notitie over energieverdeling en ritme in de week. Alleen zichtbaar voor de medewerker zelf.",
         category: "Reflectie",
         visibility: Visibility.PRIVATE,
       },
     ],
   });
 
-  console.log("Seed voltooid");
+  console.log("Seed voltooid. Demo accounts gebruiken wachtwoord: fyfit-demo");
 }
 
 main()

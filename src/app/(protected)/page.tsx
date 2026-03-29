@@ -5,32 +5,61 @@ import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
 import {
+  getActiveOnboardingPath,
   getModuleProgressForUser,
-  getOnboardingProgressForUser,
-  getStore,
   getTeamMembers,
   getVisibleDevelopmentDocuments,
   getVisibleGoals,
   getUserById,
-} from "@/lib/demo-data";
+  listCategories,
+  listModules,
+  listUsers,
+  getOnboardingProgressForUser,
+} from "@/lib/data";
 import { formatDate, getOnboardingCompletion, getStatusTone } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const store = getStore();
-  const moduleProgress = getModuleProgressForUser(user.id);
-  const onboardingProgress = getOnboardingProgressForUser(user.id);
-  const developmentDocuments = getVisibleDevelopmentDocuments(user.id, user.id);
-  const goals = getVisibleGoals(user.id, user.id);
-  const openModules = store.modules.filter((module) => {
+  const [
+    modules,
+    categories,
+    onboardingPath,
+    moduleProgress,
+    onboardingProgress,
+    developmentDocuments,
+    goals,
+  ] = await Promise.all([
+    listModules({ publishedOnly: true }),
+    listCategories(),
+    getActiveOnboardingPath(),
+    getModuleProgressForUser(user.id),
+    getOnboardingProgressForUser(user.id),
+    getVisibleDevelopmentDocuments(user.id, user.id),
+    getVisibleGoals(user.id, user.id),
+  ]);
+  const openModules = modules.filter((module) => {
     const progress = moduleProgress.find((entry) => entry.moduleId === module.id);
     return !progress || progress.status !== "AFGEROND";
   });
-  const onboardingCompletion = getOnboardingCompletion(
-    store.onboardingPath.steps,
-    onboardingProgress,
+  const onboardingCompletion = getOnboardingCompletion(onboardingPath?.steps ?? [], onboardingProgress);
+  const teamMembers =
+    user.role === "MEDEWERKER"
+      ? []
+      : user.role === "BEHEERDER"
+        ? (await listUsers()).filter((entry) => entry.role !== "BEHEERDER")
+        : await getTeamMembers(user.id);
+  const teamSnapshots = await Promise.all(
+    teamMembers.map(async (member) => ({
+      member,
+      moduleProgress: await getModuleProgressForUser(member.id),
+      goals: await getVisibleGoals(user.id, member.id),
+      buddy: member.buddyId ? await getUserById(member.buddyId) : null,
+      onboarding: getOnboardingCompletion(
+        onboardingPath?.steps ?? [],
+        await getOnboardingProgressForUser(member.id),
+      ),
+    })),
   );
-  const teamMembers = user.role === "MEDEWERKER" ? [] : getTeamMembers(user.id);
 
   return (
     <div className="space-y-6">
@@ -147,7 +176,7 @@ export default async function DashboardPage() {
           <div className="mt-6 space-y-4">
             {openModules.slice(0, 3).map((module) => {
               const progress = moduleProgress.find((entry) => entry.moduleId === module.id);
-              const category = store.categories.find((entry) => entry.id === module.categoryId);
+              const category = categories.find((entry) => entry.id === module.categoryId);
 
               return (
                 <Link
@@ -235,15 +264,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
-            {teamMembers.map((member) => {
-              const memberProgress = getModuleProgressForUser(member.id);
-              const memberGoals = getVisibleGoals(user.id, member.id);
-              const buddy = member.buddyId ? getUserById(member.buddyId) : null;
-              const memberOnboarding = getOnboardingCompletion(
-                store.onboardingPath.steps,
-                getOnboardingProgressForUser(member.id),
-              );
-
+            {teamSnapshots.map(({ member, moduleProgress: memberProgress, goals: memberGoals, buddy, onboarding: memberOnboarding }) => {
               return (
                 <Link
                   key={member.id}
@@ -269,7 +290,7 @@ export default async function DashboardPage() {
                       </p>
                       <p className="mt-2 text-lg font-semibold text-slate-950">
                         {memberProgress.filter((entry) => entry.status === "AFGEROND").length}/
-                        {store.modules.length}
+                        {modules.length}
                       </p>
                     </div>
                     <div className="rounded-2xl bg-[var(--teal-soft)] p-3">

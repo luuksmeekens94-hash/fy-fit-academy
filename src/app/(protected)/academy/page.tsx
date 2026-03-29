@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
-import { getModuleProgressForUser, getStore } from "@/lib/demo-data";
+import { getModuleProgressForUser, listCategories, listModules } from "@/lib/data";
 import { getStatusTone } from "@/lib/utils";
 
 type AcademyPageProps = {
@@ -13,18 +13,21 @@ type AcademyPageProps = {
 export default async function AcademyPage({ searchParams }: AcademyPageProps) {
   const user = await requireUser();
   const params = await searchParams;
-  const store = getStore();
+  const [categories, modules, progressEntries] = await Promise.all([
+    listCategories(),
+    listModules({ publishedOnly: true }),
+    getModuleProgressForUser(user.id),
+  ]);
   const query = params.q?.toLowerCase() ?? "";
   const selectedCategory = params.category ?? "all";
-  const progressEntries = getModuleProgressForUser(user.id);
 
-  const filteredModules = store.modules.filter((module) => {
+  const filteredModules = modules.filter((module) => {
     const matchesQuery =
       module.title.toLowerCase().includes(query) ||
       module.description.toLowerCase().includes(query);
     const matchesCategory =
       selectedCategory === "all" || module.categoryId === selectedCategory;
-    return matchesQuery && matchesCategory && module.status === "GEPUBLICEERD";
+    return matchesQuery && matchesCategory;
   });
 
   return (
@@ -50,7 +53,7 @@ export default async function AcademyPage({ searchParams }: AcademyPageProps) {
             className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
           >
             <option value="all">Alle categorieen</option>
-            {store.categories.map((category) => (
+            {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
               </option>
@@ -67,7 +70,7 @@ export default async function AcademyPage({ searchParams }: AcademyPageProps) {
 
       <section className="grid gap-5 xl:grid-cols-2">
         {filteredModules.map((module) => {
-          const category = store.categories.find((entry) => entry.id === module.categoryId);
+          const category = categories.find((entry) => entry.id === module.categoryId);
           const progress = progressEntries.find((entry) => entry.moduleId === module.id);
 
           return (

@@ -4,14 +4,14 @@ import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth";
 import {
+  getActiveOnboardingPath,
   getModuleProgressForUser,
   getOnboardingProgressForUser,
-  getStore,
   getTeamMembers,
   getUserById,
   getVisibleDevelopmentDocuments,
   getVisibleGoals,
-} from "@/lib/demo-data";
+} from "@/lib/data";
 import { formatDate, getOnboardingCompletion, getStatusTone } from "@/lib/utils";
 
 type TeamDetailPageProps = {
@@ -21,7 +21,7 @@ type TeamDetailPageProps = {
 export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
   const viewer = await requireRole(["TEAMLEIDER", "BEHEERDER"]);
   const { userId } = await params;
-  const member = getUserById(userId);
+  const member = await getUserById(userId);
 
   if (!member) {
     notFound();
@@ -29,19 +29,19 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
 
   if (
     viewer.role === "TEAMLEIDER" &&
-    !getTeamMembers(viewer.id).some((entry) => entry.id === member.id)
+    !(await getTeamMembers(viewer.id)).some((entry) => entry.id === member.id)
   ) {
     redirect("/team");
   }
 
-  const store = getStore();
-  const goals = getVisibleGoals(viewer.id, member.id);
-  const documents = getVisibleDevelopmentDocuments(viewer.id, member.id);
-  const moduleProgress = getModuleProgressForUser(member.id);
-  const onboarding = getOnboardingCompletion(
-    store.onboardingPath.steps,
+  const [goals, documents, moduleProgress, onboardingPath, onboardingProgress] = await Promise.all([
+    getVisibleGoals(viewer.id, member.id),
+    getVisibleDevelopmentDocuments(viewer.id, member.id),
+    getModuleProgressForUser(member.id),
+    getActiveOnboardingPath(),
     getOnboardingProgressForUser(member.id),
-  );
+  ]);
+  const onboarding = getOnboardingCompletion(onboardingPath?.steps ?? [], onboardingProgress);
 
   return (
     <div className="space-y-6">

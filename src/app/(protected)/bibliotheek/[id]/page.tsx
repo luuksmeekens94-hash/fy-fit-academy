@@ -3,24 +3,31 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
-import { getDocumentById, getStore } from "@/lib/demo-data";
+import { getDocumentById, listCategories, listUsers } from "@/lib/data";
 
 type LibraryDetailPageProps = {
   params: Promise<{ id: string }>;
 };
 
 export default async function LibraryDetailPage({ params }: LibraryDetailPageProps) {
-  await requireUser();
+  const user = await requireUser();
   const { id } = await params;
-  const store = getStore();
-  const document = getDocumentById(id);
+  const [document, users, categories] = await Promise.all([
+    getDocumentById(id),
+    listUsers(),
+    listCategories(),
+  ]);
 
   if (!document) {
     notFound();
   }
 
-  const owner = store.users.find((entry) => entry.id === document.ownerId);
-  const category = store.categories.find((entry) => entry.id === document.categoryId);
+  if (!document.isPublished && user.role !== "BEHEERDER") {
+    notFound();
+  }
+
+  const owner = users.find((entry) => entry.id === document.ownerId);
+  const category = categories.find((entry) => entry.id === document.categoryId);
 
   return (
     <div className="space-y-6">
@@ -42,13 +49,10 @@ export default async function LibraryDetailPage({ params }: LibraryDetailPagePro
       </section>
 
       <section className="card-surface rounded-[32px] p-6">
-        <div className="space-y-5">
-          {document.content.map((paragraph) => (
-            <p key={paragraph} className="text-base leading-8 text-[var(--ink-soft)]">
-              {paragraph}
-            </p>
-          ))}
-        </div>
+        <div
+          className="prose prose-slate max-w-none text-[var(--ink-soft)]"
+          dangerouslySetInnerHTML={{ __html: document.content }}
+        />
       </section>
     </div>
   );
