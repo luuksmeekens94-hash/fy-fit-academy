@@ -1,5 +1,6 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 import { requireUser } from "@/lib/auth";
@@ -246,53 +247,62 @@ export async function startAssessmentAttemptAction(formData: FormData) {
   assert(courseId, "Cursus ontbreekt.");
   assert(assessmentId, "Toets ontbreekt.");
 
-  const [enrollment, assessment, existingAttempts] = await Promise.all([
-    prisma.enrollment.findUnique({
-      where: {
-        userId_courseId: {
+  const attempt = await prisma.$transaction(
+    async (tx) => {
+      const [enrollment, assessment, existingAttempts] = await Promise.all([
+        tx.enrollment.findUnique({
+          where: {
+            userId_courseId: {
+              userId: user.id,
+              courseId,
+            },
+          },
+        }),
+        tx.assessment.findUnique({
+          where: { id: assessmentId },
+          include: {
+            courseVersion: true,
+          },
+        }),
+        tx.assessmentAttempt.findMany({
+          where: {
+            userId: user.id,
+            assessmentId,
+          },
+          orderBy: { attemptNumber: "desc" },
+        }),
+      ]);
+
+      assert(enrollment, "Geen LMS-inschrijving gevonden voor deze cursus.");
+      assert(assessment, "Toets niet gevonden.");
+      assert(assessment.courseVersion.courseId === courseId, "Toets hoort niet bij deze cursus.");
+      assert(existingAttempts.length < assessment.maxAttempts, "Maximum aantal toetspogingen bereikt.");
+      assert(
+        existingAttempts.every((attempt) => attempt.submittedAt !== null),
+        "Er staat al een actieve toetspoging open. Lever die eerst in."
+      );
+
+      if (enrollment.status === "NOT_STARTED") {
+        await tx.enrollment.update({
+          where: { id: enrollment.id },
+          data: {
+            status: "IN_PROGRESS",
+            startedAt: enrollment.startedAt ?? new Date(),
+          },
+        });
+      }
+
+      return tx.assessmentAttempt.create({
+        data: {
+          assessmentId,
           userId: user.id,
-          courseId,
+          courseVersionId: assessment.courseVersionId,
+          attemptNumber: (existingAttempts[0]?.attemptNumber ?? 0) + 1,
         },
-      },
-    }),
-    prisma.assessment.findUnique({
-      where: { id: assessmentId },
-      include: {
-        courseVersion: true,
-      },
-    }),
-    prisma.assessmentAttempt.findMany({
-      where: {
-        userId: user.id,
-        assessmentId,
-      },
-      orderBy: { attemptNumber: "desc" },
-    }),
-  ]);
-
-  assert(enrollment, "Geen LMS-inschrijving gevonden voor deze cursus.");
-  assert(assessment, "Toets niet gevonden.");
-  assert(assessment.courseVersion.courseId === courseId, "Toets hoort niet bij deze cursus.");
-  assert(existingAttempts.length < assessment.maxAttempts, "Maximum aantal toetspogingen bereikt.");
-
-  if (enrollment.status === "NOT_STARTED") {
-    await prisma.enrollment.update({
-      where: { id: enrollment.id },
-      data: {
-        status: "IN_PROGRESS",
-        startedAt: enrollment.startedAt ?? new Date(),
-      },
-    });
-  }
-
-  const attempt = await prisma.assessmentAttempt.create({
-    data: {
-      assessmentId,
-      userId: user.id,
-      courseVersionId: assessment.courseVersionId,
-      attemptNumber: (existingAttempts[0]?.attemptNumber ?? 0) + 1,
+      });
     },
-  });
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+  );
 
   revalidateLmsPaths(courseId);
   return { attemptId: attempt.id, attemptNumber: attempt.attemptNumber };

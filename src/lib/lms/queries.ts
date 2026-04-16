@@ -93,6 +93,7 @@ function mapCourseDetail(course: {
     }[];
     assessments: {
       id: string;
+      lessonId: string | null;
       title: string;
       passPercentage: number;
       maxAttempts: number;
@@ -138,6 +139,7 @@ function mapCourseDetail(course: {
           })),
           assessments: activeVersion.assessments.map((assessment) => ({
             id: assessment.id,
+            lessonId: assessment.lessonId,
             title: assessment.title,
             passPercentage: assessment.passPercentage,
             maxAttempts: assessment.maxAttempts,
@@ -438,7 +440,6 @@ export const getAssessmentDetail = cache(
         id: question.id,
         type: question.type,
         prompt: question.prompt,
-        explanation: question.explanation,
         order: question.order,
         points: question.points,
         options: question.options.map((option) => ({

@@ -2,14 +2,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { completeLessonAction } from "@/app/lms-actions";
+import { AssessmentRunner } from "@/components/lms/assessment-runner";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
 import {
+  getAssessmentDetail,
   getCourseDetail,
   getEnrollmentDetailForUser,
   getLessonDetail,
   getLessonProgressForVersion,
+  getMyAttempts,
 } from "@/lib/lms/queries";
 
 type LmsLessonDetailPageProps = {
@@ -48,6 +51,25 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
 
   const progressEntries = await getLessonProgressForVersion(user.id, course.activeVersion.id);
   const progress = progressEntries.find((entry) => entry.lessonId === lesson.id);
+  const assessmentSummary =
+    lesson.type === "ASSESSMENT"
+      ? course.activeVersion.assessments.find((entry) => entry.lessonId === lesson.id) ?? null
+      : null;
+
+  if (lesson.type === "ASSESSMENT" && !assessmentSummary) {
+    notFound();
+  }
+
+  const [assessment, attempts] = assessmentSummary
+    ? await Promise.all([
+        getAssessmentDetail(assessmentSummary.id),
+        getMyAttempts(user.id, assessmentSummary.id),
+      ])
+    : [null, []];
+
+  if (lesson.type === "ASSESSMENT" && !assessment) {
+    notFound();
+  }
 
   const canCompleteLesson = lesson.type !== "ASSESSMENT" && progress?.status !== "COMPLETED";
 
@@ -72,14 +94,8 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
         </div>
       </section>
 
-      {lesson.type === "ASSESSMENT" ? (
-        <section className="card-surface rounded-[32px] p-6">
-          <h2 className="text-xl font-semibold text-slate-950">Toetskoppeling volgt in de volgende stap</h2>
-          <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
-            De server-side toetslogica staat al klaar, maar de interactieve toetsrunner wordt in de volgende UI-fase aangesloten.
-            Zodra de assessmentpagina is gekoppeld, kun je deze les daar afronden.
-          </p>
-        </section>
+      {lesson.type === "ASSESSMENT" && assessment ? (
+        <AssessmentRunner courseId={courseId} assessment={assessment} initialAttempts={attempts} />
       ) : null}
 
       <section className="flex flex-wrap items-center gap-3">

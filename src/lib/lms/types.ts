@@ -118,6 +118,7 @@ export type LessonProgressInfo = {
 
 export type AssessmentSummary = {
   id: string;
+  lessonId: string | null;
   title: string;
   passPercentage: number;
   maxAttempts: number;
@@ -144,7 +145,6 @@ export type QuestionDetail = {
   id: string;
   type: QuestionType;
   prompt: string;
-  explanation: string | null;
   order: number;
   points: number;
   options: QuestionOptionDetail[];
