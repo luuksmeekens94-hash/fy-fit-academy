@@ -1,94 +1,191 @@
-# Fy-fit Academy
+# Fy-Fit Academy
 
-MVP-demo voor een interne Fy-fit academy met vijf kernstromen:
+Intern leer- en ontwikkelplatform voor **Fy Fit Fysiotherapie Nijmegen**.
 
-- dashboard per rol
+De applicatie ondersteunt nu al de bestaande Academy-domeinen:
+- dashboard
 - academy-modules
 - bibliotheek
 - onboarding
-- persoonlijke ontwikkeling / POP
+- ontwikkeling / POP
+- teamoverzicht
+- mijn-gegevens
+- admin
 
-## Lokale start
+Daarnaast is de **nieuwe LMS-domeinlaag** technisch al gestart in de codebase, zodat het platform gefaseerd kan doorgroeien naar een volwaardig LMS met cursussen, lessen, toetsing, voortgang en certificaten.
+
+## Live omgevingen
+
+- **GitHub repo:** https://github.com/luuksmeekens94-hash/fy-fit-academy
+- **Productie:** https://fy-fit-academy.vercel.app
+- **Vercel project:** https://vercel.com/luuksmeekens94-6788s-projects/fy-fit-academy
+
+## Stack
+
+- **Next.js 16.2.1** (App Router)
+- **React 19**
+- **TypeScript 5**
+- **Prisma 7.5** met `@prisma/adapter-pg`
+- **PostgreSQL via Neon**
+- **Tailwind CSS 4**
+- **Deployment via Vercel**
+
+## Authenticatie en rollen
+
+De app gebruikt **cookie-based HMAC auth** met een ondertekende sessiecookie.
+
+Rollen:
+- **BEHEERDER**
+- **TEAMLEIDER**
+- **MEDEWERKER**
+
+Belangrijke auth-bestanden:
+- `src/lib/auth.ts`
+- `src/lib/session.ts`
+
+## Projectstructuur
+
+### App-routes
+
+`src/app/(protected)/`
+- `page.tsx` — dashboard
+- `academy/` — bestaande Academy-modules
+- `bibliotheek/` — documenten en protocollen
+- `onboarding/` — onboardingpad en voortgang
+- `ontwikkeling/` — leerdoelen en ontwikkeldocumenten
+- `team/` — teamoverzicht en medewerkerdetail
+- `mijn-gegevens/` — profiel
+- `admin/` — beheerfunctionaliteit
+
+Publieke route:
+- `src/app/login/page.tsx`
+
+### Shared logic
+
+- `src/app/actions.ts` — bestaande server actions
+- `src/lib/data.ts` — bestaande querylaag en mappers
+- `src/lib/types.ts` — app-types
+- `src/lib/prisma.ts` — Prisma client
+
+### LMS-domeinlaag
+
+De LMS-laag staat bewust **naast** de bestaande Academy-modulelogica.
+
+Belangrijkste bestanden:
+- `prisma/schema.prisma` — bevat zowel bestaande Academy-modellen als LMS-modellen
+- `src/lib/lms/types.ts`
+- `src/lib/lms/queries.ts`
+- `src/lib/lms/scoring.ts`
+- `src/lib/lms/rules.ts`
+- `src/lib/lms/certificates.ts`
+
+### Huidige LMS-status
+
+**Al aanwezig:**
+- datamodel voor `Course`, `CourseVersion`, `Lesson`, `Enrollment`, `Assessment`, `Certificate`, etc.
+- query- en helperlaag in `src/lib/lms/`
+
+**Nog te bouwen:**
+- LMS-routes in `src/app/(protected)/lms/`
+- LMS server actions
+- end-to-end medewerkerflow
+- admin/teamleider LMS-schermen
+- seeddata voor een volledige LMS-demo-flow
+
+## Database en environment variables
+
+Benodigde variabelen:
+
+```env
+DATABASE_URL=postgresql://...
+DIRECT_URL=postgresql://...
+SESSION_SECRET=...
+```
+
+Deze staan lokaal in `.env.local` en in Vercel als project environment variables.
+
+## Lokale ontwikkeling
+
+### Installeren
 
 ```bash
 npm install
+```
+
+### Development server starten
+
+```bash
 npm run dev
 ```
 
-Open daarna [http://localhost:3000](http://localhost:3000).
+Open daarna:
+- http://localhost:3000
 
-## Van lokaal naar gedeelde demo
-
-### 1. Neon database aanmaken
-
-- Maak een nieuw project aan in Neon
-- Kopieer de connection string
-- Zet die lokaal in `.env.local` als `DATABASE_URL`
-- Zet diezelfde variabele later in Vercel
-
-Gebruik lokaal bijvoorbeeld:
-
-```env
-DATABASE_URL="postgresql://user:password@host:5432/fyfitacademy?schema=public"
-```
-
-### 2. Prisma initialiseren tegen Neon
-
-Zet bij voorkeur beide variabelen:
-
-```env
-DATABASE_URL="postgresql://..."
-DIRECT_URL="postgresql://..."
-```
-
-Gebruik voor `DIRECT_URL` het liefst de unpooled variant uit Vercel/Neon, bijvoorbeeld `DATABASE_URL_UNPOOLED` of `POSTGRES_URL_NON_POOLING`.
+### Prisma client genereren
 
 ```bash
+npm run db:generate
+```
+
+### Schema pushen naar database
+
+```bash
+npm run db:push
+```
+
+### Seed draaien
+
+```bash
+npm run db:seed
+```
+
+## Beschikbare scripts
+
+```bash
+npm run dev
+npm run build
+npm run start
+npm run lint
 npm run db:generate
 npm run db:push
 npm run db:seed
 ```
 
-Hiermee genereer je de Prisma client, maak je het schema aan en vul je de database met demo-inhoud.
-
-### 3. Deployen naar Vercel
-
-- Push de repo naar GitHub
-- Importeer het project in Vercel
-- Voeg `DATABASE_URL` toe bij de environment variables
-- Deploy opnieuw nadat de env var is opgeslagen
-
-### 4. Aanbevolen volgorde
-
-- Eerst lokaal valideren
-- Dan Neon koppelen
-- Dan seed draaien
-- Dan pas Vercel deployen
-
-Zo blijft de demo straks deelbaar, terwijl de stack al klaarstaat voor echte persistentie.
-
 ## Demo-accounts
 
-Alle accounts gebruiken wachtwoord `fyfit-demo`.
+Wachtwoord voor de demo-accounts:
 
-- `heidi@fy-fitacademy.demo` - beheerder
-- `dave@fy-fitacademy.demo` - teamleider
-- `ryan@fy-fitacademy.demo` - medewerker in onboarding
-- `fleur@fy-fitacademy.demo` - medewerker
+```txt
+fyfit-demo
+```
 
-## Architectuur
+Bekende accounts in de seed:
+- `marion@fysiotherapienijmegen.nl` — BEHEERDER
+- `sjoerd@fysiotherapienijmegen.nl` — TEAMLEIDER
+- `luuk@fysiotherapienijmegen.nl` — MEDEWERKER
 
-- `src/app/(protected)` bevat alle ingelogde routes
-- `src/app/actions.ts` bevat server actions voor demo-auth en simpele mutaties
-- `src/lib/demo-data.ts` bevat de in-memory seed/store voor de demo
-- `src/lib/prisma.ts` bevat de Prisma client helper voor de databasefase
-- `prisma/schema.prisma` legt het bedoelde PostgreSQL-datamodel vast voor de vervolgfase
-- `prisma/seed.ts` vult een Neon/Postgres database met dezelfde basis als de demo
+Controleer altijd `prisma/seed.ts` voor de actuele seedinhoud.
 
-## Huidige status
+## Belangrijke projectregels
 
-De app draait nu op een demo-first basis met een in-memory store, zodat flows direct toonbaar zijn zonder eerst een database te provisionen. Het Prisma-schema is alvast aanwezig voor de stap naar Neon/PostgreSQL.
+1. Lees `CLAUDE.md` eerst voordat je grotere wijzigingen doet.
+2. Next.js 16 heeft breaking changes; check relevante docs als je nieuwe framework-API’s gebruikt.
+3. Houd LMS-logica uit de bestaande `src/lib/data.ts` en `src/app/actions.ts` waar mogelijk.
+4. Bouw het LMS als **nieuw domein**, niet als uitbreiding van `Module`.
+5. Gebruik bestaande design tokens en componentstijl; introduceer geen los nieuw design system.
 
-## Belangrijke noot
+## Huidige ontwikkelrichting
 
-De UI leest nu nog uit de demo-store in `src/lib/demo-data.ts`. De database-setup is dus klaar voor de volgende fase, maar nog niet live aangesloten op de pagina's. De beste vervolgstap is daarom: schermen één voor één omzetten van demo-data naar Prisma-queries.
+De gekozen route voor de volgende fase is:
+- bestaande Academy intact houden
+- LMS verder uitbouwen als parallel domein
+- eerst één volledige flow bouwen:
+  - cursus
+  - les
+  - toets
+  - afronding
+  - certificaat
+- daarna pas verbreden naar uitgebreid beheer, reviewworkflow en rapportage
+
+Het actieve implementatieplan staat in:
+- `docs/plans/2026-04-16-fy-fit-academy-lms-plan.md`

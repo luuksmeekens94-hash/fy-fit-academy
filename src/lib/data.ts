@@ -318,12 +318,12 @@ export const listModules = cache(async (options?: { publishedOnly?: boolean }) =
 });
 
 export const getModuleById = cache(async (moduleId: string) => {
-  const module = await prisma.module.findUnique({
+  const academyModule = await prisma.module.findUnique({
     where: { id: moduleId },
     include: moduleInclude,
   });
 
-  return module ? mapModule(module) : null;
+  return academyModule ? mapModule(academyModule) : null;
 });
 
 export const getModuleProgressForUser = cache(async (userId: string) => {
