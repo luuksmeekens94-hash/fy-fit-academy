@@ -52,6 +52,9 @@ export function AppShell({ user, children }: AppShellProps) {
                       <Link href="/academy" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
                         Fy-fit Academy
                       </Link>
+                      <Link href="/lms" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
+                        LMS cursussen
+                      </Link>
                       <Link href="/ontwikkeling" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
                         Mijn ontwikkeling
                       </Link>
@@ -85,6 +88,7 @@ export function AppShell({ user, children }: AppShellProps) {
             <div className="relative flex flex-wrap gap-3">
               <NavLink href="/" label="Dashboard" />
               <NavLink href="/academy" label="Fy-fit Academy" />
+              <NavLink href="/lms" label="LMS" />
               <NavLink href="/ontwikkeling" label="Mijn ontwikkeling" />
               {user.isOnboarding || user.role !== "MEDEWERKER" ? (
                 <NavLink href="/onboarding" label="Onboarding" />
