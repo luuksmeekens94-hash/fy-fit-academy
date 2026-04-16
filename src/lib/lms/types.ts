@@ -96,6 +96,16 @@ export type EnrollmentSummary = {
   progress: number; // 0–100
 };
 
+export type EnrollmentDetail = EnrollmentSummary & {
+  userId: string;
+  activeVersionId: string | null;
+  lessonCount: number;
+  completedLessonCount: number;
+  requiredAssessmentCount: number;
+  passedRequiredAssessmentCount: number;
+  certificateId: string | null;
+};
+
 // ─── LessonProgress ───────────────────────────────────────────────────────────
 
 export type LessonProgressInfo = {
@@ -143,7 +153,6 @@ export type QuestionDetail = {
 export type QuestionOptionDetail = {
   id: string;
   label: string;
-  isCorrect: boolean;
   order: number;
 };
 

@@ -2,16 +2,185 @@
 
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+import { calculateCourseProgress, selectLatestPassedAttempt } from "./query-helpers";
 import type {
-  CourseSummary,
-  CourseDetail,
-  EnrollmentSummary,
-  LessonProgressInfo,
   AssessmentDetail,
   AttemptResult,
   CertificateSummary,
+  CourseDetail,
+  CourseSummary,
+  EnrollmentDetail,
+  EnrollmentSummary,
+  LessonDetail,
+  LessonProgressInfo,
   TeamMemberProgress,
 } from "./types";
+
+function mapAttemptResult(attempt: {
+  id: string;
+  attemptNumber: number;
+  startedAt: Date;
+  submittedAt: Date | null;
+  scoreRaw: number | null;
+  scorePercentage: number | null;
+  passed: boolean | null;
+}): AttemptResult {
+  return {
+    id: attempt.id,
+    attemptNumber: attempt.attemptNumber,
+    startedAt: attempt.startedAt,
+    submittedAt: attempt.submittedAt,
+    scoreRaw: attempt.scoreRaw,
+    scorePercentage: attempt.scorePercentage,
+    passed: attempt.passed,
+  };
+}
+
+function mapCertificateSummary(certificate: {
+  id: string;
+  courseId: string;
+  issuedAt: Date;
+  scorePercentage: number | null;
+  studyLoadMinutes: number | null;
+  certificateCode: string;
+  course: { title: string };
+  courseVersion: { versionNumber: string };
+}): CertificateSummary {
+  return {
+    id: certificate.id,
+    courseId: certificate.courseId,
+    courseTitle: certificate.course.title,
+    issuedAt: certificate.issuedAt,
+    scorePercentage: certificate.scorePercentage,
+    studyLoadMinutes: certificate.studyLoadMinutes,
+    certificateCode: certificate.certificateCode,
+    versionNumber: certificate.courseVersion.versionNumber,
+  };
+}
+
+function mapCourseDetail(course: {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  audience: string | null;
+  learningObjectives: string | null;
+  studyLoadMinutes: number;
+  status: CourseDetail["status"];
+  isMandatory: boolean;
+  authorId: string;
+  reviewerId: string | null;
+  publishedAt: Date | null;
+  revisionDueAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  author: { name: string };
+  reviewer: { name: string } | null;
+  versions: {
+    id: string;
+    courseId: string;
+    versionNumber: string;
+    changeSummary: string | null;
+    isActive: boolean;
+    createdAt: Date;
+    lessons: {
+      id: string;
+      title: string;
+      type: LessonDetail["type"];
+      order: number;
+      isRequired: boolean;
+      estimatedMinutes: number;
+    }[];
+    assessments: {
+      id: string;
+      title: string;
+      passPercentage: number;
+      maxAttempts: number;
+      isRequiredForCompletion: boolean;
+    }[];
+  }[];
+}): CourseDetail {
+  const activeVersion = course.versions[0] ?? null;
+
+  return {
+    id: course.id,
+    title: course.title,
+    slug: course.slug,
+    description: course.description,
+    audience: course.audience,
+    learningObjectives: course.learningObjectives,
+    studyLoadMinutes: course.studyLoadMinutes,
+    status: course.status,
+    isMandatory: course.isMandatory,
+    authorId: course.authorId,
+    authorName: course.author.name,
+    reviewerId: course.reviewerId,
+    reviewerName: course.reviewer?.name ?? null,
+    publishedAt: course.publishedAt,
+    revisionDueAt: course.revisionDueAt,
+    createdAt: course.createdAt,
+    updatedAt: course.updatedAt,
+    activeVersion: activeVersion
+      ? {
+          id: activeVersion.id,
+          courseId: activeVersion.courseId,
+          versionNumber: activeVersion.versionNumber,
+          changeSummary: activeVersion.changeSummary,
+          isActive: activeVersion.isActive,
+          createdAt: activeVersion.createdAt,
+          lessons: activeVersion.lessons.map((lesson) => ({
+            id: lesson.id,
+            title: lesson.title,
+            type: lesson.type,
+            order: lesson.order,
+            isRequired: lesson.isRequired,
+            estimatedMinutes: lesson.estimatedMinutes,
+          })),
+          assessments: activeVersion.assessments.map((assessment) => ({
+            id: assessment.id,
+            title: assessment.title,
+            passPercentage: assessment.passPercentage,
+            maxAttempts: assessment.maxAttempts,
+            isRequiredForCompletion: assessment.isRequiredForCompletion,
+          })),
+        }
+      : null,
+  };
+}
+
+async function getCourseDetailRecord(where: { id?: string; slug?: string }) {
+  const course = where.id
+    ? await prisma.course.findUnique({
+        where: { id: where.id },
+        include: {
+          author: true,
+          reviewer: true,
+          versions: {
+            where: { isActive: true },
+            include: {
+              lessons: { orderBy: { order: "asc" } },
+              assessments: true,
+            },
+          },
+        },
+      })
+    : await prisma.course.findUnique({
+        where: { slug: where.slug },
+        include: {
+          author: true,
+          reviewer: true,
+          versions: {
+            where: { isActive: true },
+            include: {
+              lessons: { orderBy: { order: "asc" } },
+              assessments: true,
+            },
+          },
+        },
+      });
+
+  return course ? mapCourseDetail(course) : null;
+}
 
 // ─── Cursusoverzicht (admin) ───────────────────────────────────────────────────
 
@@ -25,89 +194,31 @@ export const getAllCourses = cache(async (): Promise<CourseSummary[]> => {
     orderBy: { createdAt: "desc" },
   });
 
-  return courses.map((c) => ({
-    id: c.id,
-    title: c.title,
-    slug: c.slug,
-    description: c.description,
-    status: c.status,
-    isMandatory: c.isMandatory,
-    studyLoadMinutes: c.studyLoadMinutes,
-    authorName: c.author.name,
-    publishedAt: c.publishedAt,
-    versionCount: c.versions.length,
-    enrollmentCount: c.enrollments.length,
+  return courses.map((course) => ({
+    id: course.id,
+    title: course.title,
+    slug: course.slug,
+    description: course.description,
+    status: course.status,
+    isMandatory: course.isMandatory,
+    studyLoadMinutes: course.studyLoadMinutes,
+    authorName: course.author.name,
+    publishedAt: course.publishedAt,
+    versionCount: course.versions.length,
+    enrollmentCount: course.enrollments.length,
   }));
 });
 
 // ─── Cursusdetail ──────────────────────────────────────────────────────────────
 
 export const getCourseDetail = cache(
-  async (courseId: string): Promise<CourseDetail | null> => {
-    const c = await prisma.course.findUnique({
-      where: { id: courseId },
-      include: {
-        author: true,
-        reviewer: true,
-        versions: {
-          where: { isActive: true },
-          include: {
-            lessons: { orderBy: { order: "asc" } },
-            assessments: true,
-          },
-        },
-      },
-    });
+  async (courseId: string): Promise<CourseDetail | null> =>
+    getCourseDetailRecord({ id: courseId })
+);
 
-    if (!c) return null;
-
-    const activeVersion = c.versions[0] ?? null;
-
-    return {
-      id: c.id,
-      title: c.title,
-      slug: c.slug,
-      description: c.description,
-      audience: c.audience,
-      learningObjectives: c.learningObjectives,
-      studyLoadMinutes: c.studyLoadMinutes,
-      status: c.status,
-      isMandatory: c.isMandatory,
-      authorId: c.authorId,
-      authorName: c.author.name,
-      reviewerId: c.reviewerId,
-      reviewerName: c.reviewer?.name ?? null,
-      publishedAt: c.publishedAt,
-      revisionDueAt: c.revisionDueAt,
-      createdAt: c.createdAt,
-      updatedAt: c.updatedAt,
-      activeVersion: activeVersion
-        ? {
-            id: activeVersion.id,
-            courseId: activeVersion.courseId,
-            versionNumber: activeVersion.versionNumber,
-            changeSummary: activeVersion.changeSummary,
-            isActive: activeVersion.isActive,
-            createdAt: activeVersion.createdAt,
-            lessons: activeVersion.lessons.map((l) => ({
-              id: l.id,
-              title: l.title,
-              type: l.type,
-              order: l.order,
-              isRequired: l.isRequired,
-              estimatedMinutes: l.estimatedMinutes,
-            })),
-            assessments: activeVersion.assessments.map((a) => ({
-              id: a.id,
-              title: a.title,
-              passPercentage: a.passPercentage,
-              maxAttempts: a.maxAttempts,
-              isRequiredForCompletion: a.isRequiredForCompletion,
-            })),
-          }
-        : null,
-    };
-  }
+export const getCourseBySlug = cache(
+  async (slug: string): Promise<CourseDetail | null> =>
+    getCourseDetailRecord({ slug })
 );
 
 // ─── Eigen inschrijvingen (medewerker) ────────────────────────────────────────
@@ -130,35 +241,117 @@ export const getMyEnrollments = cache(
     });
 
     const progressRecords = await prisma.lessonProgress.findMany({
-      where: { userId },
+      where: { userId, status: "COMPLETED" },
     });
+    const completedLessonIds = progressRecords.map((progress) => progress.lessonId);
 
-    return enrollments.map((e) => {
-      const activeVersion = e.course.versions[0];
-      const totalLessons = activeVersion?.lessons.length ?? 0;
-      const completedLessons = progressRecords.filter(
-        (p) =>
-          p.status === "COMPLETED" &&
-          activeVersion?.lessons.some((l) => l.id === p.lessonId)
-      ).length;
-      const progress =
-        totalLessons > 0
-          ? Math.round((completedLessons / totalLessons) * 100)
-          : 0;
+    return enrollments.map((enrollment) => {
+      const activeVersion = enrollment.course.versions[0];
+      const lessonIds = activeVersion?.lessons.map((lesson) => lesson.id) ?? [];
+      const progress = calculateCourseProgress({
+        lessonIds,
+        completedLessonIds,
+      });
 
       return {
-        id: e.id,
-        courseId: e.courseId,
-        courseTitle: e.course.title,
-        courseSlug: e.course.slug,
-        status: e.status,
-        assignmentType: e.assignmentType,
-        deadlineAt: e.deadlineAt,
-        startedAt: e.startedAt,
-        completedAt: e.completedAt,
+        id: enrollment.id,
+        courseId: enrollment.courseId,
+        courseTitle: enrollment.course.title,
+        courseSlug: enrollment.course.slug,
+        status: enrollment.status,
+        assignmentType: enrollment.assignmentType,
+        deadlineAt: enrollment.deadlineAt,
+        startedAt: enrollment.startedAt,
+        completedAt: enrollment.completedAt,
         progress,
       };
     });
+  }
+);
+
+export const getEnrollmentDetailForUser = cache(
+  async (userId: string, courseId: string): Promise<EnrollmentDetail | null> => {
+    const enrollment = await prisma.enrollment.findUnique({
+      where: {
+        userId_courseId: {
+          userId,
+          courseId,
+        },
+      },
+      include: {
+        course: {
+          include: {
+            versions: {
+              where: { isActive: true },
+              include: {
+                lessons: true,
+                assessments: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!enrollment) {
+      return null;
+    }
+
+    const activeVersion = enrollment.course.versions[0] ?? null;
+    const lessonIds = activeVersion?.lessons.map((lesson) => lesson.id) ?? [];
+    const requiredAssessmentIds =
+      activeVersion?.assessments
+        .filter((assessment) => assessment.isRequiredForCompletion)
+        .map((assessment) => assessment.id) ?? [];
+
+    const [progressRecords, assessmentAttempts, certificate] = await Promise.all([
+      prisma.lessonProgress.findMany({
+        where: { userId, lessonId: { in: lessonIds } },
+      }),
+      prisma.assessmentAttempt.findMany({
+        where: { userId, assessmentId: { in: requiredAssessmentIds } },
+        orderBy: { attemptNumber: "asc" },
+      }),
+      prisma.certificate.findFirst({
+        where: { userId, courseId },
+        orderBy: { issuedAt: "desc" },
+      }),
+    ]);
+
+    const completedLessonIds = progressRecords
+      .filter((progress) => progress.status === "COMPLETED")
+      .map((progress) => progress.lessonId);
+
+    const passedRequiredAssessmentCount = requiredAssessmentIds.filter((assessmentId) => {
+      const attemptsForAssessment = assessmentAttempts
+        .filter((attempt) => attempt.assessmentId === assessmentId)
+        .map(mapAttemptResult);
+
+      return selectLatestPassedAttempt(attemptsForAssessment) !== null;
+    }).length;
+
+    return {
+      id: enrollment.id,
+      userId: enrollment.userId,
+      courseId: enrollment.courseId,
+      courseTitle: enrollment.course.title,
+      courseSlug: enrollment.course.slug,
+      status: enrollment.status,
+      assignmentType: enrollment.assignmentType,
+      deadlineAt: enrollment.deadlineAt,
+      startedAt: enrollment.startedAt,
+      completedAt: enrollment.completedAt,
+      progress: calculateCourseProgress({
+        lessonIds,
+        completedLessonIds,
+      }),
+      activeVersionId: activeVersion?.id ?? null,
+      lessonCount: lessonIds.length,
+      completedLessonCount: completedLessonIds.length,
+      requiredAssessmentCount: requiredAssessmentIds.length,
+      passedRequiredAssessmentCount,
+      certificateId: certificate?.id ?? null,
+    };
   }
 );
 
@@ -174,18 +367,43 @@ export const getLessonProgressForVersion = cache(
     const progress = await prisma.lessonProgress.findMany({
       where: {
         userId,
-        lessonId: { in: lessons.map((l) => l.id) },
+        lessonId: { in: lessons.map((lesson) => lesson.id) },
       },
     });
 
-    return lessons.map((l) => {
-      const p = progress.find((pr) => pr.lessonId === l.id);
+    return lessons.map((lesson) => {
+      const lessonProgress = progress.find((item) => item.lessonId === lesson.id);
       return {
-        lessonId: l.id,
-        status: p?.status ?? "NOT_STARTED",
-        completedAt: p?.completedAt ?? null,
+        lessonId: lesson.id,
+        status: lessonProgress?.status ?? "NOT_STARTED",
+        completedAt: lessonProgress?.completedAt ?? null,
       };
     });
+  }
+);
+
+export const getLessonDetail = cache(
+  async (lessonId: string): Promise<LessonDetail | null> => {
+    const lesson = await prisma.lesson.findUnique({
+      where: { id: lessonId },
+    });
+
+    if (!lesson) {
+      return null;
+    }
+
+    return {
+      id: lesson.id,
+      courseVersionId: lesson.courseVersionId,
+      title: lesson.title,
+      slug: lesson.slug,
+      description: lesson.description,
+      type: lesson.type,
+      content: lesson.content,
+      order: lesson.order,
+      isRequired: lesson.isRequired,
+      estimatedMinutes: lesson.estimatedMinutes,
+    };
   }
 );
 
@@ -193,7 +411,7 @@ export const getLessonProgressForVersion = cache(
 
 export const getAssessmentDetail = cache(
   async (assessmentId: string): Promise<AssessmentDetail | null> => {
-    const a = await prisma.assessment.findUnique({
+    const assessment = await prisma.assessment.findUnique({
       where: { id: assessmentId },
       include: {
         questions: {
@@ -203,31 +421,30 @@ export const getAssessmentDetail = cache(
       },
     });
 
-    if (!a) return null;
+    if (!assessment) return null;
 
     return {
-      id: a.id,
-      title: a.title,
-      description: a.description,
-      passPercentage: a.passPercentage,
-      maxAttempts: a.maxAttempts,
-      timeLimitMinutes: a.timeLimitMinutes,
-      shuffleQuestions: a.shuffleQuestions,
-      shuffleOptions: a.shuffleOptions,
-      showFeedbackImmediately: a.showFeedbackImmediately,
-      isRequiredForCompletion: a.isRequiredForCompletion,
-      questions: a.questions.map((q) => ({
-        id: q.id,
-        type: q.type,
-        prompt: q.prompt,
-        explanation: q.explanation,
-        order: q.order,
-        points: q.points,
-        options: q.options.map((o) => ({
-          id: o.id,
-          label: o.label,
-          isCorrect: o.isCorrect,
-          order: o.order,
+      id: assessment.id,
+      title: assessment.title,
+      description: assessment.description,
+      passPercentage: assessment.passPercentage,
+      maxAttempts: assessment.maxAttempts,
+      timeLimitMinutes: assessment.timeLimitMinutes,
+      shuffleQuestions: assessment.shuffleQuestions,
+      shuffleOptions: assessment.shuffleOptions,
+      showFeedbackImmediately: assessment.showFeedbackImmediately,
+      isRequiredForCompletion: assessment.isRequiredForCompletion,
+      questions: assessment.questions.map((question) => ({
+        id: question.id,
+        type: question.type,
+        prompt: question.prompt,
+        explanation: question.explanation,
+        order: question.order,
+        points: question.points,
+        options: question.options.map((option) => ({
+          id: option.id,
+          label: option.label,
+          order: option.order,
         })),
       })),
     };
@@ -243,15 +460,18 @@ export const getMyAttempts = cache(
       orderBy: { attemptNumber: "asc" },
     });
 
-    return attempts.map((a) => ({
-      id: a.id,
-      attemptNumber: a.attemptNumber,
-      startedAt: a.startedAt,
-      submittedAt: a.submittedAt,
-      scoreRaw: a.scoreRaw,
-      scorePercentage: a.scorePercentage,
-      passed: a.passed,
-    }));
+    return attempts.map(mapAttemptResult);
+  }
+);
+
+export const getLatestPassedAttemptForAssessment = cache(
+  async (userId: string, assessmentId: string): Promise<AttemptResult | null> => {
+    const attempts = await prisma.assessmentAttempt.findMany({
+      where: { userId, assessmentId },
+      orderBy: { attemptNumber: "asc" },
+    });
+
+    return selectLatestPassedAttempt(attempts.map(mapAttemptResult));
   }
 );
 
@@ -259,7 +479,7 @@ export const getMyAttempts = cache(
 
 export const getMyCertificates = cache(
   async (userId: string): Promise<CertificateSummary[]> => {
-    const certs = await prisma.certificate.findMany({
+    const certificates = await prisma.certificate.findMany({
       where: { userId },
       include: {
         course: true,
@@ -268,16 +488,22 @@ export const getMyCertificates = cache(
       orderBy: { issuedAt: "desc" },
     });
 
-    return certs.map((c) => ({
-      id: c.id,
-      courseId: c.courseId,
-      courseTitle: c.course.title,
-      issuedAt: c.issuedAt,
-      scorePercentage: c.scorePercentage,
-      studyLoadMinutes: c.studyLoadMinutes,
-      certificateCode: c.certificateCode,
-      versionNumber: c.courseVersion.versionNumber,
-    }));
+    return certificates.map(mapCertificateSummary);
+  }
+);
+
+export const getCertificateForCourseAndUser = cache(
+  async (userId: string, courseId: string): Promise<CertificateSummary | null> => {
+    const certificate = await prisma.certificate.findFirst({
+      where: { userId, courseId },
+      include: {
+        course: true,
+        courseVersion: true,
+      },
+      orderBy: { issuedAt: "desc" },
+    });
+
+    return certificate ? mapCertificateSummary(certificate) : null;
   }
 );
 
@@ -297,11 +523,11 @@ export const getTeamLmsProgress = cache(
     return teamMembers.map((member) => ({
       userId: member.id,
       userName: member.name,
-      enrollments: member.enrollments.map((e) => ({
-        courseTitle: e.course.title,
-        status: e.status,
-        completedAt: e.completedAt,
-        deadlineAt: e.deadlineAt,
+      enrollments: member.enrollments.map((enrollment) => ({
+        courseTitle: enrollment.course.title,
+        status: enrollment.status,
+        completedAt: enrollment.completedAt,
+        deadlineAt: enrollment.deadlineAt,
       })),
     }));
   }

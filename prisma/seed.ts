@@ -13,18 +13,30 @@ import {
   Visibility,
 } from "@prisma/client";
 
-import { hashPassword } from "../src/lib/password";
+import { buildLmsSeedSpec } from "./lms-seed-data.ts";
+import { hashPassword } from "../src/lib/password.ts";
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({
     connectionString:
       process.env.DIRECT_URL ??
       process.env.DATABASE_URL ??
-      "postgresql://placeholder:placeholder@localhost:5432/fyfitacademy?schema=public",
+      "postgresql://placeholder:***@localhost:5432/fyfitacademy?schema=public",
   }),
 });
 
 async function main() {
+  await prisma.assessmentAnswer.deleteMany();
+  await prisma.assessmentAttempt.deleteMany();
+  await prisma.questionOption.deleteMany();
+  await prisma.question.deleteMany();
+  await prisma.assessment.deleteMany();
+  await prisma.lessonProgress.deleteMany();
+  await prisma.enrollment.deleteMany();
+  await prisma.certificate.deleteMany();
+  await prisma.lesson.deleteMany();
+  await prisma.courseVersion.deleteMany();
+  await prisma.course.deleteMany();
   await prisma.moduleProgress.deleteMany();
   await prisma.onboardingProgress.deleteMany();
   await prisma.learningGoal.deleteMany();
@@ -241,33 +253,41 @@ async function main() {
           {
             order: 1,
             title: "Welkom bij Fy-fit",
-            description: "Start met de introductievideo en leer hoe Fy-fit persoonlijke aandacht combineert met innovatieve zorg.",
+            description:
+              "Start met de introductievideo en leer hoe Fy-fit persoonlijke aandacht combineert met innovatieve zorg.",
             contentType: "VIDEO",
-            content: "Bekijk de korte welkomstvideo en noteer twee dingen die je direct opvallen aan de Fy-fit benadering.",
+            content:
+              "Bekijk de korte welkomstvideo en noteer twee dingen die je direct opvallen aan de Fy-fit benadering.",
             isRequired: true,
           },
           {
             order: 2,
             title: "Missie, visie en merkbelofte",
-            description: "Leer de kernboodschap kennen die in consulten, intake en teamoverleg terugkomt.",
+            description:
+              "Leer de kernboodschap kennen die in consulten, intake en teamoverleg terugkomt.",
             contentType: "TEXT",
-            content: "Fy-fit staat voor innovatieve behandelingen met een persoonlijke benadering. Koppel dit aan jouw eigen manier van werken.",
+            content:
+              "Fy-fit staat voor innovatieve behandelingen met een persoonlijke benadering. Koppel dit aan jouw eigen manier van werken.",
             isRequired: true,
           },
           {
             order: 3,
             title: "Jouw buddy en eerste week",
-            description: "Stem met je buddy af wat je deze week observeert en welke vragen je meeneemt.",
+            description:
+              "Stem met je buddy af wat je deze week observeert en welke vragen je meeneemt.",
             contentType: "CHECKLIST",
-            content: "Plan een eerste evaluatiemoment van 20 minuten met je buddy aan het einde van je eerste week.",
+            content:
+              "Plan een eerste evaluatiemoment van 20 minuten met je buddy aan het einde van je eerste week.",
             isRequired: true,
           },
           {
             order: 4,
             title: "Praktische werkafspraken",
-            description: "Neem de basale afspraken door over verslaglegging, overdracht en patiëntcontact.",
+            description:
+              "Neem de basale afspraken door over verslaglegging, overdracht en patiëntcontact.",
             contentType: "DOCUMENT",
-            content: "Lees de documenten in de bibliotheek en bevestig dat je weet waar je de actuele versies vindt.",
+            content:
+              "Lees de documenten in de bibliotheek en bevestig dat je weet waar je de actuele versies vindt.",
             isRequired: true,
           },
           {
@@ -426,11 +446,239 @@ async function main() {
       {
         userId: medewerker2.id,
         title: "Persoonlijke reflectienotitie",
-        description: "Korte notitie over energieverdeling en ritme in de week. Alleen zichtbaar voor de medewerker zelf.",
+        description:
+          "Korte notitie over energieverdeling en ritme in de week. Alleen zichtbaar voor de medewerker zelf.",
         category: "Reflectie",
         visibility: Visibility.PRIVATE,
       },
     ],
+  });
+
+  const lmsSeed = buildLmsSeedSpec();
+  const usersByEmail = new Map([
+    [admin.email, admin],
+    [teamlead.email, teamlead],
+    [medewerker1.email, medewerker1],
+    [medewerker2.email, medewerker2],
+  ]);
+
+  const seededCourse = await prisma.course.create({
+    data: {
+      title: lmsSeed.course.title,
+      slug: lmsSeed.course.slug,
+      description: lmsSeed.course.description,
+      audience: lmsSeed.course.audience,
+      learningObjectives: lmsSeed.course.learningObjectives,
+      studyLoadMinutes: lmsSeed.course.studyLoadMinutes,
+      status: lmsSeed.course.status,
+      isMandatory: lmsSeed.course.isMandatory,
+      authorId: admin.id,
+      reviewerId: teamlead.id,
+      publishedAt: new Date(lmsSeed.course.publishedAt),
+      revisionDueAt: new Date(lmsSeed.course.revisionDueAt),
+      versions: {
+        create: {
+          versionNumber: lmsSeed.version.versionNumber,
+          changeSummary: lmsSeed.version.changeSummary,
+          isActive: lmsSeed.version.isActive,
+          createdById: admin.id,
+          lessons: {
+            create: lmsSeed.lessons.map((lesson) => ({
+              title: lesson.title,
+              slug: lesson.slug,
+              description: lesson.description,
+              type: lesson.type,
+              content: lesson.content,
+              order: lesson.order,
+              isRequired: lesson.isRequired,
+              estimatedMinutes: lesson.estimatedMinutes,
+              publishedAt: new Date(lmsSeed.course.publishedAt),
+            })),
+          },
+        },
+      },
+    },
+    include: {
+      versions: {
+        include: {
+          lessons: {
+            orderBy: { order: "asc" },
+          },
+        },
+      },
+    },
+  });
+
+  const activeVersion = seededCourse.versions[0];
+  const lessonsBySlug = new Map(activeVersion.lessons.map((lesson) => [lesson.slug, lesson]));
+  const assessmentLesson = lessonsBySlug.get(lmsSeed.assessment.lessonSlug);
+
+  if (!assessmentLesson) {
+    throw new Error(`Assessment lesson not found for slug ${lmsSeed.assessment.lessonSlug}`);
+  }
+
+  const seededAssessment = await prisma.assessment.create({
+    data: {
+      courseVersionId: activeVersion.id,
+      lessonId: assessmentLesson.id,
+      title: lmsSeed.assessment.title,
+      description: lmsSeed.assessment.description,
+      passPercentage: lmsSeed.assessment.passPercentage,
+      maxAttempts: lmsSeed.assessment.maxAttempts,
+      timeLimitMinutes: lmsSeed.assessment.timeLimitMinutes,
+      shuffleQuestions: lmsSeed.assessment.shuffleQuestions,
+      shuffleOptions: lmsSeed.assessment.shuffleOptions,
+      showFeedbackImmediately: lmsSeed.assessment.showFeedbackImmediately,
+      isRequiredForCompletion: lmsSeed.assessment.isRequiredForCompletion,
+      questions: {
+        create: lmsSeed.assessment.questions.map((question, index) => ({
+          type: question.type,
+          prompt: question.prompt,
+          explanation: question.explanation,
+          order: index + 1,
+          points: question.points,
+          options: {
+            create: question.options.map((option, optionIndex) => ({
+              label: option.label,
+              isCorrect: option.isCorrect,
+              order: optionIndex + 1,
+            })),
+          },
+        })),
+      },
+    },
+    include: {
+      questions: {
+        orderBy: { order: "asc" },
+        include: {
+          options: {
+            orderBy: { order: "asc" },
+          },
+        },
+      },
+    },
+  });
+
+  const enrollmentsByKey = new Map<string, { id: string; userId: string }>();
+
+  for (const fixture of lmsSeed.enrollmentFixtures) {
+    const assignee = usersByEmail.get(fixture.assigneeEmail);
+
+    if (!assignee) {
+      throw new Error(`No user found for LMS fixture assignee ${fixture.assigneeEmail}`);
+    }
+
+    const enrollment = await prisma.enrollment.create({
+      data: {
+        userId: assignee.id,
+        courseId: seededCourse.id,
+        assignedById: teamlead.id,
+        assignmentType: fixture.assignmentType,
+        deadlineAt: fixture.deadlineAt ? new Date(fixture.deadlineAt) : null,
+        status: fixture.status,
+        startedAt: new Date(fixture.startedAt),
+        completedAt: fixture.completedAt ? new Date(fixture.completedAt) : null,
+      },
+    });
+
+    enrollmentsByKey.set(fixture.key, { id: enrollment.id, userId: assignee.id });
+
+    if (fixture.completedLessonSlugs.length > 0) {
+      await prisma.lessonProgress.createMany({
+        data: fixture.completedLessonSlugs.map((slug, index) => {
+          const lesson = lessonsBySlug.get(slug);
+
+          if (!lesson) {
+            throw new Error(`No lesson found for completed LMS lesson slug ${slug}`);
+          }
+
+          const startedBase = new Date(fixture.startedAt);
+          startedBase.setHours(startedBase.getHours() + index);
+          const completedBase = fixture.completedAt ? new Date(fixture.completedAt) : new Date(fixture.startedAt);
+          completedBase.setHours(completedBase.getHours() - (fixture.completedLessonSlugs.length - index));
+
+          return {
+            userId: assignee.id,
+            lessonId: lesson.id,
+            status: "COMPLETED",
+            startedAt: startedBase,
+            completedAt: completedBase,
+            lastViewedAt: completedBase,
+          };
+        }),
+      });
+    }
+
+    if (fixture.inProgressLessonSlug) {
+      const inProgressLesson = lessonsBySlug.get(fixture.inProgressLessonSlug);
+
+      if (!inProgressLesson) {
+        throw new Error(`No lesson found for in-progress LMS lesson slug ${fixture.inProgressLessonSlug}`);
+      }
+
+      await prisma.lessonProgress.create({
+        data: {
+          userId: assignee.id,
+          lessonId: inProgressLesson.id,
+          status: "IN_PROGRESS",
+          startedAt: new Date(fixture.startedAt),
+          lastViewedAt: new Date("2026-04-10T14:00:00.000Z"),
+        },
+      });
+    }
+  }
+
+  const completedFixture = lmsSeed.enrollmentFixtures.find((fixture) => fixture.key === "completed");
+  const completedEnrollment = enrollmentsByKey.get("completed");
+
+  if (!completedFixture || !completedEnrollment) {
+    throw new Error("Completed LMS fixture not created correctly.");
+  }
+
+  const totalQuestionPoints = lmsSeed.assessment.questions.reduce(
+    (sum, question) => sum + question.points,
+    0
+  );
+
+  const completedAttempt = await prisma.assessmentAttempt.create({
+    data: {
+      assessmentId: seededAssessment.id,
+      userId: completedEnrollment.userId,
+      courseVersionId: activeVersion.id,
+      attemptNumber: 1,
+      startedAt: new Date("2026-04-05T14:00:00.000Z"),
+      submittedAt: new Date("2026-04-05T14:12:00.000Z"),
+      scoreRaw: totalQuestionPoints,
+      scorePercentage: lmsSeed.certificateFixture.scorePercentage,
+      passed: true,
+    },
+  });
+
+  await prisma.assessmentAnswer.createMany({
+    data: seededAssessment.questions.map((question, index) => ({
+      attemptId: completedAttempt.id,
+      questionId: question.id,
+      selectedOptionIds: question.options.filter((option) => option.isCorrect).map((option) => option.id),
+      textAnswer: null,
+      isCorrect: true,
+      awardedPoints: lmsSeed.assessment.questions[index].points,
+    })),
+  });
+
+  const certificate = await prisma.certificate.create({
+    data: {
+      userId: completedEnrollment.userId,
+      courseId: seededCourse.id,
+      courseVersionId: activeVersion.id,
+      issuedAt: new Date(completedFixture.completedAt ?? "2026-04-05T16:00:00.000Z"),
+      scorePercentage: lmsSeed.certificateFixture.scorePercentage,
+      studyLoadMinutes: lmsSeed.certificateFixture.studyLoadMinutes,
+    },
+  });
+
+  await prisma.enrollment.update({
+    where: { id: completedEnrollment.id },
+    data: { certificateId: certificate.id },
   });
 
   console.log("Seed voltooid. Demo accounts gebruiken wachtwoord: fyfit-demo");
