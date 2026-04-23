@@ -30,6 +30,9 @@ export type CourseDetail = {
   description: string;
   audience: string | null;
   learningObjectives: string | null;
+  goal: string | null;
+  focus: string | null;
+  learnerOutcomes: string[];
   studyLoadMinutes: number;
   status: CourseStatus;
   isMandatory: boolean;
@@ -62,6 +65,7 @@ export type CourseVersionDetail = {
 export type LessonSummary = {
   id: string;
   title: string;
+  slug: string;
   type: LessonType;
   order: number;
   isRequired: boolean;

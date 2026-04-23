@@ -40,6 +40,9 @@ export type LmsSeedSpec = {
     description: string;
     audience: string;
     learningObjectives: string;
+    goal: string;
+    focus: string;
+    learnerOutcomes: string[];
     studyLoadMinutes: number;
     status: "PUBLISHED";
     isMandatory: boolean;
@@ -84,6 +87,15 @@ export function buildLmsSeedSpec(): LmsSeedSpec {
       audience: "Medewerkers en nieuwe collega's binnen Fy-fit",
       learningObjectives:
         "Na afronding kan de medewerker een consult helder openen, samenvatten, samen besluiten nemen en een concrete vervolgstap formuleren.",
+      goal:
+        "Medewerkers een houvast geven om consulten op de Fy-fit manier rustig, duidelijk en menselijk te openen en af te ronden.",
+      focus:
+        "Consultstructuur, gezamenlijke besluitvorming en een concrete afronding die de patiënt vertrouwen geeft.",
+      learnerOutcomes: [
+        "Je opent een consult met een helder kader en de juiste toon.",
+        "Je vat de hulpvraag en bevindingen begrijpelijk samen.",
+        "Je sluit af met één concrete vervolgstap en checkt of de patiënt die begrijpt.",
+      ],
       studyLoadMinutes: 55,
       status: "PUBLISHED",
       isMandatory: true,

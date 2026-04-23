@@ -16,6 +16,16 @@ test("buildLmsSeedSpec returns a published MVP LMS course with lessons, assessme
   assert.equal(spec.certificateFixture.courseVersionNumber, "1.0");
 });
 
+
+test("buildLmsSeedSpec adds Academy intro fields for goal, focus and learner outcomes", () => {
+  const spec = buildLmsSeedSpec();
+
+  assert.equal(typeof spec.course.goal, "string");
+  assert.equal(typeof spec.course.focus, "string");
+  assert.equal(Array.isArray(spec.course.learnerOutcomes), true);
+  assert.equal(spec.course.learnerOutcomes.length > 0, true);
+});
+
 test("buildLmsSeedSpec includes exactly one completed fixture and one in-progress fixture", () => {
   const spec = buildLmsSeedSpec();
 

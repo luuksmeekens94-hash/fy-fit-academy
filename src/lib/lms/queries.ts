@@ -16,6 +16,14 @@ import type {
   TeamMemberProgress,
 } from "./types";
 
+function mapLearnerOutcomes(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === "string");
+}
+
 function mapAttemptResult(attempt: {
   id: string;
   attemptNumber: number;
@@ -65,6 +73,9 @@ function mapCourseDetail(course: {
   description: string;
   audience: string | null;
   learningObjectives: string | null;
+  goal: string | null;
+  focus: string | null;
+  learnerOutcomes: unknown;
   studyLoadMinutes: number;
   status: CourseDetail["status"];
   isMandatory: boolean;
@@ -86,6 +97,7 @@ function mapCourseDetail(course: {
     lessons: {
       id: string;
       title: string;
+      slug: string;
       type: LessonDetail["type"];
       order: number;
       isRequired: boolean;
@@ -110,6 +122,9 @@ function mapCourseDetail(course: {
     description: course.description,
     audience: course.audience,
     learningObjectives: course.learningObjectives,
+    goal: course.goal,
+    focus: course.focus,
+    learnerOutcomes: mapLearnerOutcomes(course.learnerOutcomes),
     studyLoadMinutes: course.studyLoadMinutes,
     status: course.status,
     isMandatory: course.isMandatory,
@@ -132,6 +147,7 @@ function mapCourseDetail(course: {
           lessons: activeVersion.lessons.map((lesson) => ({
             id: lesson.id,
             title: lesson.title,
+            slug: lesson.slug,
             type: lesson.type,
             order: lesson.order,
             isRequired: lesson.isRequired,

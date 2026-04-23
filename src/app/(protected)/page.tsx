@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
+import { getMyAcademyCourses } from "@/lib/academy/queries";
 import {
   getActiveOnboardingPath,
   getModuleProgressForUser,
@@ -11,7 +12,6 @@ import {
   getVisibleDevelopmentDocuments,
   getVisibleGoals,
   getUserById,
-  listCategories,
   listModules,
   listUsers,
   getOnboardingProgressForUser,
@@ -22,25 +22,20 @@ export default async function DashboardPage() {
   const user = await requireUser();
   const [
     modules,
-    categories,
     onboardingPath,
-    moduleProgress,
     onboardingProgress,
     developmentDocuments,
     goals,
+    academyCourses,
   ] = await Promise.all([
     listModules({ publishedOnly: true }),
-    listCategories(),
     getActiveOnboardingPath(),
-    getModuleProgressForUser(user.id),
     getOnboardingProgressForUser(user.id),
     getVisibleDevelopmentDocuments(user.id, user.id),
     getVisibleGoals(user.id, user.id),
+    getMyAcademyCourses(user.id),
   ]);
-  const openModules = modules.filter((module) => {
-    const progress = moduleProgress.find((entry) => entry.moduleId === module.id);
-    return !progress || progress.status !== "AFGEROND";
-  });
+  const openAcademyCourses = academyCourses.filter((course) => course.status !== "COMPLETED");
   const onboardingCompletion = getOnboardingCompletion(onboardingPath?.steps ?? [], onboardingProgress);
   const teamMembers =
     user.role === "MEDEWERKER"
@@ -71,9 +66,9 @@ export default async function DashboardPage() {
 
       <section className="grid gap-4 md:grid-cols-3">
         <StatCard
-          label="Openstaande modules"
-          value={String(openModules.length)}
-          detail="Nog te bekijken of af te ronden binnen jouw persoonlijke route."
+          label="Openstaande e-learnings"
+          value={String(openAcademyCourses.length)}
+          detail="Nog te starten of af te ronden binnen jouw Academy-leerpad."
         />
         <StatCard
           label="Actieve leerdoelen"
@@ -136,7 +131,7 @@ export default async function DashboardPage() {
           </p>
           <div className="mt-6 grid gap-4">
             {[
-              { href: "/academy", title: "Academy", text: "Werk verder aan je modules en kennistoetsen." },
+              { href: "/academy", title: "Academy", text: "Werk verder aan je e-learnings en toetsmomenten." },
               { href: "/bibliotheek", title: "Bibliotheek", text: "Pak protocollen, kernboodschappen en formats erbij." },
               { href: "/onboarding", title: "Onboarding", text: "Bekijk je volgende stap en buddy-notities." },
             ]
@@ -163,7 +158,7 @@ export default async function DashboardPage() {
                 Academy
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-                Jouw openstaande modules
+                Jouw openstaande e-learnings
               </h2>
             </div>
             <Link
@@ -174,28 +169,25 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="mt-6 space-y-4">
-            {openModules.slice(0, 3).map((module) => {
-              const progress = moduleProgress.find((entry) => entry.moduleId === module.id);
-              const category = categories.find((entry) => entry.id === module.categoryId);
-
+            {openAcademyCourses.slice(0, 3).map((course) => {
               return (
                 <Link
-                  key={module.id}
-                  href={`/academy/${module.id}`}
+                  key={course.id}
+                  href={course.href}
                   className="block rounded-[24px] border border-[var(--border)] bg-white/85 p-5 transition hover:border-[var(--brand)]"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="text-lg font-semibold text-slate-950">{module.title}</h3>
+                    <h3 className="text-lg font-semibold text-slate-950">{course.title}</h3>
                     <StatusBadge
-                      label={progress?.status ?? "NIET_GESTART"}
-                      tone={getStatusTone(progress?.status ?? "NIET_GESTART")}
+                      label={course.status}
+                      tone={course.status === "COMPLETED" ? "success" : course.status === "IN_PROGRESS" ? "warning" : "neutral"}
                     />
                   </div>
                   <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-                    {module.description}
+                    {course.description}
                   </p>
                   <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
-                    {category?.name} · {module.estimatedMinutes} minuten
+                    {course.assignmentLabel} · {course.studyLoadMinutes} minuten · {course.progressLabel}
                   </p>
                 </Link>
               );

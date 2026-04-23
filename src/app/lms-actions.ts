@@ -31,14 +31,45 @@ function parseAssessmentResponses(formData: FormData) {
   return parsed;
 }
 
-function revalidateLmsPaths(courseId: string) {
+async function revalidateLearningPaths(params: {
+  courseId: string;
+  lessonId?: string;
+}) {
   revalidatePath("/lms");
-  revalidatePath(`/lms/courses/${courseId}`);
+  revalidatePath(`/lms/courses/${params.courseId}`);
   revalidatePath("/lms/certificates");
   revalidatePath("/lms/team");
   revalidatePath("/lms/admin");
   revalidatePath("/lms/admin/courses");
   revalidatePath("/lms/admin/reports");
+  revalidatePath("/academy");
+
+  const course = await prisma.course.findUnique({
+    where: { id: params.courseId },
+    include: {
+      versions: {
+        where: { isActive: true },
+        include: {
+          lessons: true,
+        },
+      },
+    },
+  });
+
+  if (!course) {
+    return;
+  }
+
+  revalidatePath(`/academy/${course.slug}`);
+
+  const activeVersion = course.versions[0] ?? null;
+  const lesson = params.lessonId
+    ? activeVersion?.lessons.find((entry) => entry.id === params.lessonId) ?? null
+    : null;
+
+  if (lesson) {
+    revalidatePath(`/academy/${course.slug}/lessons/${lesson.slug}`);
+  }
 }
 
 async function getEnrollmentForUser(userId: string, courseId: string) {
@@ -66,6 +97,71 @@ async function getEnrollmentForUser(userId: string, courseId: string) {
 
   assert(enrollment, "Geen LMS-inschrijving gevonden voor deze cursus.");
   return enrollment;
+}
+
+async function ensureEnrollmentForUser(userId: string, courseId: string) {
+  const existingEnrollment = await prisma.enrollment.findUnique({
+    where: {
+      userId_courseId: {
+        userId,
+        courseId,
+      },
+    },
+  });
+
+  if (existingEnrollment) {
+    return existingEnrollment;
+  }
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { id: true, isMandatory: true },
+  });
+
+  assert(course, "Cursus niet gevonden.");
+
+  return prisma.enrollment.create({
+    data: {
+      userId,
+      courseId,
+      assignmentType: course.isMandatory ? "REQUIRED" : "OPTIONAL",
+      status: "NOT_STARTED",
+    },
+  });
+}
+
+async function assertCourseAccessibleForUser(params: {
+  userId: string;
+  role: "MEDEWERKER" | "TEAMLEIDER" | "BEHEERDER";
+  courseId: string;
+}) {
+  const course = await prisma.course.findUnique({
+    where: { id: params.courseId },
+    select: { id: true, status: true },
+  });
+
+  assert(course, "Cursus niet gevonden.");
+  assert(
+    params.role === "BEHEERDER" || course.status === "PUBLISHED",
+    "Cursus is niet beschikbaar."
+  );
+}
+
+async function getActiveCourseVersionId(courseId: string) {
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: {
+      versions: {
+        where: { isActive: true },
+        select: { id: true },
+      },
+    },
+  });
+
+  const activeVersions = course?.versions ?? [];
+  assert(activeVersions.length === 1, "Er moet precies één actieve cursusversie zijn.");
+
+  return activeVersions[0].id;
 }
 
 async function syncEnrollmentCompletionState(params: {
@@ -156,16 +252,13 @@ export async function startEnrollmentAction(formData: FormData) {
 
   assert(courseId, "Cursus ontbreekt.");
 
-  const enrollment = await prisma.enrollment.findUnique({
-    where: {
-      userId_courseId: {
-        userId: user.id,
-        courseId,
-      },
-    },
+  await assertCourseAccessibleForUser({
+    userId: user.id,
+    role: user.role,
+    courseId,
   });
 
-  assert(enrollment, "Geen LMS-inschrijving gevonden voor deze cursus.");
+  const enrollment = await ensureEnrollmentForUser(user.id, courseId);
 
   if (enrollment.status === "NOT_STARTED") {
     await prisma.enrollment.update({
@@ -177,7 +270,7 @@ export async function startEnrollmentAction(formData: FormData) {
     });
   }
 
-  revalidateLmsPaths(courseId);
+  await revalidateLearningPaths({ courseId });
 }
 
 export async function completeLessonAction(formData: FormData) {
@@ -188,6 +281,15 @@ export async function completeLessonAction(formData: FormData) {
   assert(courseId, "Cursus ontbreekt.");
   assert(lessonId, "Les ontbreekt.");
 
+  await assertCourseAccessibleForUser({
+    userId: user.id,
+    role: user.role,
+    courseId,
+  });
+
+  await ensureEnrollmentForUser(user.id, courseId);
+  const activeCourseVersionId = await getActiveCourseVersionId(courseId);
+
   const lesson = await prisma.lesson.findUnique({
     where: { id: lessonId },
     include: {
@@ -197,6 +299,7 @@ export async function completeLessonAction(formData: FormData) {
 
   assert(lesson, "Les niet gevonden.");
   assert(lesson.courseVersion.courseId === courseId, "Les hoort niet bij deze cursus.");
+  assert(lesson.courseVersionId === activeCourseVersionId, "Les hoort niet bij de actieve cursusversie.");
   assert(lesson.type !== "ASSESSMENT", "Een assessment-les wordt afgerond via toetsinlevering.");
 
   const existingLessonProgress = await prisma.lessonProgress.findUnique({
@@ -236,7 +339,7 @@ export async function completeLessonAction(formData: FormData) {
     courseId,
   });
 
-  revalidateLmsPaths(courseId);
+  await revalidateLearningPaths({ courseId, lessonId });
 }
 
 export async function startAssessmentAttemptAction(formData: FormData) {
@@ -246,6 +349,15 @@ export async function startAssessmentAttemptAction(formData: FormData) {
 
   assert(courseId, "Cursus ontbreekt.");
   assert(assessmentId, "Toets ontbreekt.");
+
+  await assertCourseAccessibleForUser({
+    userId: user.id,
+    role: user.role,
+    courseId,
+  });
+
+  await ensureEnrollmentForUser(user.id, courseId);
+  const activeCourseVersionId = await getActiveCourseVersionId(courseId);
 
   const attempt = await prisma.$transaction(
     async (tx) => {
@@ -276,6 +388,7 @@ export async function startAssessmentAttemptAction(formData: FormData) {
       assert(enrollment, "Geen LMS-inschrijving gevonden voor deze cursus.");
       assert(assessment, "Toets niet gevonden.");
       assert(assessment.courseVersion.courseId === courseId, "Toets hoort niet bij deze cursus.");
+      assert(assessment.courseVersionId === activeCourseVersionId, "Toets hoort niet bij de actieve cursusversie.");
       assert(existingAttempts.length < assessment.maxAttempts, "Maximum aantal toetspogingen bereikt.");
       assert(
         existingAttempts.every((attempt) => attempt.submittedAt !== null),
@@ -304,7 +417,7 @@ export async function startAssessmentAttemptAction(formData: FormData) {
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
   );
 
-  revalidateLmsPaths(courseId);
+  await revalidateLearningPaths({ courseId });
   return { attemptId: attempt.id, attemptNumber: attempt.attemptNumber };
 }
 
@@ -316,6 +429,14 @@ export async function submitAssessmentAttemptAction(formData: FormData) {
 
   assert(courseId, "Cursus ontbreekt.");
   assert(attemptId, "Toetspoging ontbreekt.");
+
+  await assertCourseAccessibleForUser({
+    userId: user.id,
+    role: user.role,
+    courseId,
+  });
+
+  const activeCourseVersionId = await getActiveCourseVersionId(courseId);
 
   const attempt = await prisma.assessmentAttempt.findUnique({
     where: { id: attemptId },
@@ -342,6 +463,10 @@ export async function submitAssessmentAttemptAction(formData: FormData) {
   assert(
     attempt.assessment.courseVersion.courseId === courseId,
     "Toetspoging hoort niet bij deze cursus."
+  );
+  assert(
+    attempt.courseVersionId === activeCourseVersionId,
+    "Toetspoging hoort niet bij de actieve cursusversie."
   );
 
   const evaluated = buildAssessmentAnswerRecords({
@@ -420,7 +545,10 @@ export async function submitAssessmentAttemptAction(formData: FormData) {
     courseId,
   });
 
-  revalidateLmsPaths(courseId);
+  await revalidateLearningPaths({
+    courseId,
+    lessonId: attempt.assessment.lessonId ?? undefined,
+  });
 
   return {
     attemptId: attempt.id,
