@@ -29,10 +29,6 @@ export function proxy(request: NextRequest) {
   );
   const session = decodeSession(request.cookies.get(SESSION_COOKIE)?.value);
 
-  if (pathname === "/login" && session) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
   if (!isProtected) {
     return NextResponse.next();
   }
