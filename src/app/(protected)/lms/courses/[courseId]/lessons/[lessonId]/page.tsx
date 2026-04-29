@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { completeLessonAction } from "@/app/lms-actions";
 import { AssessmentRunner } from "@/components/lms/assessment-runner";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
+import { getLearnerLmsRedirectPath } from "@/lib/lms/route-access";
 import {
   getAssessmentDetail,
   getCourseDetail,
@@ -47,6 +48,15 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
 
   if (lesson.courseVersionId !== course.activeVersion.id) {
     notFound();
+  }
+
+  const academyRedirectPath = getLearnerLmsRedirectPath(user.role, {
+    courseSlug: course.slug,
+    lessonSlug: lesson.slug,
+  });
+
+  if (academyRedirectPath) {
+    redirect(academyRedirectPath);
   }
 
   const progressEntries = await getLessonProgressForVersion(user.id, course.activeVersion.id);

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { startEnrollmentAction } from "@/app/lms-actions";
 import { LessonList } from "@/components/lms/lesson-list";
@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
+import { getLearnerLmsRedirectPath } from "@/lib/lms/route-access";
 import {
   getCertificateForCourseAndUser,
   getCourseDetail,
@@ -54,6 +55,14 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
 
   if (!course || !enrollment) {
     notFound();
+  }
+
+  const academyRedirectPath = getLearnerLmsRedirectPath(user.role, {
+    courseSlug: course.slug,
+  });
+
+  if (academyRedirectPath) {
+    redirect(academyRedirectPath);
   }
 
   const progressEntries = course.activeVersion

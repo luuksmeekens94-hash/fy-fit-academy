@@ -2,10 +2,19 @@ import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { CourseCard } from "@/components/lms/course-card";
 import { requireUser } from "@/lib/auth";
+import { getLearnerLmsRedirectPath } from "@/lib/lms/route-access";
 import { getMyEnrollments } from "@/lib/lms/queries";
+import { redirect } from "next/navigation";
 
 export default async function LmsOverviewPage() {
   const user = await requireUser();
+
+  const academyRedirectPath = getLearnerLmsRedirectPath(user.role);
+
+  if (academyRedirectPath) {
+    redirect(academyRedirectPath);
+  }
+
   const enrollments = await getMyEnrollments(user.id);
 
   const completedCount = enrollments.filter((entry) => entry.status === "COMPLETED").length;
