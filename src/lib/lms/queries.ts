@@ -3,6 +3,8 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { calculateCourseProgress, selectLatestPassedAttempt } from "./query-helpers";
+import { buildParticipantCompletionReport } from "./participant-report";
+import type { ParticipantCompletionReport } from "./participant-report";
 import type { WorkForm } from "@prisma/client";
 import type {
   AssessmentDetail,
@@ -695,6 +697,85 @@ export const getCertificateForCourseAndUser = cache(
     });
 
     return certificate ? mapCertificateSummary(certificate) : null;
+  }
+);
+
+export const getCourseParticipantCompletionReport = cache(
+  async (courseId: string): Promise<ParticipantCompletionReport[]> => {
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      include: {
+        versions: {
+          where: { isActive: true },
+          include: {
+            assessments: true,
+            evaluationForms: true,
+          },
+        },
+        enrollments: {
+          include: { user: true },
+          orderBy: { createdAt: "asc" },
+        },
+        certificates: true,
+      },
+    });
+
+    if (!course) {
+      return [];
+    }
+
+    const activeVersion = course.versions[0] ?? null;
+    if (!activeVersion) {
+      return [];
+    }
+
+    const [assessmentAttempts, evaluationSubmissions] = await Promise.all([
+      prisma.assessmentAttempt.findMany({
+        where: {
+          courseVersionId: activeVersion.id,
+          userId: { in: course.enrollments.map((enrollment) => enrollment.userId) },
+        },
+        include: { assessment: true },
+        orderBy: [{ userId: "asc" }, { attemptNumber: "asc" }],
+      }),
+      prisma.evaluationSubmission.findMany({
+        where: {
+          userId: { in: course.enrollments.map((enrollment) => enrollment.userId) },
+          evaluationFormId: { in: activeVersion.evaluationForms.map((form) => form.id) },
+        },
+      }),
+    ]);
+
+    return course.enrollments.map((enrollment) => {
+      const certificate = course.certificates
+        .filter((entry) => entry.userId === enrollment.userId && entry.courseVersionId === activeVersion.id)
+        .sort((left, right) => right.issuedAt.getTime() - left.issuedAt.getTime())[0] ?? null;
+
+      return buildParticipantCompletionReport({
+        courseTitle: course.title,
+        participantName: enrollment.user.name,
+        professionalRegistrationNumber: null,
+        completedAt: enrollment.completedAt,
+        enrollmentStatus: enrollment.status,
+        assessmentAttempts: assessmentAttempts
+          .filter((attempt) => attempt.userId === enrollment.userId)
+          .map((attempt) => ({
+            assessmentTitle: attempt.assessment.title,
+            attemptNumber: attempt.attemptNumber,
+            scorePercentage: attempt.scorePercentage,
+            passed: attempt.passed,
+            submittedAt: attempt.submittedAt,
+          })),
+        certificate: certificate
+          ? {
+              id: certificate.id,
+              certificateCode: certificate.certificateCode,
+              issuedAt: certificate.issuedAt,
+            }
+          : null,
+        evaluationCompleted: evaluationSubmissions.some((submission) => submission.userId === enrollment.userId),
+      });
+    });
   }
 );
 

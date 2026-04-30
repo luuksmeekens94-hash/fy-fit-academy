@@ -12,6 +12,7 @@ import { getLearnerLmsRedirectPath } from "@/lib/lms/route-access";
 import {
   getCertificateForCourseAndUser,
   getCourseDetail,
+  getCourseParticipantCompletionReport,
   getEnrollmentDetailForUser,
   getLessonProgressForVersion,
 } from "@/lib/lms/queries";
@@ -75,6 +76,9 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
 
   const progressEntries = course.activeVersion
     ? await getLessonProgressForVersion(user.id, course.activeVersion.id)
+    : [];
+  const participantReport = canPreviewWithoutEnrollment
+    ? await getCourseParticipantCompletionReport(course.id)
     : [];
 
   return (
@@ -140,7 +144,11 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
       </section>
 
       {canPreviewWithoutEnrollment ? (
-        <AccreditationPanel course={course} mode={isReviewerPreview ? "reviewer" : "beheer"} />
+        <AccreditationPanel
+          course={course}
+          mode={isReviewerPreview ? "reviewer" : "beheer"}
+          completionReport={participantReport}
+        />
       ) : null}
 
       {certificate ? (

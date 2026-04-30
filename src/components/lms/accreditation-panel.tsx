@@ -7,6 +7,11 @@ import {
 import { StatusBadge } from "@/components/status-badge";
 import { buildAccreditationChecklist } from "@/lib/lms/accreditation-checklist";
 import { buildAccreditationEvidenceExport } from "@/lib/lms/accreditation-evidence";
+import {
+  exportParticipantCompletionReportCsv,
+  exportParticipantCompletionReportMarkdown,
+  type ParticipantCompletionReport,
+} from "@/lib/lms/participant-report";
 import type { CourseDetail } from "@/lib/lms/types";
 
 
@@ -109,9 +114,10 @@ function getChecklistTone(status: "complete" | "missing" | "warning") {
 type AccreditationPanelProps = {
   course: CourseDetail;
   mode?: "beheer" | "reviewer";
+  completionReport?: ParticipantCompletionReport[];
 };
 
-export function AccreditationPanel({ course, mode = "beheer" }: AccreditationPanelProps) {
+export function AccreditationPanel({ course, mode = "beheer", completionReport = [] }: AccreditationPanelProps) {
   const checklist = buildAccreditationChecklist({
     title: course.title,
     audience: course.audience,
@@ -134,6 +140,8 @@ export function AccreditationPanel({ course, mode = "beheer" }: AccreditationPan
   const evaluationForms = course.activeVersion?.evaluationForms ?? [];
   const changeLogs = course.activeVersion?.changeLogs ?? [];
   const evidenceExport = buildAccreditationEvidenceExport(course, checklist);
+  const participantReportMarkdown = exportParticipantCompletionReportMarkdown(completionReport);
+  const participantReportCsv = exportParticipantCompletionReportCsv(completionReport);
 
   return (
     <section className="card-surface rounded-[32px] p-6">
@@ -289,6 +297,33 @@ export function AccreditationPanel({ course, mode = "beheer" }: AccreditationPan
           rows={14}
           className="mt-4 w-full rounded-2xl border border-white/10 bg-white/10 p-4 font-mono text-xs leading-6 text-white outline-none"
         />
+      </div>
+
+      <div className="mt-6 rounded-[28px] bg-white/85 p-5">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-950">Deelnemerrapportage</h3>
+            <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+              Export voor afrondingsbewijs: deelnemer, registratienummer, e-learning, datum afronding,
+              toets-score, pogingen, status, certificaat en evaluatie.
+            </p>
+          </div>
+          <StatusBadge label={`${completionReport.length} deelnemers`} tone="brand" />
+        </div>
+        <div className="mt-4 grid gap-4 xl:grid-cols-2">
+          <textarea
+            readOnly
+            value={participantReportMarkdown}
+            rows={12}
+            className="w-full rounded-2xl border border-[var(--border)] bg-white p-4 font-mono text-xs leading-6 text-slate-900 outline-none"
+          />
+          <textarea
+            readOnly
+            value={participantReportCsv}
+            rows={12}
+            className="w-full rounded-2xl border border-[var(--border)] bg-white p-4 font-mono text-xs leading-6 text-slate-900 outline-none"
+          />
+        </div>
       </div>
 
       <div className="mt-6 grid gap-5 xl:grid-cols-2">
