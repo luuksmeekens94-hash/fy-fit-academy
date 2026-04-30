@@ -42,7 +42,14 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
     getLessonDetail(lessonId),
   ]);
 
-  if (!course || !enrollment || !lesson || !course.activeVersion) {
+  if (!course || !lesson || !course.activeVersion) {
+    notFound();
+  }
+
+  const isReviewerPreview = user.role === "REVIEWER";
+  const canPreviewWithoutEnrollment = user.role === "BEHEERDER" || isReviewerPreview;
+
+  if (!enrollment && !canPreviewWithoutEnrollment) {
     notFound();
   }
 
@@ -81,7 +88,7 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
     notFound();
   }
 
-  const canCompleteLesson = lesson.type !== "ASSESSMENT" && progress?.status !== "COMPLETED";
+  const canCompleteLesson = Boolean(enrollment) && lesson.type !== "ASSESSMENT" && progress?.status !== "COMPLETED";
 
   return (
     <div className="space-y-6">
@@ -94,7 +101,10 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
       <section className="card-surface rounded-[32px] p-6">
         <div className="flex flex-wrap items-center gap-3">
           <StatusBadge label={lesson.type} tone="neutral" />
-          <StatusBadge label={progress?.status ?? "NOT_STARTED"} tone={getProgressTone(progress?.status ?? "NOT_STARTED")} />
+          <StatusBadge
+            label={enrollment ? progress?.status ?? "NOT_STARTED" : isReviewerPreview ? "REVIEWER_PREVIEW" : "BEHEER_PREVIEW"}
+            tone={enrollment ? getProgressTone(progress?.status ?? "NOT_STARTED") : "brand"}
+          />
           {lesson.isRequired ? <StatusBadge label="Verplicht" tone="brand" /> : null}
           <StatusBadge label={`${lesson.estimatedMinutes} minuten`} tone="neutral" />
         </div>
@@ -104,8 +114,23 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
         </div>
       </section>
 
-      {lesson.type === "ASSESSMENT" && assessment ? (
+      {lesson.type === "ASSESSMENT" && assessment && enrollment ? (
         <AssessmentRunner courseId={courseId} assessment={assessment} initialAttempts={attempts} />
+      ) : null}
+
+      {lesson.type === "ASSESSMENT" && assessment && !enrollment ? (
+        <section className="card-surface rounded-[32px] p-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <StatusBadge label="Toetspreview" tone="brand" />
+            <StatusBadge label={`${assessment.questions.length} vragen`} tone="neutral" />
+            <StatusBadge label={`${assessment.passPercentage}% norm`} tone="neutral" />
+            <StatusBadge label={`max. ${assessment.maxAttempts} pogingen`} tone="neutral" />
+          </div>
+          <h2 className="mt-4 text-xl font-semibold text-slate-950">Toetsopbouw voor reviewer</h2>
+          <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
+            Deze preview toont de toetsinstellingen zonder poging, score of voortgangsdata aan te maken.
+          </p>
+        </section>
       ) : null}
 
       <section className="flex flex-wrap items-center gap-3">
@@ -133,7 +158,9 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
       <section className="card-surface rounded-[32px] p-6">
         <h2 className="text-xl font-semibold text-slate-950">Cursuscontext</h2>
         <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
-          Je voortgang in deze cursus staat momenteel op {enrollment.progress}%. Werk de verplichte lessen af en rond daarna de toets af om het certificaat vrij te spelen.
+          {enrollment
+            ? `Je voortgang in deze cursus staat momenteel op ${enrollment.progress}%. Werk de verplichte lessen af en rond daarna de toets af om het certificaat vrij te spelen.`
+            : "Previewmodus: je bekijkt de lesinhoud zonder voortgang, toetsresultaten of certificaatdata aan te maken."}
         </p>
       </section>
     </div>

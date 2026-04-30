@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { startEnrollmentAction } from "@/app/lms-actions";
+import { AccreditationPanel } from "@/components/lms/accreditation-panel";
 import { LessonList } from "@/components/lms/lesson-list";
 import { ProgressBar } from "@/components/lms/progress-bar";
 import { PageHeader } from "@/components/page-header";
@@ -53,7 +54,14 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
     getCertificateForCourseAndUser(user.id, courseId),
   ]);
 
-  if (!course || !enrollment) {
+  if (!course) {
+    notFound();
+  }
+
+  const isReviewerPreview = user.role === "REVIEWER";
+  const canPreviewWithoutEnrollment = user.role === "BEHEERDER" || isReviewerPreview;
+
+  if (!enrollment && !canPreviewWithoutEnrollment) {
     notFound();
   }
 
@@ -81,7 +89,10 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-3">
             <div className="flex flex-wrap gap-3">
-              <StatusBadge label={enrollment.status} tone={getEnrollmentTone(enrollment.status)} />
+              <StatusBadge
+                label={enrollment?.status ?? (isReviewerPreview ? "REVIEWER_PREVIEW" : "BEHEER_PREVIEW")}
+                tone={enrollment ? getEnrollmentTone(enrollment.status) : "brand"}
+              />
               {course.isMandatory ? <StatusBadge label="Verplicht" tone="brand" /> : null}
               <StatusBadge label={`${course.studyLoadMinutes} minuten`} tone="neutral" />
             </div>
@@ -92,7 +103,7 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
             </p>
           </div>
 
-          {enrollment.status === "NOT_STARTED" ? (
+          {enrollment?.status === "NOT_STARTED" ? (
             <form action={startEnrollmentAction}>
               <input type="hidden" name="courseId" value={course.id} />
               <button
@@ -106,27 +117,31 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
         </div>
 
         <div className="mt-6">
-          <ProgressBar value={enrollment.progress} label="Totale cursusvoortgang" />
+          <ProgressBar value={enrollment?.progress ?? 0} label={enrollment ? "Totale cursusvoortgang" : "Preview zonder gebruikersvoortgang"} />
         </div>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
         <StatCard
           label="Lessen"
-          value={`${enrollment.completedLessonCount}/${enrollment.lessonCount}`}
+          value={enrollment ? `${enrollment.completedLessonCount}/${enrollment.lessonCount}` : `${course.activeVersion?.lessons.length ?? 0}`}
           detail="Aantal lessen dat op dit moment als afgerond staat geregistreerd."
         />
         <StatCard
           label="Verplichte toetsen"
-          value={`${enrollment.passedRequiredAssessmentCount}/${enrollment.requiredAssessmentCount}`}
+          value={enrollment ? `${enrollment.passedRequiredAssessmentCount}/${enrollment.requiredAssessmentCount}` : `${course.activeVersion?.assessments.filter((assessment) => assessment.isRequiredForCompletion).length ?? 0}`}
           detail="Aantal verplichte toetsen dat al met een voldoende resultaat is afgesloten."
         />
         <StatCard
           label="Deadline"
-          value={formatDate(enrollment.deadlineAt)}
+          value={formatDate(enrollment?.deadlineAt ?? null)}
           detail="Doeldatum waarop deze cursus idealiter volledig is afgerond."
         />
       </section>
+
+      {canPreviewWithoutEnrollment ? (
+        <AccreditationPanel course={course} mode={isReviewerPreview ? "reviewer" : "beheer"} />
+      ) : null}
 
       {certificate ? (
         <section className="card-surface rounded-[32px] p-6">

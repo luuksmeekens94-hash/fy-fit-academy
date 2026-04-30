@@ -24,7 +24,8 @@ test("getLearnerLmsRedirectPath maps medewerker lesson routes to the matching Ac
   );
 });
 
-test("getLearnerLmsRedirectPath keeps LMS routes available for teamleiders and beheerders", () => {
+test("getLearnerLmsRedirectPath keeps LMS routes available for teamleiders, beheerders and reviewers", () => {
   assert.equal(getLearnerLmsRedirectPath("TEAMLEIDER"), null);
   assert.equal(getLearnerLmsRedirectPath("BEHEERDER", { courseSlug: "fy-fit-consultvoering-basis" }), null);
+  assert.equal(getLearnerLmsRedirectPath("REVIEWER", { courseSlug: "fy-fit-consultvoering-basis" }), null);
 });

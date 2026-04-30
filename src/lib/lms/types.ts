@@ -79,6 +79,7 @@ export type CourseVersionDetail = {
   literature: LiteratureReferenceSummary[];
   competencies: CompetencyReferenceSummary[];
   evaluationForms: EvaluationFormSummary[];
+  changeLogs: CourseChangeLogSummary[];
   lessons: LessonSummary[];
   assessments: AssessmentSummary[];
 };
@@ -128,10 +129,19 @@ export type EvaluationFormSummary = {
   questionCount: number;
 };
 
+export type CourseChangeLogSummary = {
+  id: string;
+  changedAt: Date;
+  changeType: string;
+  summary: string;
+  changedByName: string;
+};
+
 // ─── Lesson ───────────────────────────────────────────────────────────────────
 
 export type LessonSummary = {
   id: string;
+  moduleId: string | null;
   title: string;
   slug: string;
   type: LessonType;
@@ -195,6 +205,9 @@ export type AssessmentSummary = {
   title: string;
   passPercentage: number;
   maxAttempts: number;
+  shuffleOptions: boolean;
+  questionCount: number;
+  allQuestionsLinkedToObjectives: boolean;
   isRequiredForCompletion: boolean;
 };
 

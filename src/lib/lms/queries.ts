@@ -157,6 +157,13 @@ function mapCourseDetail(course: {
       isRequired: boolean;
       questions: { id: string }[];
     }[];
+    changeLogs: {
+      id: string;
+      changedAt: Date;
+      changeType: string;
+      summary: string;
+      changedBy: { name: string };
+    }[];
     lessons: {
       id: string;
       moduleId: string | null;
@@ -173,7 +180,9 @@ function mapCourseDetail(course: {
       title: string;
       passPercentage: number;
       maxAttempts: number;
+      shuffleOptions: boolean;
       isRequiredForCompletion: boolean;
+      questions: { objectives: { learningObjectiveId: string }[] }[];
     }[];
   }[];
 }): CourseDetail {
@@ -253,6 +262,13 @@ function mapCourseDetail(course: {
             isRequired: form.isRequired,
             questionCount: form.questions.length,
           })),
+          changeLogs: activeVersion.changeLogs.map((entry) => ({
+            id: entry.id,
+            changedAt: entry.changedAt,
+            changeType: entry.changeType,
+            summary: entry.summary,
+            changedByName: entry.changedBy.name,
+          })),
           lessons: activeVersion.lessons.map((lesson) => ({
             id: lesson.id,
             moduleId: lesson.moduleId,
@@ -269,6 +285,11 @@ function mapCourseDetail(course: {
             title: assessment.title,
             passPercentage: assessment.passPercentage,
             maxAttempts: assessment.maxAttempts,
+            shuffleOptions: assessment.shuffleOptions,
+            questionCount: assessment.questions.length,
+            allQuestionsLinkedToObjectives: assessment.questions.every(
+              (question) => question.objectives.length > 0
+            ),
             isRequiredForCompletion: assessment.isRequiredForCompletion,
           })),
         }
@@ -293,8 +314,16 @@ async function getCourseDetailRecord(where: { id?: string; slug?: string }) {
               evaluationForms: {
                 include: { questions: true },
               },
+              changeLogs: {
+                include: { changedBy: true },
+                orderBy: { changedAt: "desc" },
+              },
               lessons: { orderBy: { order: "asc" } },
-              assessments: true,
+              assessments: {
+                include: {
+                  questions: { include: { objectives: true } },
+                },
+              },
             },
           },
         },
@@ -314,8 +343,16 @@ async function getCourseDetailRecord(where: { id?: string; slug?: string }) {
               evaluationForms: {
                 include: { questions: true },
               },
+              changeLogs: {
+                include: { changedBy: true },
+                orderBy: { changedAt: "desc" },
+              },
               lessons: { orderBy: { order: "asc" } },
-              assessments: true,
+              assessments: {
+                include: {
+                  questions: { include: { objectives: true } },
+                },
+              },
             },
           },
         },
