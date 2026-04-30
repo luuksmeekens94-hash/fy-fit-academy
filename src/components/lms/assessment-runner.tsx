@@ -24,6 +24,7 @@ type AssessmentRunnerProps = {
   courseId: string;
   assessment: AssessmentDetail;
   initialAttempts: AttemptResult[];
+  variant?: "lms" | "academy";
 };
 
 type AssessmentResponses = Record<string, string[] | { textAnswer: string }>;
@@ -67,6 +68,7 @@ export function AssessmentRunner({
   courseId,
   assessment,
   initialAttempts,
+  variant = "lms",
 }: AssessmentRunnerProps) {
   const router = useRouter();
   const [attempts, setAttempts] = useState(initialAttempts);
@@ -87,6 +89,7 @@ export function AssessmentRunner({
   const unansweredQuestions = assessment.questions.filter(
     (question) => getAnswerCount(question, responses[question.id]) === 0,
   ).length;
+  const isAcademy = variant === "academy";
 
   async function handleStartAttempt() {
     setErrorMessage(null);
@@ -211,7 +214,12 @@ export function AssessmentRunner({
             <StatusBadge label={`${remainingAttempts} poging${remainingAttempts === 1 ? "" : "en"} over`} tone="neutral" />
           </div>
           <div className="space-y-2 text-sm leading-7 text-[var(--ink-soft)]">
-            <p>{assessment.description ?? "Deze toets controleert of je de belangrijkste principes uit de cursus beheerst."}</p>
+            <p>
+              {assessment.description ??
+                (isAcademy
+                  ? "Deze toets controleert of je de belangrijkste principes uit deze e-learning beheerst."
+                  : "Deze toets controleert of je de belangrijkste principes uit de cursus beheerst.")}
+            </p>
             <p>
               Maximaal {assessment.maxAttempts} pogingen.
               {assessment.timeLimitMinutes
@@ -255,7 +263,9 @@ export function AssessmentRunner({
               </p>
               <p className="mt-1">
                 {feedback.passed
-                  ? "Voldoende — deze toets staat als gehaald geregistreerd."
+                  ? isAcademy
+                    ? "Mooi — deze toets staat als behaald geregistreerd binnen je Academy leerpad."
+                    : "Voldoende — deze toets staat als gehaald geregistreerd."
                   : "Nog niet voldoende. Je kunt een nieuwe poging starten zolang je nog pogingen over hebt."}
               </p>
             </>
@@ -266,7 +276,9 @@ export function AssessmentRunner({
           )}
           {feedback.courseCompleted ? (
             <p className="mt-1">
-              De cursus is nu volledig afgerond{feedback.certificateId ? " en het certificaat is gekoppeld." : "."}
+              {isAcademy
+                ? `Deze e-learning is nu volledig afgerond${feedback.certificateId ? " en het certificaat is gekoppeld." : "."}`
+                : `De cursus is nu volledig afgerond${feedback.certificateId ? " en het certificaat is gekoppeld." : "."}`}
             </p>
           ) : null}
         </div>
@@ -274,7 +286,9 @@ export function AssessmentRunner({
 
       {hasUnsupportedOpenText ? (
         <div className="rounded-[24px] border border-[var(--border)] bg-slate-50 px-5 py-4 text-sm leading-6 text-[var(--ink-soft)]">
-          Deze toets bevat open vragen en vraagt daardoor nog een handmatige beoordelingsflow. In deze MVP is die variant nog niet aangesloten op de learner UI.
+          {isAcademy
+            ? "Deze toets bevat open vragen en vraagt daardoor nog een handmatige beoordelingsflow. Binnen Academy sluiten we die variant later aan op de medewerkerervaring."
+            : "Deze toets bevat open vragen en vraagt daardoor nog een handmatige beoordelingsflow. In deze MVP is die variant nog niet aangesloten op de learner UI."}
         </div>
       ) : null}
 

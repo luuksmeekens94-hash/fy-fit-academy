@@ -28,6 +28,25 @@ export type AcademyIntroSection = {
   value: string | string[];
 };
 
+export type AcademyCompletionState = {
+  tone: "success" | "warning" | "neutral";
+  title: string;
+  message: string;
+  isCompleted: boolean;
+  isCertificateAvailable: boolean;
+};
+
+export type AcademyAssessmentState = {
+  tone: "success" | "warning" | "neutral";
+  title: string;
+  message: string;
+  hasPassed: boolean;
+  hasActiveAttempt: boolean;
+  remainingAttempts: number;
+  latestCompletedAttemptNumber: number | null;
+  latestCompletedScorePercentage: number | null;
+};
+
 export type AcademyLessonListItemView = {
   id: string;
   slug: string;
@@ -56,6 +75,7 @@ export type AcademyCourseDetailView = {
   status: EnrollmentDetail["status"];
   deadlineAt: Date | null;
   startLabel: string;
+  completionState: AcademyCompletionState;
   lessons: AcademyLessonListItemView[];
 };
 
@@ -89,7 +109,9 @@ export type AcademyLessonDetailView = {
   enrollment: Pick<AcademyCourseDetailView, "progressPercentage" | "progressLabel"> & {
     status: EnrollmentDetail["status"];
   };
+  completionState: AcademyCompletionState;
   assessment: AssessmentDetail | null;
+  assessmentState: AcademyAssessmentState | null;
   attempts: AttemptResult[];
   sidebar: AcademyLessonSidebarView;
 };

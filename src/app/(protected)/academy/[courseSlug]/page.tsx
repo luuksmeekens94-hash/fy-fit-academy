@@ -4,6 +4,7 @@ import { AcademyCourseHero } from "@/components/academy/academy-course-hero";
 import { AcademyCourseIntro } from "@/components/academy/academy-course-intro";
 import { AcademyLessonList } from "@/components/academy/academy-lesson-list";
 import { AcademyStartButton } from "@/components/academy/academy-start-button";
+import { AcademyStatusPanel } from "@/components/academy/academy-status-panel";
 import { PageHeader } from "@/components/page-header";
 import { requireUser } from "@/lib/auth";
 import { getAcademyCourseBySlugForUser } from "@/lib/academy/queries";
@@ -42,6 +43,12 @@ export default async function AcademyCourseDetailPage({
       <AcademyCourseHero
         course={course}
         action={<AcademyStartButton courseId={course.id} isStarted={course.status !== "NOT_STARTED"} />}
+      />
+
+      <AcademyStatusPanel
+        tone={course.completionState.tone}
+        title={course.completionState.title}
+        message={course.completionState.message}
       />
 
       <AcademyCourseIntro sections={course.introSections} />
