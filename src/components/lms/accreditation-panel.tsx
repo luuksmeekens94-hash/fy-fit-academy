@@ -1,6 +1,76 @@
+import {
+  saveAssessmentAccreditationRulesAction,
+  saveCourseAccreditationMetadataAction,
+  saveCourseAccreditationStructureAction,
+} from "@/app/lms-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { buildAccreditationChecklist } from "@/lib/lms/accreditation-checklist";
 import type { CourseDetail } from "@/lib/lms/types";
+
+
+function formatInputDate(date: Date | null) {
+  if (!date) {
+    return "";
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function formatAuthorExperts(experts: CourseDetail["authorExperts"]) {
+  return experts
+    .map((expert) => [expert.name, expert.role, expert.organization ?? "", expert.registrationNumber ?? ""].join("||"))
+    .join("\n");
+}
+
+function formatModules(course: CourseDetail) {
+  return (course.activeVersion?.modules ?? [])
+    .map((module) => [
+      module.order,
+      module.title,
+      module.estimatedMinutes,
+      module.introduction ?? "",
+      module.summary ?? "",
+      module.workForms.join(", ").toLowerCase(),
+    ].join("||"))
+    .join("\n");
+}
+
+function formatObjectives(course: CourseDetail) {
+  const modulesById = new Map((course.activeVersion?.modules ?? []).map((module) => [module.id, module.order]));
+
+  return (course.activeVersion?.objectives ?? [])
+    .map((objective) => [objective.code, objective.text, objective.moduleId ? modulesById.get(objective.moduleId) ?? "" : ""].join("||"))
+    .join("\n");
+}
+
+function formatLiterature(course: CourseDetail) {
+  const modulesById = new Map((course.activeVersion?.modules ?? []).map((module) => [module.id, module.order]));
+
+  return (course.activeVersion?.literature ?? [])
+    .map((reference) => [
+      reference.order,
+      reference.title,
+      reference.source ?? "",
+      reference.url ?? "",
+      reference.guideline ?? "",
+      reference.year ?? "",
+      reference.moduleId ? modulesById.get(reference.moduleId) ?? "" : "",
+    ].join("||"))
+    .join("\n");
+}
+
+function formatCompetencies(course: CourseDetail) {
+  const modulesById = new Map((course.activeVersion?.modules ?? []).map((module) => [module.id, module.order]));
+
+  return (course.activeVersion?.competencies ?? [])
+    .map((reference) => [
+      reference.name,
+      reference.framework ?? "",
+      reference.description ?? "",
+      reference.moduleId ? modulesById.get(reference.moduleId) ?? "" : "",
+    ].join("||"))
+    .join("\n");
+}
 
 function formatDate(date: Date | null) {
   if (!date) {
@@ -88,6 +158,57 @@ export function AccreditationPanel({ course, mode = "beheer" }: AccreditationPan
         </div>
       </div>
 
+      {mode === "beheer" ? (
+        <div className="mt-6 grid gap-5 xl:grid-cols-2">
+          <form action={saveCourseAccreditationMetadataAction} className="rounded-[28px] bg-[var(--brand-soft)] p-5">
+            <input type="hidden" name="courseId" value={course.id} />
+            <h3 className="text-lg font-semibold text-slate-950">Algemene gegevens beheren</h3>
+            <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+              Velden voor titel, doelgroep, register, soort, studielast, auteurs en versiebeheer.
+            </p>
+            <div className="mt-4 grid gap-3">
+              <input name="title" defaultValue={course.title} placeholder="Titel e-learning" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" required />
+              <textarea name="description" defaultValue={course.description} rows={3} placeholder="Beschrijving" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" required />
+              <input name="audience" defaultValue={course.audience ?? ""} placeholder="Doelgroep" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+              <div className="grid gap-3 md:grid-cols-2">
+                <input name="accreditationRegister" defaultValue={course.accreditationRegister ?? ""} placeholder="Register" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+                <select name="accreditationKind" defaultValue={course.accreditationKind} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm">
+                  <option value="VAKINHOUDELIJK">Vakinhoudelijk</option>
+                  <option value="BEROEPSGERELATEERD">Beroepsgerelateerd</option>
+                </select>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <input name="studyLoadMinutes" type="number" defaultValue={course.studyLoadMinutes} placeholder="Studielast in minuten" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" required />
+                <input name="requiredQuestionCount" type="number" defaultValue={course.requiredQuestionCount ?? ""} placeholder="Min. MC-vragen" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <input name="versionDate" type="date" defaultValue={formatInputDate(course.versionDate)} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+                <input name="revisionDueAt" type="date" defaultValue={formatInputDate(course.revisionDueAt)} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+              </div>
+              <textarea name="authorExperts" defaultValue={formatAuthorExperts(course.authorExperts)} rows={4} placeholder="Naam||Rol||Organisatie||Registratienummer" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 font-mono text-sm" />
+              <input name="changeSummary" defaultValue="Accreditatie-metadata bijgewerkt." className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+              <button type="submit" className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white">Algemene gegevens opslaan</button>
+            </div>
+          </form>
+
+          <form action={saveCourseAccreditationStructureAction} className="rounded-[28px] bg-[var(--teal-soft)] p-5">
+            <input type="hidden" name="courseId" value={course.id} />
+            <h3 className="text-lg font-semibold text-slate-950">Leerstructuur beheren</h3>
+            <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+              Eén regel per item. Modules: volgorde||titel||duur||intro||samenvatting||werkvormen.
+            </p>
+            <div className="mt-4 grid gap-3">
+              <textarea name="modules" defaultValue={formatModules(course)} rows={5} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 font-mono text-sm" />
+              <textarea name="learningObjectives" defaultValue={formatObjectives(course)} rows={5} placeholder="LO1||Tekst leerdoel||modulevolgorde" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 font-mono text-sm" />
+              <textarea name="literature" defaultValue={formatLiterature(course)} rows={4} placeholder="1||Titel||Bron||URL||Richtlijn||Jaar||modulevolgorde" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 font-mono text-sm" />
+              <textarea name="competencies" defaultValue={formatCompetencies(course)} rows={4} placeholder="Naam||Framework||Beschrijving||modulevolgorde" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 font-mono text-sm" />
+              <input name="changeSummary" defaultValue="Accreditatie-structuur bijgewerkt." className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+              <button type="submit" className="rounded-full bg-[var(--teal)] px-5 py-3 text-sm font-semibold text-white">Leerstructuur opslaan</button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
       <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] bg-white/85 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-soft)]">Register</p>
@@ -138,6 +259,29 @@ export function AccreditationPanel({ course, mode = "beheer" }: AccreditationPan
               <div key={assessment.id} className="rounded-2xl bg-white/85 p-4 text-sm leading-6 text-[var(--ink-soft)]">
                 <p className="font-semibold text-slate-950">{assessment.title}</p>
                 <p>{assessment.questionCount} vragen • {assessment.passPercentage}% norm • max. {assessment.maxAttempts} pogingen • antwoorden randomiseren: {assessment.shuffleOptions ? "ja" : "nee"}</p>
+                {mode === "beheer" ? (
+                  <form action={saveAssessmentAccreditationRulesAction} className="mt-4 grid gap-3 rounded-2xl border border-[var(--border)] bg-white p-4">
+                    <input type="hidden" name="courseId" value={course.id} />
+                    <input type="hidden" name="assessmentId" value={assessment.id} />
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <input name="passPercentage" type="number" defaultValue={assessment.passPercentage} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                      <input name="maxAttempts" type="number" defaultValue={assessment.maxAttempts} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                    </div>
+                    <label className="flex items-center gap-3 text-sm font-medium text-slate-900">
+                      <input type="checkbox" name="shuffleQuestions" defaultChecked={assessment.shuffleQuestions} className="h-4 w-4" />
+                      Vragen randomiseren
+                    </label>
+                    <label className="flex items-center gap-3 text-sm font-medium text-slate-900">
+                      <input type="checkbox" name="shuffleOptions" defaultChecked={assessment.shuffleOptions} className="h-4 w-4" />
+                      Antwoordvolgorde randomiseren
+                    </label>
+                    <label className="flex items-center gap-3 text-sm font-medium text-slate-900">
+                      <input type="checkbox" name="isRequiredForCompletion" defaultChecked={assessment.isRequiredForCompletion} className="h-4 w-4" />
+                      Vereist voor certificaat
+                    </label>
+                    <button type="submit" className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white">Toetsnormen opslaan</button>
+                  </form>
+                ) : null}
               </div>
             ))}
             {evaluationForms.map((form) => (

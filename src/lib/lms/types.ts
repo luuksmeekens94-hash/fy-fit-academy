@@ -205,6 +205,7 @@ export type AssessmentSummary = {
   title: string;
   passPercentage: number;
   maxAttempts: number;
+  shuffleQuestions: boolean;
   shuffleOptions: boolean;
   questionCount: number;
   allQuestionsLinkedToObjectives: boolean;

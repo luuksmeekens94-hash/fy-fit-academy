@@ -180,6 +180,7 @@ function mapCourseDetail(course: {
       title: string;
       passPercentage: number;
       maxAttempts: number;
+      shuffleQuestions: boolean;
       shuffleOptions: boolean;
       isRequiredForCompletion: boolean;
       questions: { objectives: { learningObjectiveId: string }[] }[];
@@ -285,6 +286,7 @@ function mapCourseDetail(course: {
             title: assessment.title,
             passPercentage: assessment.passPercentage,
             maxAttempts: assessment.maxAttempts,
+            shuffleQuestions: assessment.shuffleQuestions,
             shuffleOptions: assessment.shuffleOptions,
             questionCount: assessment.questions.length,
             allQuestionsLinkedToObjectives: assessment.questions.every(
