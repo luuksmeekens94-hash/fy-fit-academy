@@ -13,7 +13,10 @@ import {
   parseLiteratureReferencesInput,
   parseModulesInput,
 } from "@/lib/lms/accreditation-admin";
+import { buildAccreditationChecklist } from "@/lib/lms/accreditation-checklist";
+import { assertAccreditationPublishable } from "@/lib/lms/accreditation-evidence";
 import { issueCertificate } from "@/lib/lms/certificates";
+import { getCourseDetail } from "@/lib/lms/queries";
 import { isCourseCompleted } from "@/lib/lms/rules";
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -818,6 +821,59 @@ export async function saveAssessmentAccreditationRulesAction(formData: FormData)
         changedById: user.id,
         changeType: "ASSESSMENT_RULES",
         summary: `Toetsnormen bijgewerkt voor ${assessment.title}.`,
+      },
+    });
+  });
+
+  await revalidateLearningPaths({ courseId });
+}
+
+export async function publishCourseAccreditationReadyAction(formData: FormData) {
+  const user = await requireAccreditationManager();
+  const courseId = getString(formData, "courseId");
+  assert(courseId, "Cursus ontbreekt.");
+
+  const course = await getCourseDetail(courseId);
+  assert(course, "Cursus niet gevonden.");
+  assert(course.activeVersion, "Geen actieve cursusversie gevonden.");
+
+  const checklist = buildAccreditationChecklist({
+    title: course.title,
+    audience: course.audience,
+    accreditationRegister: course.accreditationRegister,
+    accreditationKind: course.accreditationKind,
+    studyLoadMinutes: course.studyLoadMinutes,
+    versionDate: course.versionDate,
+    authorExperts: course.authorExperts,
+    requiredQuestionCount: course.requiredQuestionCount,
+    reviewerName: course.reviewerName,
+    activeVersion: course.activeVersion,
+    changeLogCount: course.activeVersion.changeLogs.length,
+  });
+
+  assertAccreditationPublishable(checklist);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.course.update({
+      where: { id: courseId },
+      data: {
+        status: "PUBLISHED",
+        publishedAt: new Date(),
+      },
+    });
+
+    await tx.courseVersion.update({
+      where: { id: course.activeVersion!.id },
+      data: { changeSummary: "E-learning accreditatie-ready gepubliceerd." },
+    });
+
+    await tx.courseChangeLog.create({
+      data: {
+        courseId,
+        courseVersionId: course.activeVersion!.id,
+        changedById: user.id,
+        changeType: "ACCREDITATION_PUBLISHED",
+        summary: "E-learning gepubliceerd na groene accreditatiechecklist.",
       },
     });
   });

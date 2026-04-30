@@ -1,10 +1,12 @@
 import {
+  publishCourseAccreditationReadyAction,
   saveAssessmentAccreditationRulesAction,
   saveCourseAccreditationMetadataAction,
   saveCourseAccreditationStructureAction,
 } from "@/app/lms-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { buildAccreditationChecklist } from "@/lib/lms/accreditation-checklist";
+import { buildAccreditationEvidenceExport } from "@/lib/lms/accreditation-evidence";
 import type { CourseDetail } from "@/lib/lms/types";
 
 
@@ -131,6 +133,7 @@ export function AccreditationPanel({ course, mode = "beheer" }: AccreditationPan
   const assessments = course.activeVersion?.assessments ?? [];
   const evaluationForms = course.activeVersion?.evaluationForms ?? [];
   const changeLogs = course.activeVersion?.changeLogs ?? [];
+  const evidenceExport = buildAccreditationEvidenceExport(course, checklist);
 
   return (
     <section className="card-surface rounded-[32px] p-6">
@@ -157,6 +160,35 @@ export function AccreditationPanel({ course, mode = "beheer" }: AccreditationPan
           <StatusBadge label={`${checklist.completedCount}/${checklist.totalCount} checks`} tone="neutral" />
         </div>
       </div>
+
+      {mode === "beheer" ? (
+        <div className="mt-6 rounded-[28px] border border-[var(--border)] bg-white/85 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-950">Publicatieblokkade</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+                Publiceren kan pas als alle kritieke Kwaliteitshuis-checks groen zijn. Waarschuwingen blijven zichtbaar,
+                maar blokkeren publicatie niet.
+              </p>
+            </div>
+            <form action={publishCourseAccreditationReadyAction}>
+              <input type="hidden" name="courseId" value={course.id} />
+              <button
+                type="submit"
+                disabled={!checklist.isPublishable || course.status === "PUBLISHED"}
+                className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {course.status === "PUBLISHED" ? "Al gepubliceerd" : "Publiceer accreditatie-ready"}
+              </button>
+            </form>
+          </div>
+          {!checklist.isPublishable ? (
+            <p className="mt-3 text-sm font-semibold text-amber-700">
+              Nog {checklist.criticalOpenCount} kritieke blokkade(s). Los deze op voordat de e-learning live mag.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {mode === "beheer" ? (
         <div className="mt-6 grid gap-5 xl:grid-cols-2">
@@ -238,6 +270,25 @@ export function AccreditationPanel({ course, mode = "beheer" }: AccreditationPan
             <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{item.message}</p>
           </div>
         ))}
+      </div>
+
+      <div className="mt-6 rounded-[28px] bg-slate-950 p-5 text-white">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Accreditatie-export</h3>
+            <p className="mt-2 text-sm leading-6 text-white/70">
+              Markdown-dossier voor Kwaliteitshuis: algemene gegevens, leerdoelen, modules, toetsing,
+              evaluatie, reviewer-info, bewijsvelden en wijzigingslog.
+            </p>
+          </div>
+          <StatusBadge label="Copy/paste dossier" tone="neutral" />
+        </div>
+        <textarea
+          readOnly
+          value={evidenceExport}
+          rows={14}
+          className="mt-4 w-full rounded-2xl border border-white/10 bg-white/10 p-4 font-mono text-xs leading-6 text-white outline-none"
+        />
       </div>
 
       <div className="mt-6 grid gap-5 xl:grid-cols-2">
