@@ -131,6 +131,7 @@ model User {
   name                  String
   role                  Role
   team                  String?
+  professionalRegistrationNumber String?
   title                 String
   location              String
   bio                   String

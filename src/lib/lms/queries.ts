@@ -754,7 +754,7 @@ export const getCourseParticipantCompletionReport = cache(
       return buildParticipantCompletionReport({
         courseTitle: course.title,
         participantName: enrollment.user.name,
-        professionalRegistrationNumber: null,
+        professionalRegistrationNumber: enrollment.user.professionalRegistrationNumber,
         completedAt: enrollment.completedAt,
         enrollmentStatus: enrollment.status,
         assessmentAttempts: assessmentAttempts

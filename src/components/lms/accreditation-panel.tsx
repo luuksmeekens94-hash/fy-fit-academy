@@ -310,6 +310,20 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
           </div>
           <StatusBadge label={`${completionReport.length} deelnemers`} tone="brand" />
         </div>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <a
+            href={`/lms/courses/${course.id}/participant-report/csv`}
+            className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Download CSV
+          </a>
+          <a
+            href={`/lms/courses/${course.id}/participant-report/markdown`}
+            className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white"
+          >
+            Download Markdown
+          </a>
+        </div>
         <div className="mt-4 grid gap-4 xl:grid-cols-2">
           <textarea
             readOnly

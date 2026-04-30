@@ -50,6 +50,31 @@ function csvEscape(value: string | number | null) {
   return `"${text.replace(/"/g, '""')}"`;
 }
 
+function slugify(value: string) {
+  const slug = value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || "cursus";
+}
+
+export function normalizeProfessionalRegistrationNumber(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed
+    .toUpperCase()
+    .replace(/[\s/]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^([A-Z]+)-?(\d.*)$/, "$1-$2")
+    .replace(/^-+|-+$/g, "");
+}
+
 export function buildParticipantCompletionReport(input: ParticipantReportInput): ParticipantCompletionReport {
   const submittedAttempts = input.assessmentAttempts.filter((attempt) => attempt.submittedAt !== null);
   const scoredAttempts = submittedAttempts.filter((attempt) => attempt.scorePercentage !== null);
@@ -124,4 +149,30 @@ export function exportParticipantCompletionReportCsv(rows: ParticipantCompletion
   ].map(csvEscape).join(","));
 
   return [headers.join(","), ...body].join("\n");
+}
+
+export function buildParticipantReportDownload({
+  rows,
+  courseSlug,
+  format,
+}: {
+  rows: ParticipantCompletionReport[];
+  courseSlug: string;
+  format: "csv" | "markdown";
+}) {
+  const safeSlug = slugify(courseSlug);
+
+  if (format === "csv") {
+    return {
+      filename: `deelnemerrapportage-${safeSlug}.csv`,
+      contentType: "text/csv; charset=utf-8",
+      body: exportParticipantCompletionReportCsv(rows),
+    };
+  }
+
+  return {
+    filename: `deelnemerrapportage-${safeSlug}.md`,
+    contentType: "text/markdown; charset=utf-8",
+    body: exportParticipantCompletionReportMarkdown(rows),
+  };
 }

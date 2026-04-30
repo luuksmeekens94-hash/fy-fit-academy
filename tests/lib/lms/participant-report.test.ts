@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 
 import {
   buildParticipantCompletionReport,
+  buildParticipantReportDownload,
   exportParticipantCompletionReportCsv,
   exportParticipantCompletionReportMarkdown,
+  normalizeProfessionalRegistrationNumber,
 } from "../../../src/lib/lms/participant-report.ts";
 
 const input = {
@@ -70,4 +72,32 @@ test("participant report exports markdown and csv for accreditation/audit delive
   assert.match(markdown, /Evaluatie ingevuld: ja/);
   assert.match(csv, /participantName,professionalRegistrationNumber,courseTitle,completedAt,bestScorePercentage,attemptCount,passed,certificateAvailable,certificateCode,evaluationCompleted/);
   assert.match(csv, /Lotte Jansen,KRF-12345,Fy-Fit consultvoering basis,2026-04-30,80,2,ja,ja,CERT-2026-001,ja/);
+});
+
+test("normalizeProfessionalRegistrationNumber stores compact BIG KRF SKF values or null", () => {
+  assert.equal(normalizeProfessionalRegistrationNumber("  krf - 12345  "), "KRF-12345");
+  assert.equal(normalizeProfessionalRegistrationNumber("BIG 99887766"), "BIG-99887766");
+  assert.equal(normalizeProfessionalRegistrationNumber("skf/abc-42"), "SKF-ABC-42");
+  assert.equal(normalizeProfessionalRegistrationNumber("   "), null);
+});
+
+test("buildParticipantReportDownload returns safe filenames and mime types", () => {
+  const report = buildParticipantCompletionReport(input);
+  const csvDownload = buildParticipantReportDownload({
+    rows: [report],
+    courseSlug: "Consultvoering Basis!",
+    format: "csv",
+  });
+  const markdownDownload = buildParticipantReportDownload({
+    rows: [report],
+    courseSlug: "Consultvoering Basis!",
+    format: "markdown",
+  });
+
+  assert.equal(csvDownload.filename, "deelnemerrapportage-consultvoering-basis.csv");
+  assert.equal(csvDownload.contentType, "text/csv; charset=utf-8");
+  assert.match(csvDownload.body, /Lotte Jansen,KRF-12345/);
+  assert.equal(markdownDownload.filename, "deelnemerrapportage-consultvoering-basis.md");
+  assert.equal(markdownDownload.contentType, "text/markdown; charset=utf-8");
+  assert.match(markdownDownload.body, /# Deelnemerrapportage LMS/);
 });

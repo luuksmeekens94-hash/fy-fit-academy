@@ -25,6 +25,7 @@ export type User = {
   email: string;
   role: Role;
   team?: string | null;
+  professionalRegistrationNumber?: string | null;
   title: string;
   location: string;
   buddyId?: string;

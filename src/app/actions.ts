@@ -11,6 +11,7 @@ import { clearSession, createSession, requireRole, requireUser } from "@/lib/aut
 import { getAuthUserByEmail, getUserById } from "@/lib/data";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
+import { normalizeProfessionalRegistrationNumber } from "@/lib/lms/participant-report";
 
 function getString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -305,6 +306,21 @@ export async function changePasswordAction(formData: FormData) {
   revalidatePath("/mijn-gegevens");
 }
 
+export async function saveMyProfessionalRegistrationAction(formData: FormData) {
+  const user = await requireUser();
+  const professionalRegistrationNumber = normalizeProfessionalRegistrationNumber(
+    getOptionalString(formData, "professionalRegistrationNumber"),
+  );
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { professionalRegistrationNumber },
+  });
+
+  revalidatePath("/mijn-gegevens");
+  revalidatePath("/lms");
+}
+
 export async function saveCategoryAction(formData: FormData) {
   await requireRole([Role.BEHEERDER]);
   const categoryId = getOptionalString(formData, "categoryId");
@@ -506,10 +522,13 @@ export async function saveUserAction(formData: FormData) {
   const email = getString(formData, "email").toLowerCase();
   const role = ensureEnumValue(
     getString(formData, "role"),
-    ["MEDEWERKER", "TEAMLEIDER", "BEHEERDER"] as const,
+    ["MEDEWERKER", "TEAMLEIDER", "BEHEERDER", "REVIEWER"] as const,
     "MEDEWERKER",
   );
   const team = getOptionalString(formData, "team");
+  const professionalRegistrationNumber = normalizeProfessionalRegistrationNumber(
+    getOptionalString(formData, "professionalRegistrationNumber"),
+  );
   const title = getString(formData, "title");
   const location = getString(formData, "location");
   const bio = getString(formData, "bio");
@@ -531,6 +550,7 @@ export async function saveUserAction(formData: FormData) {
       email,
       role,
       team: team ?? null,
+      professionalRegistrationNumber,
       title,
       location,
       bio,
@@ -559,6 +579,7 @@ export async function saveUserAction(formData: FormData) {
         passwordHash: await hashPassword(initialPassword),
         role,
         team: team ?? null,
+        professionalRegistrationNumber,
         title,
         location,
         bio,

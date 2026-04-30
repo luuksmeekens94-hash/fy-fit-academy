@@ -1,4 +1,4 @@
-import { changePasswordAction } from "@/app/actions";
+import { changePasswordAction, saveMyProfessionalRegistrationAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
 import { requireUser } from "@/lib/auth";
 import { initials } from "@/lib/utils";
@@ -28,6 +28,8 @@ export default async function MijnGegevensPage() {
             <h2 className="text-2xl font-semibold text-slate-950">{user.name}</h2>
             <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
               Placeholder voor een latere profielfoto en aanvullende profielgegevens.
+              <br />
+              Accreditatie-registratie: {user.professionalRegistrationNumber ?? "Nog niet vastgelegd"}.
             </p>
           </div>
         </div>
@@ -58,7 +60,31 @@ export default async function MijnGegevensPage() {
               </p>
               <p className="mt-2 text-lg font-semibold text-slate-950">{user.location}</p>
             </div>
+            <div className="rounded-[24px] border border-[var(--border)] bg-white/85 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                Registratienummer
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-950">{user.professionalRegistrationNumber ?? "Niet vastgelegd"}</p>
+            </div>
           </div>
+          <form action={saveMyProfessionalRegistrationAction} className="mt-6 grid gap-3 rounded-[28px] bg-[var(--teal-soft)] p-5">
+            <h2 className="text-lg font-semibold text-slate-950">BIG/KRF/SKF registratie</h2>
+            <p className="text-sm leading-6 text-[var(--ink-soft)]">
+              Dit nummer komt terug in deelnemerrapportages en accreditatiebewijs. Laat leeg als dit niet relevant is.
+            </p>
+            <input
+              name="professionalRegistrationNumber"
+              defaultValue={user.professionalRegistrationNumber ?? ""}
+              placeholder="Bijv. BIG-12345678901, KRF-12345 of SKF-ABC-42"
+              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+            />
+            <button
+              type="submit"
+              className="rounded-full bg-[var(--teal)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
+            >
+              Registratie opslaan
+            </button>
+          </form>
           <form action={changePasswordAction} className="mt-6 grid gap-3 rounded-[28px] bg-[var(--brand-soft)] p-5">
             <h2 className="text-lg font-semibold text-slate-950">Wachtwoord wijzigen</h2>
             <input

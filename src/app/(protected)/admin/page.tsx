@@ -265,13 +265,15 @@ export default async function AdminPage() {
               <input name="name" placeholder="Naam" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" required />
               <input name="email" type="email" placeholder="E-mailadres" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" required />
             </div>
-            <div className="grid gap-3 md:grid-cols-4">
+            <div className="grid gap-3 md:grid-cols-5">
               <select name="role" defaultValue="MEDEWERKER" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]">
                 <option value="MEDEWERKER">Medewerker</option>
                 <option value="TEAMLEIDER">Teamleider</option>
                 <option value="BEHEERDER">Beheerder</option>
+                <option value="REVIEWER">Reviewer</option>
               </select>
               <input name="team" placeholder="Team" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" />
+              <input name="professionalRegistrationNumber" placeholder="BIG/KRF/SKF registratienummer" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" />
               <input name="title" placeholder="Functie" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" required />
               <input name="location" placeholder="Locatie" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" required />
             </div>
@@ -311,13 +313,15 @@ export default async function AdminPage() {
                     <input name="name" defaultValue={user.name} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" required />
                     <input name="email" type="email" defaultValue={user.email} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" required />
                   </div>
-                  <div className="grid gap-3 md:grid-cols-4">
+                  <div className="grid gap-3 md:grid-cols-5">
                     <select name="role" defaultValue={user.role} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]">
                       <option value="MEDEWERKER">Medewerker</option>
                       <option value="TEAMLEIDER">Teamleider</option>
                       <option value="BEHEERDER">Beheerder</option>
+                      <option value="REVIEWER">Reviewer</option>
                     </select>
                     <input name="team" defaultValue={user.team ?? ""} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" />
+                    <input name="professionalRegistrationNumber" defaultValue={user.professionalRegistrationNumber ?? ""} placeholder="BIG/KRF/SKF" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" />
                     <input name="title" defaultValue={user.title} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" required />
                     <input name="location" defaultValue={user.location} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" required />
                   </div>
