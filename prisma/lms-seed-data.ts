@@ -4,9 +4,57 @@ export type LmsSeedQuestionSpec = {
   prompt: string;
   explanation: string;
   points: number;
+  learningObjectiveCodes: string[];
   options: {
     label: string;
     isCorrect: boolean;
+  }[];
+};
+
+export type LmsSeedModuleSpec = {
+  key: string;
+  title: string;
+  description: string;
+  introduction: string;
+  summary: string;
+  order: number;
+  estimatedMinutes: number;
+  workForms: ("VIDEO" | "TEKST" | "CASUS" | "REFLECTIE" | "PODCAST" | "TOETS" | "MIXED")[];
+  lessonSlugs: string[];
+};
+
+export type LmsSeedLearningObjectiveSpec = {
+  code: string;
+  moduleKey: string;
+  text: string;
+  order: number;
+};
+
+export type LmsSeedLiteratureReferenceSpec = {
+  moduleKey: string;
+  title: string;
+  source: string;
+  url?: string;
+  guideline?: string;
+  year?: number;
+  order: number;
+};
+
+export type LmsSeedCompetencyReferenceSpec = {
+  moduleKey: string;
+  name: string;
+  framework: string;
+  description: string;
+};
+
+export type LmsSeedEvaluationFormSpec = {
+  title: string;
+  isRequired: boolean;
+  questions: {
+    label: string;
+    type: "SCALE_1_5" | "TEXT" | "YES_NO";
+    order: number;
+    isRequired: boolean;
   }[];
 };
 
@@ -43,12 +91,27 @@ export type LmsSeedSpec = {
     goal: string;
     focus: string;
     learnerOutcomes: string[];
+    authorExperts: {
+      name: string;
+      role: string;
+      organization?: string;
+      registrationNumber?: string;
+    }[];
+    accreditationRegister: string;
+    accreditationKind: "VAKINHOUDELIJK" | "BEROEPSGERELATEERD";
+    versionDate: string;
+    requiredQuestionCount: number;
     studyLoadMinutes: number;
     status: "PUBLISHED";
     isMandatory: boolean;
     publishedAt: string;
     revisionDueAt: string;
   };
+  modules: LmsSeedModuleSpec[];
+  learningObjectives: LmsSeedLearningObjectiveSpec[];
+  literatureReferences: LmsSeedLiteratureReferenceSpec[];
+  competencyReferences: LmsSeedCompetencyReferenceSpec[];
+  evaluationForm: LmsSeedEvaluationFormSpec;
   version: {
     versionNumber: string;
     changeSummary: string;
@@ -96,11 +159,108 @@ export function buildLmsSeedSpec(): LmsSeedSpec {
         "Je vat de hulpvraag en bevindingen begrijpelijk samen.",
         "Je sluit af met één concrete vervolgstap en checkt of de patiënt die begrijpt.",
       ],
+      authorExperts: [
+        {
+          name: "Marion Brouwer",
+          role: "Praktijkmanager en inhoudscoördinator Fy-Fit Academy",
+          organization: "Fy Fit Fysiotherapie Nijmegen",
+        },
+        {
+          name: "Sjoerd Hendriks",
+          role: "Sportfysiotherapeut en inhoudsdeskundige consultvoering",
+          organization: "Fy Fit Fysiotherapie Nijmegen",
+        },
+      ],
+      accreditationRegister: "KRF NL / SKF Fysiotherapie",
+      accreditationKind: "VAKINHOUDELIJK",
+      versionDate: "2026-04-01T08:00:00.000Z",
+      requiredQuestionCount: 5,
       studyLoadMinutes: 55,
       status: "PUBLISHED",
       isMandatory: true,
       publishedAt: "2026-04-01T08:00:00.000Z",
       revisionDueAt: "2026-10-01T08:00:00.000Z",
+    },
+    modules: [
+      {
+        key: "consultvoering-fy-fit",
+        title: "Consultvoering volgens Fy-fit stijl",
+        description: "Basismodule over openen, kaderen, samenvatten en afronden van een consult.",
+        introduction:
+          "Deze module verbindt vakinhoudelijke redenering met de menselijke Fy-fit toon in het behandelcontact.",
+        summary:
+          "Een sterk Fy-fit consult geeft de patiënt rust, richting en een concrete vervolgstap.",
+        order: 1,
+        estimatedMinutes: 55,
+        workForms: ["TEKST", "VIDEO", "CASUS", "REFLECTIE", "TOETS"],
+        lessonSlugs: [
+          "intro-fy-fit-consultvoering",
+          "consult-openen-en-kaderen",
+          "casus-samenvatten-en-richting-kiezen",
+          "reflectie-afsluiten-met-volgende-stap",
+          "toets-consultvoering-basis",
+        ],
+      },
+    ],
+    learningObjectives: [
+      {
+        code: "LO1",
+        moduleKey: "consultvoering-fy-fit",
+        text: "Na afloop kan de deelnemer uitleggen hoe de Fy-fit consultstijl vakinhoudelijke duidelijkheid combineert met menselijk contact.",
+        order: 1,
+      },
+      {
+        code: "LO2",
+        moduleKey: "consultvoering-fy-fit",
+        text: "Na afloop kan de deelnemer klinisch redeneren bij het samenvatten van hulpvraag, bevindingen en behandelrichting.",
+        order: 2,
+      },
+      {
+        code: "LO3",
+        moduleKey: "consultvoering-fy-fit",
+        text: "Na afloop kan de deelnemer een consult afronden met een concrete vervolgstap en begripcheck.",
+        order: 3,
+      },
+    ],
+    literatureReferences: [
+      {
+        moduleKey: "consultvoering-fy-fit",
+        title: "KNGF Beroepsprofiel Fysiotherapeut",
+        source: "Koninklijk Nederlands Genootschap voor Fysiotherapie",
+        guideline: "Professioneel handelen en communicatie",
+        year: 2021,
+        order: 1,
+      },
+      {
+        moduleKey: "consultvoering-fy-fit",
+        title: "Samen beslissen in de fysiotherapeutische praktijk",
+        source: "Fy Fit interne werkafspraak",
+        guideline: "Consultvoering en patiëntcommunicatie",
+        year: 2026,
+        order: 2,
+      },
+    ],
+    competencyReferences: [
+      {
+        moduleKey: "consultvoering-fy-fit",
+        name: "Communicatie en professioneel handelen",
+        framework: "Kwaliteitshuis Fysiotherapie / CanMEDS-afgeleid competentieprofiel",
+        description:
+          "De deelnemer communiceert helder, betrekt de patiënt bij keuzes en borgt passende vervolgstappen.",
+      },
+    ],
+    evaluationForm: {
+      title: "Evaluatie Fy-fit consultvoering basis",
+      isRequired: true,
+      questions: [
+        { label: "Niveau/diepgang", type: "SCALE_1_5", order: 1, isRequired: true },
+        { label: "Relevantie voor de praktijk", type: "SCALE_1_5", order: 2, isRequired: true },
+        { label: "Toepasbaarheid", type: "SCALE_1_5", order: 3, isRequired: true },
+        { label: "Kwaliteit van de leerstof", type: "SCALE_1_5", order: 4, isRequired: true },
+        { label: "Toets passend bij de leerstof", type: "SCALE_1_5", order: 5, isRequired: true },
+        { label: "Geschatte versus werkelijke studielast", type: "TEXT", order: 6, isRequired: true },
+        { label: "Verbeterpunten", type: "TEXT", order: 7, isRequired: false },
+      ],
     },
     version: {
       versionNumber: "1.0",
@@ -182,6 +342,7 @@ export function buildLmsSeedSpec(): LmsSeedSpec {
           explanation:
             "Een goede samenvatting laat zien dat je de patiënt hebt begrepen en helpt om samen naar de volgende stap te bewegen.",
           points: 1,
+          learningObjectiveCodes: ["LO2"],
           options: [
             { label: "Zo snel mogelijk het oefenprogramma uitleggen", isCorrect: false },
             { label: "Controleren of je de klacht, hulpvraag en richting samen helder hebt", isCorrect: true },
@@ -195,6 +356,7 @@ export function buildLmsSeedSpec(): LmsSeedSpec {
           explanation:
             "Fy-fit normaliseert waar passend, maar doet nooit alsof de ervaring van de patiënt er niet toe doet.",
           points: 1,
+          learningObjectiveCodes: ["LO1"],
           options: [
             { label: "Juist", isCorrect: false },
             { label: "Onjuist", isCorrect: true },
@@ -207,6 +369,7 @@ export function buildLmsSeedSpec(): LmsSeedSpec {
           explanation:
             "Een goede afronding maakt de afspraak concreet, checkt begrip en laat de patiënt met focus vertrekken.",
           points: 2,
+          learningObjectiveCodes: ["LO3"],
           options: [
             { label: "Eén concrete volgende stap formuleren", isCorrect: true },
             { label: "Checken of de patiënt de afspraak heeft begrepen", isCorrect: true },
@@ -221,6 +384,7 @@ export function buildLmsSeedSpec(): LmsSeedSpec {
           explanation:
             "De stijl is warm, concreet en richtinggevend — niet afstandelijk of overladen.",
           points: 1,
+          learningObjectiveCodes: ["LO1"],
           options: [
             { label: "Warm, duidelijk en gezamenlijk", isCorrect: true },
             { label: "Afstandelijk maar efficiënt", isCorrect: false },
@@ -234,6 +398,7 @@ export function buildLmsSeedSpec(): LmsSeedSpec {
           explanation:
             "De cursus is afgerond als verplichte lessen voltooid zijn en de verplichte assessment gehaald is.",
           points: 1,
+          learningObjectiveCodes: ["LO1", "LO3"],
           options: [
             { label: "Zodra de medewerker de eerste les opent", isCorrect: false },
             { label: "Wanneer alle verplichte lessen klaar zijn en de toets is gehaald", isCorrect: true },

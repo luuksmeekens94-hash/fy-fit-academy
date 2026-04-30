@@ -132,7 +132,7 @@ async function ensureEnrollmentForUser(userId: string, courseId: string) {
 
 async function assertCourseAccessibleForUser(params: {
   userId: string;
-  role: "MEDEWERKER" | "TEAMLEIDER" | "BEHEERDER";
+  role: "MEDEWERKER" | "TEAMLEIDER" | "BEHEERDER" | "REVIEWER";
   courseId: string;
 }) {
   const course = await prisma.course.findUnique({
@@ -142,7 +142,7 @@ async function assertCourseAccessibleForUser(params: {
 
   assert(course, "Cursus niet gevonden.");
   assert(
-    params.role === "BEHEERDER" || course.status === "PUBLISHED",
+    params.role === "BEHEERDER" || params.role === "REVIEWER" || course.status === "PUBLISHED",
     "Cursus is niet beschikbaar."
   );
 }

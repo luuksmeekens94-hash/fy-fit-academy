@@ -28,13 +28,23 @@ const prisma = new PrismaClient({
 async function main() {
   await prisma.assessmentAnswer.deleteMany();
   await prisma.assessmentAttempt.deleteMany();
+  await prisma.questionLearningObjective.deleteMany();
   await prisma.questionOption.deleteMany();
   await prisma.question.deleteMany();
   await prisma.assessment.deleteMany();
+  await prisma.evaluationAnswer.deleteMany();
+  await prisma.evaluationSubmission.deleteMany();
+  await prisma.evaluationQuestion.deleteMany();
+  await prisma.evaluationForm.deleteMany();
   await prisma.lessonProgress.deleteMany();
   await prisma.enrollment.deleteMany();
   await prisma.certificate.deleteMany();
   await prisma.lesson.deleteMany();
+  await prisma.learningObjective.deleteMany();
+  await prisma.literatureReference.deleteMany();
+  await prisma.competencyReference.deleteMany();
+  await prisma.courseModule.deleteMany();
+  await prisma.courseChangeLog.deleteMany();
   await prisma.courseVersion.deleteMany();
   await prisma.course.deleteMany();
   await prisma.moduleProgress.deleteMany();
@@ -87,6 +97,23 @@ async function main() {
       location: "Lankforst",
       bio: "Begeleidt teamleden op sportrevalidatie, casuistiek en persoonlijke ontwikkeling.",
       avatarColor: "bg-[var(--teal)]",
+      isOnboarding: false,
+      isActive: true,
+    },
+  });
+
+  const reviewer = await prisma.user.create({
+    data: {
+      email: "accreditatie@fysiotherapienijmegen.nl",
+      passwordHash,
+      name: "Accreditatiecommissie Reviewer",
+      role: Role.REVIEWER,
+      team: "Academy",
+      title: "Reviewer accreditatiecommissie",
+      location: "Extern",
+      bio:
+        "Reviewer-account voor accreditatiecommissie: inzage in e-learningstructuur zonder echte gebruikersdata te vervuilen.",
+      avatarColor: "bg-slate-500",
       isOnboarding: false,
       isActive: true,
     },
@@ -458,6 +485,7 @@ async function main() {
   const usersByEmail = new Map([
     [admin.email, admin],
     [teamlead.email, teamlead],
+    [reviewer.email, reviewer],
     [medewerker1.email, medewerker1],
     [medewerker2.email, medewerker2],
   ]);
@@ -472,11 +500,16 @@ async function main() {
       goal: lmsSeed.course.goal,
       focus: lmsSeed.course.focus,
       learnerOutcomes: lmsSeed.course.learnerOutcomes,
+      accreditationRegister: lmsSeed.course.accreditationRegister,
+      accreditationKind: lmsSeed.course.accreditationKind,
+      versionDate: new Date(lmsSeed.course.versionDate),
+      authorExperts: lmsSeed.course.authorExperts,
+      requiredQuestionCount: lmsSeed.course.requiredQuestionCount,
       studyLoadMinutes: lmsSeed.course.studyLoadMinutes,
       status: lmsSeed.course.status,
       isMandatory: lmsSeed.course.isMandatory,
       authorId: admin.id,
-      reviewerId: teamlead.id,
+      reviewerId: reviewer.id,
       publishedAt: new Date(lmsSeed.course.publishedAt),
       revisionDueAt: new Date(lmsSeed.course.revisionDueAt),
       versions: {
@@ -485,35 +518,140 @@ async function main() {
           changeSummary: lmsSeed.version.changeSummary,
           isActive: lmsSeed.version.isActive,
           createdById: admin.id,
-          lessons: {
-            create: lmsSeed.lessons.map((lesson) => ({
-              title: lesson.title,
-              slug: lesson.slug,
-              description: lesson.description,
-              type: lesson.type,
-              content: lesson.content,
-              order: lesson.order,
-              isRequired: lesson.isRequired,
-              estimatedMinutes: lesson.estimatedMinutes,
-              publishedAt: new Date(lmsSeed.course.publishedAt),
-            })),
-          },
         },
       },
     },
     include: {
-      versions: {
-        include: {
-          lessons: {
-            orderBy: { order: "asc" },
-          },
-        },
-      },
+      versions: true,
     },
   });
 
   const activeVersion = seededCourse.versions[0];
-  const lessonsBySlug = new Map(activeVersion.lessons.map((lesson) => [lesson.slug, lesson]));
+  const modulesByKey = new Map<string, { id: string }>();
+
+  for (const moduleSpec of lmsSeed.modules) {
+    const courseModule = await prisma.courseModule.create({
+      data: {
+        courseVersionId: activeVersion.id,
+        title: moduleSpec.title,
+        description: moduleSpec.description,
+        introduction: moduleSpec.introduction,
+        summary: moduleSpec.summary,
+        order: moduleSpec.order,
+        estimatedMinutes: moduleSpec.estimatedMinutes,
+        workForms: moduleSpec.workForms,
+      },
+    });
+    modulesByKey.set(moduleSpec.key, courseModule);
+  }
+
+  const objectivesByCode = new Map<string, { id: string }>();
+
+  for (const objectiveSpec of lmsSeed.learningObjectives) {
+    const courseModule = modulesByKey.get(objectiveSpec.moduleKey);
+    const objective = await prisma.learningObjective.create({
+      data: {
+        courseVersionId: activeVersion.id,
+        moduleId: courseModule?.id,
+        code: objectiveSpec.code,
+        text: objectiveSpec.text,
+        order: objectiveSpec.order,
+      },
+    });
+    objectivesByCode.set(objectiveSpec.code, objective);
+  }
+
+  for (const literatureSpec of lmsSeed.literatureReferences) {
+    const courseModule = modulesByKey.get(literatureSpec.moduleKey);
+    await prisma.literatureReference.create({
+      data: {
+        courseVersionId: activeVersion.id,
+        moduleId: courseModule?.id,
+        title: literatureSpec.title,
+        source: literatureSpec.source,
+        url: literatureSpec.url,
+        guideline: literatureSpec.guideline,
+        year: literatureSpec.year,
+        order: literatureSpec.order,
+      },
+    });
+  }
+
+  for (const competencySpec of lmsSeed.competencyReferences) {
+    const courseModule = modulesByKey.get(competencySpec.moduleKey);
+    await prisma.competencyReference.create({
+      data: {
+        courseVersionId: activeVersion.id,
+        moduleId: courseModule?.id,
+        name: competencySpec.name,
+        framework: competencySpec.framework,
+        description: competencySpec.description,
+      },
+    });
+  }
+
+  await prisma.evaluationForm.create({
+    data: {
+      courseVersionId: activeVersion.id,
+      title: lmsSeed.evaluationForm.title,
+      isRequired: lmsSeed.evaluationForm.isRequired,
+      questions: {
+        create: lmsSeed.evaluationForm.questions.map((question) => ({
+          label: question.label,
+          type: question.type,
+          order: question.order,
+          isRequired: question.isRequired,
+        })),
+      },
+    },
+  });
+
+  const lessonModuleBySlug = new Map<string, string>();
+  for (const moduleSpec of lmsSeed.modules) {
+    const courseModule = modulesByKey.get(moduleSpec.key);
+    if (!courseModule) {
+      continue;
+    }
+    for (const slug of moduleSpec.lessonSlugs) {
+      lessonModuleBySlug.set(slug, courseModule.id);
+    }
+  }
+
+  const seededLessons = await Promise.all(
+    lmsSeed.lessons.map((lesson) =>
+      prisma.lesson.create({
+        data: {
+          courseVersionId: activeVersion.id,
+          moduleId: lessonModuleBySlug.get(lesson.slug),
+          title: lesson.title,
+          slug: lesson.slug,
+          description: lesson.description,
+          type: lesson.type,
+          content: lesson.content,
+          order: lesson.order,
+          isRequired: lesson.isRequired,
+          estimatedMinutes: lesson.estimatedMinutes,
+          publishedAt: new Date(lmsSeed.course.publishedAt),
+        },
+      })
+    )
+  );
+
+  await prisma.courseChangeLog.create({
+    data: {
+      courseId: seededCourse.id,
+      courseVersionId: activeVersion.id,
+      changedById: admin.id,
+      changeType: "PUBLISHED",
+      summary: "Eerste accreditatie-ready LMS seedversie gepubliceerd.",
+      details: {
+        versionNumber: lmsSeed.version.versionNumber,
+        accreditationRegister: lmsSeed.course.accreditationRegister,
+      },
+    },
+  });
+
+  const lessonsBySlug = new Map(seededLessons.map((lesson) => [lesson.slug, lesson]));
   const assessmentLesson = lessonsBySlug.get(lmsSeed.assessment.lessonSlug);
 
   if (!assessmentLesson) {
@@ -561,6 +699,26 @@ async function main() {
       },
     },
   });
+
+  for (const [index, questionSpec] of lmsSeed.assessment.questions.entries()) {
+    const seededQuestion = seededAssessment.questions[index];
+    if (!seededQuestion) {
+      continue;
+    }
+
+    await prisma.questionLearningObjective.createMany({
+      data: questionSpec.learningObjectiveCodes.map((code) => {
+        const objective = objectivesByCode.get(code);
+        if (!objective) {
+          throw new Error(`Learning objective not found for code ${code}`);
+        }
+        return {
+          questionId: seededQuestion.id,
+          learningObjectiveId: objective.id,
+        };
+      }),
+    });
+  }
 
   const enrollmentsByKey = new Map<string, { id: string; userId: string }>();
 

@@ -1,13 +1,22 @@
 import {
+  AccreditationKind,
   AssignmentType,
   CourseStatus,
   EnrollmentStatus,
   LessonProgressStatus,
   LessonType,
   QuestionType,
+  WorkForm,
 } from "@prisma/client";
 
 // ─── Course ───────────────────────────────────────────────────────────────────
+
+export type CourseAuthorExpert = {
+  name: string;
+  role: string;
+  organization?: string;
+  registrationNumber?: string;
+};
 
 export type CourseSummary = {
   id: string;
@@ -17,6 +26,10 @@ export type CourseSummary = {
   status: CourseStatus;
   isMandatory: boolean;
   studyLoadMinutes: number;
+  accreditationRegister: string | null;
+  accreditationKind: AccreditationKind;
+  versionDate: Date | null;
+  requiredQuestionCount: number | null;
   authorName: string;
   publishedAt: Date | null;
   versionCount: number;
@@ -33,6 +46,11 @@ export type CourseDetail = {
   goal: string | null;
   focus: string | null;
   learnerOutcomes: string[];
+  accreditationRegister: string | null;
+  accreditationKind: AccreditationKind;
+  versionDate: Date | null;
+  authorExperts: CourseAuthorExpert[];
+  requiredQuestionCount: number | null;
   studyLoadMinutes: number;
   status: CourseStatus;
   isMandatory: boolean;
@@ -56,8 +74,58 @@ export type CourseVersionDetail = {
   changeSummary: string | null;
   isActive: boolean;
   createdAt: Date;
+  modules: CourseModuleSummary[];
+  objectives: LearningObjectiveSummary[];
+  literature: LiteratureReferenceSummary[];
+  competencies: CompetencyReferenceSummary[];
+  evaluationForms: EvaluationFormSummary[];
   lessons: LessonSummary[];
   assessments: AssessmentSummary[];
+};
+
+export type CourseModuleSummary = {
+  id: string;
+  title: string;
+  description: string | null;
+  introduction: string | null;
+  summary: string | null;
+  order: number;
+  estimatedMinutes: number;
+  workForms: WorkForm[];
+};
+
+export type LearningObjectiveSummary = {
+  id: string;
+  moduleId: string | null;
+  code: string;
+  text: string;
+  order: number;
+};
+
+export type LiteratureReferenceSummary = {
+  id: string;
+  moduleId: string | null;
+  title: string;
+  source: string | null;
+  url: string | null;
+  guideline: string | null;
+  year: number | null;
+  order: number;
+};
+
+export type CompetencyReferenceSummary = {
+  id: string;
+  moduleId: string | null;
+  name: string;
+  framework: string | null;
+  description: string | null;
+};
+
+export type EvaluationFormSummary = {
+  id: string;
+  title: string;
+  isRequired: boolean;
+  questionCount: number;
 };
 
 // ─── Lesson ───────────────────────────────────────────────────────────────────
@@ -75,6 +143,7 @@ export type LessonSummary = {
 export type LessonDetail = {
   id: string;
   courseVersionId: string;
+  moduleId: string | null;
   title: string;
   slug: string;
   description: string | null;
@@ -151,6 +220,7 @@ export type QuestionDetail = {
   prompt: string;
   order: number;
   points: number;
+  objectiveCodes: string[];
   options: QuestionOptionDetail[];
 };
 

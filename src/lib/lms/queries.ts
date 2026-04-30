@@ -3,6 +3,7 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { calculateCourseProgress, selectLatestPassedAttempt } from "./query-helpers";
+import type { WorkForm } from "@prisma/client";
 import type {
   AssessmentDetail,
   AttemptResult,
@@ -14,7 +15,24 @@ import type {
   LessonDetail,
   LessonProgressInfo,
   TeamMemberProgress,
+  CourseAuthorExpert,
 } from "./types";
+
+
+function mapAuthorExperts(value: unknown): CourseAuthorExpert[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is CourseAuthorExpert => {
+    if (!item || typeof item !== "object") {
+      return false;
+    }
+
+    const candidate = item as Record<string, unknown>;
+    return typeof candidate.name === "string" && typeof candidate.role === "string";
+  });
+}
 
 function mapLearnerOutcomes(value: unknown): string[] {
   if (!Array.isArray(value)) {
@@ -76,6 +94,11 @@ function mapCourseDetail(course: {
   goal: string | null;
   focus: string | null;
   learnerOutcomes: unknown;
+  accreditationRegister: string | null;
+  accreditationKind: CourseDetail["accreditationKind"];
+  versionDate: Date | null;
+  authorExperts: unknown;
+  requiredQuestionCount: number | null;
   studyLoadMinutes: number;
   status: CourseDetail["status"];
   isMandatory: boolean;
@@ -94,8 +117,49 @@ function mapCourseDetail(course: {
     changeSummary: string | null;
     isActive: boolean;
     createdAt: Date;
+    modules: {
+      id: string;
+      title: string;
+      description: string | null;
+      introduction: string | null;
+      summary: string | null;
+      order: number;
+      estimatedMinutes: number;
+      workForms: WorkForm[];
+    }[];
+    objectives: {
+      id: string;
+      moduleId: string | null;
+      code: string;
+      text: string;
+      order: number;
+    }[];
+    literature: {
+      id: string;
+      moduleId: string | null;
+      title: string;
+      source: string | null;
+      url: string | null;
+      guideline: string | null;
+      year: number | null;
+      order: number;
+    }[];
+    competencies: {
+      id: string;
+      moduleId: string | null;
+      name: string;
+      framework: string | null;
+      description: string | null;
+    }[];
+    evaluationForms: {
+      id: string;
+      title: string;
+      isRequired: boolean;
+      questions: { id: string }[];
+    }[];
     lessons: {
       id: string;
+      moduleId: string | null;
       title: string;
       slug: string;
       type: LessonDetail["type"];
@@ -125,6 +189,11 @@ function mapCourseDetail(course: {
     goal: course.goal,
     focus: course.focus,
     learnerOutcomes: mapLearnerOutcomes(course.learnerOutcomes),
+    accreditationRegister: course.accreditationRegister,
+    accreditationKind: course.accreditationKind,
+    versionDate: course.versionDate,
+    authorExperts: mapAuthorExperts(course.authorExperts),
+    requiredQuestionCount: course.requiredQuestionCount,
     studyLoadMinutes: course.studyLoadMinutes,
     status: course.status,
     isMandatory: course.isMandatory,
@@ -144,8 +213,49 @@ function mapCourseDetail(course: {
           changeSummary: activeVersion.changeSummary,
           isActive: activeVersion.isActive,
           createdAt: activeVersion.createdAt,
+          modules: activeVersion.modules.map((module) => ({
+            id: module.id,
+            title: module.title,
+            description: module.description,
+            introduction: module.introduction,
+            summary: module.summary,
+            order: module.order,
+            estimatedMinutes: module.estimatedMinutes,
+            workForms: module.workForms,
+          })),
+          objectives: activeVersion.objectives.map((objective) => ({
+            id: objective.id,
+            moduleId: objective.moduleId,
+            code: objective.code,
+            text: objective.text,
+            order: objective.order,
+          })),
+          literature: activeVersion.literature.map((reference) => ({
+            id: reference.id,
+            moduleId: reference.moduleId,
+            title: reference.title,
+            source: reference.source,
+            url: reference.url,
+            guideline: reference.guideline,
+            year: reference.year,
+            order: reference.order,
+          })),
+          competencies: activeVersion.competencies.map((reference) => ({
+            id: reference.id,
+            moduleId: reference.moduleId,
+            name: reference.name,
+            framework: reference.framework,
+            description: reference.description,
+          })),
+          evaluationForms: activeVersion.evaluationForms.map((form) => ({
+            id: form.id,
+            title: form.title,
+            isRequired: form.isRequired,
+            questionCount: form.questions.length,
+          })),
           lessons: activeVersion.lessons.map((lesson) => ({
             id: lesson.id,
+            moduleId: lesson.moduleId,
             title: lesson.title,
             slug: lesson.slug,
             type: lesson.type,
@@ -176,6 +286,13 @@ async function getCourseDetailRecord(where: { id?: string; slug?: string }) {
           versions: {
             where: { isActive: true },
             include: {
+              modules: { orderBy: { order: "asc" } },
+              objectives: { orderBy: { order: "asc" } },
+              literature: { orderBy: { order: "asc" } },
+              competencies: true,
+              evaluationForms: {
+                include: { questions: true },
+              },
               lessons: { orderBy: { order: "asc" } },
               assessments: true,
             },
@@ -190,6 +307,13 @@ async function getCourseDetailRecord(where: { id?: string; slug?: string }) {
           versions: {
             where: { isActive: true },
             include: {
+              modules: { orderBy: { order: "asc" } },
+              objectives: { orderBy: { order: "asc" } },
+              literature: { orderBy: { order: "asc" } },
+              competencies: true,
+              evaluationForms: {
+                include: { questions: true },
+              },
               lessons: { orderBy: { order: "asc" } },
               assessments: true,
             },
@@ -220,6 +344,10 @@ export const getAllCourses = cache(async (): Promise<CourseSummary[]> => {
     status: course.status,
     isMandatory: course.isMandatory,
     studyLoadMinutes: course.studyLoadMinutes,
+    accreditationRegister: course.accreditationRegister,
+    accreditationKind: course.accreditationKind,
+    versionDate: course.versionDate,
+    requiredQuestionCount: course.requiredQuestionCount,
     authorName: course.author.name,
     publishedAt: course.publishedAt,
     versionCount: course.versions.length,
@@ -413,6 +541,7 @@ export const getLessonDetail = cache(
     return {
       id: lesson.id,
       courseVersionId: lesson.courseVersionId,
+      moduleId: lesson.moduleId,
       title: lesson.title,
       slug: lesson.slug,
       description: lesson.description,
@@ -434,7 +563,10 @@ export const getAssessmentDetail = cache(
       include: {
         questions: {
           orderBy: { order: "asc" },
-          include: { options: { orderBy: { order: "asc" } } },
+          include: {
+            objectives: { include: { learningObjective: true } },
+            options: { orderBy: { order: "asc" } },
+          },
         },
       },
     });
@@ -458,6 +590,9 @@ export const getAssessmentDetail = cache(
         prompt: question.prompt,
         order: question.order,
         points: question.points,
+        objectiveCodes: question.objectives.map(
+          (objective) => objective.learningObjective.code
+        ),
         options: question.options.map((option) => ({
           id: option.id,
           label: option.label,
