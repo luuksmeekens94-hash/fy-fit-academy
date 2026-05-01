@@ -30,6 +30,8 @@ export type ParticipantCompletionReport = {
   enrollmentStatus: ParticipantReportInput["enrollmentStatus"];
   certificateAvailable: boolean;
   certificateCode: string;
+  certificateId: string | null;
+  certificateProofPath: string;
   evaluationCompleted: boolean;
 };
 
@@ -93,6 +95,8 @@ export function buildParticipantCompletionReport(input: ParticipantReportInput):
     enrollmentStatus: input.enrollmentStatus,
     certificateAvailable: input.certificate !== null,
     certificateCode: input.certificate?.certificateCode ?? "Niet beschikbaar",
+    certificateId: input.certificate?.id ?? null,
+    certificateProofPath: input.certificate ? `/lms/certificates/${input.certificate.id}/download` : "Niet beschikbaar",
     evaluationCompleted: input.evaluationCompleted,
   };
 }
@@ -114,6 +118,7 @@ export function exportParticipantCompletionReportMarkdown(rows: ParticipantCompl
     lines.push(`- Aantal pogingen: ${row.attemptCount}`);
     lines.push(`- Behaalde status: ${row.passed ? "behaald" : row.enrollmentStatus}`);
     lines.push(`- Certificaat/deelnamebewijs: ${row.certificateAvailable ? row.certificateCode : "nee"}`);
+    lines.push(`- Bewijsdownload: ${row.certificateAvailable ? row.certificateProofPath : "Niet beschikbaar"}`);
     lines.push(`- Evaluatie ingevuld: ${yesNo(row.evaluationCompleted)}`);
     lines.push("");
   }
@@ -132,6 +137,7 @@ export function exportParticipantCompletionReportCsv(rows: ParticipantCompletion
     "passed",
     "certificateAvailable",
     "certificateCode",
+    "certificateProofPath",
     "evaluationCompleted",
   ];
 
@@ -145,6 +151,7 @@ export function exportParticipantCompletionReportCsv(rows: ParticipantCompletion
     yesNo(row.passed),
     yesNo(row.certificateAvailable),
     row.certificateCode,
+    row.certificateProofPath,
     yesNo(row.evaluationCompleted),
   ].map(csvEscape).join(","));
 

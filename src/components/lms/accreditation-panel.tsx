@@ -324,6 +324,22 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
             Download Markdown
           </a>
         </div>
+        {completionReport.some((row) => row.certificateId) ? (
+          <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--brand-soft)] p-4">
+            <p className="text-sm font-semibold text-slate-950">Individuele accreditatiebewijzen</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {completionReport.filter((row) => row.certificateId).map((row) => (
+                <a
+                  key={row.certificateId}
+                  href={row.certificateProofPath}
+                  className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-[var(--brand-deep)] shadow-sm"
+                >
+                  {row.participantName} · {row.certificateCode}
+                </a>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <div className="mt-4 grid gap-4 xl:grid-cols-2">
           <textarea
             readOnly

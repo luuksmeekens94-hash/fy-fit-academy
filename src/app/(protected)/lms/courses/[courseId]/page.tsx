@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { startEnrollmentAction } from "@/app/lms-actions";
@@ -153,10 +154,21 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
 
       {certificate ? (
         <section className="card-surface rounded-[32px] p-6">
-          <h2 className="text-xl font-semibold text-slate-950">Certificaat beschikbaar</h2>
-          <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
-            Deze cursus is afgerond op {formatDate(certificate.issuedAt)}. Certificaatcode: {certificate.certificateCode}.
-          </p>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-950">Certificaat/deelnamebewijs beschikbaar</h2>
+              <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
+                Deze cursus is afgerond op {formatDate(certificate.issuedAt)}. Certificaatcode: {certificate.certificateCode}.
+                Download opent als printwaardige HTML zodat je via de browser direct als PDF kunt opslaan.
+              </p>
+            </div>
+            <Link
+              href={`/lms/certificates/${certificate.id}/download`}
+              className="rounded-full bg-[var(--brand)] px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
+            >
+              Download certificaat
+            </Link>
+          </div>
         </section>
       ) : null}
 

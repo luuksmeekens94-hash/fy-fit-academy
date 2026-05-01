@@ -4,6 +4,7 @@ import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { calculateCourseProgress, selectLatestPassedAttempt } from "./query-helpers";
 import { buildParticipantCompletionReport } from "./participant-report";
+import type { CertificateEvidenceInput } from "./certificate-evidence";
 import type { ParticipantCompletionReport } from "./participant-report";
 import type { WorkForm } from "@prisma/client";
 import type {
@@ -697,6 +698,72 @@ export const getCertificateForCourseAndUser = cache(
     });
 
     return certificate ? mapCertificateSummary(certificate) : null;
+  }
+);
+
+export const getCertificateEvidence = cache(
+  async (certificateId: string): Promise<CertificateEvidenceInput | null> => {
+    const certificate = await prisma.certificate.findUnique({
+      where: { id: certificateId },
+      include: {
+        user: true,
+        course: true,
+        courseVersion: {
+          include: {
+            assessments: true,
+            evaluationForms: true,
+          },
+        },
+      },
+    });
+
+    if (!certificate) {
+      return null;
+    }
+
+    const [enrollment, attempts, evaluationSubmission] = await Promise.all([
+      prisma.enrollment.findFirst({
+        where: {
+          userId: certificate.userId,
+          courseId: certificate.courseId,
+        },
+        orderBy: { completedAt: "desc" },
+      }),
+      prisma.assessmentAttempt.findMany({
+        where: {
+          userId: certificate.userId,
+          courseVersionId: certificate.courseVersionId,
+          assessmentId: { in: certificate.courseVersion.assessments.map((assessment) => assessment.id) },
+          submittedAt: { not: null },
+        },
+        orderBy: { attemptNumber: "asc" },
+      }),
+      prisma.evaluationSubmission.findFirst({
+        where: {
+          userId: certificate.userId,
+          evaluationFormId: { in: certificate.courseVersion.evaluationForms.map((form) => form.id) },
+        },
+      }),
+    ]);
+
+    return {
+      certificateId: certificate.id,
+      userId: certificate.userId,
+      courseId: certificate.courseId,
+      certificateCode: certificate.certificateCode,
+      participantName: certificate.user.name,
+      professionalRegistrationNumber: certificate.user.professionalRegistrationNumber,
+      courseTitle: certificate.course.title,
+      completedAt: enrollment?.completedAt ?? certificate.issuedAt,
+      issuedAt: certificate.issuedAt,
+      scorePercentage: certificate.scorePercentage,
+      attemptCount: attempts.length,
+      evaluationCompleted: evaluationSubmission !== null,
+      studyLoadMinutes: certificate.studyLoadMinutes ?? certificate.course.studyLoadMinutes,
+      versionNumber: certificate.courseVersion.versionNumber,
+      accreditationRegister: certificate.course.accreditationRegister,
+      accreditationKind: certificate.course.accreditationKind,
+    };
   }
 );
 

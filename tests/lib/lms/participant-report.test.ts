@@ -39,6 +39,8 @@ test("buildParticipantCompletionReport summarizes required accreditation evidenc
   assert.equal(report.passed, true);
   assert.equal(report.certificateAvailable, true);
   assert.equal(report.certificateCode, "CERT-2026-001");
+  assert.equal(report.certificateId, "cert-1");
+  assert.equal(report.certificateProofPath, "/lms/certificates/cert-1/download");
   assert.equal(report.evaluationCompleted, true);
 });
 
@@ -59,6 +61,8 @@ test("buildParticipantCompletionReport handles missing certificate, registration
   assert.equal(report.attemptCount, 0);
   assert.equal(report.passed, false);
   assert.equal(report.certificateAvailable, false);
+  assert.equal(report.certificateId, null);
+  assert.equal(report.certificateProofPath, "Niet beschikbaar");
   assert.equal(report.evaluationCompleted, false);
 });
 
@@ -70,8 +74,8 @@ test("participant report exports markdown and csv for accreditation/audit delive
   assert.match(markdown, /# Deelnemerrapportage LMS/);
   assert.match(markdown, /Lotte Jansen/);
   assert.match(markdown, /Evaluatie ingevuld: ja/);
-  assert.match(csv, /participantName,professionalRegistrationNumber,courseTitle,completedAt,bestScorePercentage,attemptCount,passed,certificateAvailable,certificateCode,evaluationCompleted/);
-  assert.match(csv, /Lotte Jansen,KRF-12345,Fy-Fit consultvoering basis,2026-04-30,80,2,ja,ja,CERT-2026-001,ja/);
+  assert.match(csv, /participantName,professionalRegistrationNumber,courseTitle,completedAt,bestScorePercentage,attemptCount,passed,certificateAvailable,certificateCode,certificateProofPath,evaluationCompleted/);
+  assert.match(csv, /Lotte Jansen,KRF-12345,Fy-Fit consultvoering basis,2026-04-30,80,2,ja,ja,CERT-2026-001,\/lms\/certificates\/cert-1\/download,ja/);
 });
 
 test("normalizeProfessionalRegistrationNumber stores compact BIG KRF SKF values or null", () => {
