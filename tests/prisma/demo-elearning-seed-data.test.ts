@@ -15,6 +15,10 @@ test("buildDemoElearningSeedSpec returns a removable temporary demo course for t
   assert.equal(spec.course.status, "PUBLISHED");
   assert.equal(spec.course.isMandatory, false);
   assert.equal(spec.version.isActive, true);
+  assert.equal(spec.version.versionNumber, "demo-12C.1");
+  assert.equal(spec.modules.length, 3);
+  assert.equal(spec.course.studyLoadMinutes, 210);
+  assert.equal(spec.course.requiredQuestionCount, 10);
   assert.equal(spec.cleanup.assetRoot, DEMO_ELEARNING_ASSET_ROOT);
 });
 
@@ -72,24 +76,48 @@ test("demo seed includes Sprint 12B module 2 with BPS system lessons, images and
   assert.match(networkLesson.content, /module-2\/images\/image1\.png/);
 });
 
-test("demo modules 1 and 2 assessment follows accreditation rules and links every question to objectives", () => {
+test("demo seed includes Sprint 12C module 3 with summary, reflection and evaluation close-out", () => {
+  const spec = buildDemoElearningSeedSpec();
+  const module3 = spec.modules.find((module) => module.key === "module-3-samenvatting-afsluiting");
+
+  assert.ok(module3);
+  assert.equal(module3.title, "Module 3: Samenvatting en afsluiting");
+  assert.equal(module3.order, 3);
+  assert.equal(module3.workForms.includes("TEKST"), true);
+  assert.equal(module3.workForms.includes("REFLECTIE"), true);
+  assert.equal(module3.workForms.includes("TOETS"), false);
+  assert.equal(spec.lessons.filter((lesson) => module3.lessonSlugs.includes(lesson.slug)).length, module3.lessonSlugs.length);
+
+  const reflectionLesson = spec.lessons.find((lesson) => lesson.slug === "module-3-reflectie-praktijktransfer");
+  assert.ok(reflectionLesson);
+  assert.match(reflectionLesson.content, /grillig verliep/i);
+  assert.match(reflectionLesson.content, /dagelijkse praktijk/i);
+});
+
+test("demo has a separate assessment after each inhoudelijke module", () => {
   const spec = buildDemoElearningSeedSpec();
   const objectiveCodes = new Set(spec.learningObjectives.map((objective) => objective.code));
 
-  assert.equal(spec.assessment.passPercentage, 70);
-  assert.equal(spec.assessment.maxAttempts, 3);
-  assert.equal(spec.assessment.shuffleQuestions, true);
-  assert.equal(spec.assessment.shuffleOptions, true);
-  assert.equal(spec.assessment.lessonSlug, "module-2-toets-bps-dynamisch-systeem");
-  assert.equal(spec.assessment.questions.length, 10);
-  assert.equal(spec.assessment.questions.filter((question) => question.key.startsWith("m2-")).length, 5);
-  assert.equal(
-    spec.assessment.questions.every(
-      (question) =>
-        question.learningObjectiveCodes.length > 0 &&
-        question.learningObjectiveCodes.every((code) => objectiveCodes.has(code)) &&
-        question.options.some((option) => option.isCorrect)
-    ),
-    true
+  assert.equal(spec.assessments.length, 2);
+  assert.deepEqual(
+    spec.assessments.map((assessment) => assessment.lessonSlug),
+    ["module-1-toets-complexiteit", "module-2-toets-bps-dynamisch-systeem"]
   );
+
+  for (const assessment of spec.assessments) {
+    assert.equal(assessment.passPercentage, 70);
+    assert.equal(assessment.maxAttempts, 3);
+    assert.equal(assessment.shuffleQuestions, true);
+    assert.equal(assessment.shuffleOptions, true);
+    assert.equal(assessment.questions.length, 5);
+    assert.equal(
+      assessment.questions.every(
+        (question) =>
+          question.learningObjectiveCodes.length > 0 &&
+          question.learningObjectiveCodes.every((code) => objectiveCodes.has(code)) &&
+          question.options.some((option) => option.isCorrect)
+      ),
+      true
+    );
+  }
 });

@@ -280,66 +280,68 @@ async function main() {
   );
 
   const lessonsBySlug = new Map(createdLessons.map((lesson) => [lesson.slug, lesson]));
-  const assessmentLesson = lessonsBySlug.get(demoSeed.assessment.lessonSlug);
-  if (!assessmentLesson) {
-    throw new Error(`Assessment lesson not found: ${demoSeed.assessment.lessonSlug}`);
-  }
-
-  const createdAssessment = await prisma.assessment.create({
-    data: {
-      courseVersionId: activeVersion.id,
-      lessonId: assessmentLesson.id,
-      title: demoSeed.assessment.title,
-      description: demoSeed.assessment.description,
-      passPercentage: demoSeed.assessment.passPercentage,
-      maxAttempts: demoSeed.assessment.maxAttempts,
-      timeLimitMinutes: demoSeed.assessment.timeLimitMinutes,
-      shuffleQuestions: demoSeed.assessment.shuffleQuestions,
-      shuffleOptions: demoSeed.assessment.shuffleOptions,
-      showFeedbackImmediately: demoSeed.assessment.showFeedbackImmediately,
-      isRequiredForCompletion: demoSeed.assessment.isRequiredForCompletion,
-      questions: {
-        create: demoSeed.assessment.questions.map((question, index) => ({
-          type: question.type,
-          prompt: question.prompt,
-          explanation: question.explanation,
-          order: index + 1,
-          points: question.points,
-          options: {
-            create: question.options.map((option, optionIndex) => ({
-              label: option.label,
-              isCorrect: option.isCorrect,
-              order: optionIndex + 1,
-            })),
-          },
-        })),
-      },
-    },
-    include: {
-      questions: {
-        orderBy: { order: "asc" },
-      },
-    },
-  });
-
-  for (const [index, questionSpec] of demoSeed.assessment.questions.entries()) {
-    const createdQuestion = createdAssessment.questions[index];
-    if (!createdQuestion) {
-      continue;
+  for (const assessmentSpec of demoSeed.assessments) {
+    const assessmentLesson = lessonsBySlug.get(assessmentSpec.lessonSlug);
+    if (!assessmentLesson) {
+      throw new Error(`Assessment lesson not found: ${assessmentSpec.lessonSlug}`);
     }
 
-    await prisma.questionLearningObjective.createMany({
-      data: questionSpec.learningObjectiveCodes.map((code) => {
-        const objective = objectivesByCode.get(code);
-        if (!objective) {
-          throw new Error(`Learning objective not found for code ${code}`);
-        }
-        return {
-          questionId: createdQuestion.id,
-          learningObjectiveId: objective.id,
-        };
-      }),
+    const createdAssessment = await prisma.assessment.create({
+      data: {
+        courseVersionId: activeVersion.id,
+        lessonId: assessmentLesson.id,
+        title: assessmentSpec.title,
+        description: assessmentSpec.description,
+        passPercentage: assessmentSpec.passPercentage,
+        maxAttempts: assessmentSpec.maxAttempts,
+        timeLimitMinutes: assessmentSpec.timeLimitMinutes,
+        shuffleQuestions: assessmentSpec.shuffleQuestions,
+        shuffleOptions: assessmentSpec.shuffleOptions,
+        showFeedbackImmediately: assessmentSpec.showFeedbackImmediately,
+        isRequiredForCompletion: assessmentSpec.isRequiredForCompletion,
+        questions: {
+          create: assessmentSpec.questions.map((question, index) => ({
+            type: question.type,
+            prompt: question.prompt,
+            explanation: question.explanation,
+            order: index + 1,
+            points: question.points,
+            options: {
+              create: question.options.map((option, optionIndex) => ({
+                label: option.label,
+                isCorrect: option.isCorrect,
+                order: optionIndex + 1,
+              })),
+            },
+          })),
+        },
+      },
+      include: {
+        questions: {
+          orderBy: { order: "asc" },
+        },
+      },
     });
+
+    for (const [index, questionSpec] of assessmentSpec.questions.entries()) {
+      const createdQuestion = createdAssessment.questions[index];
+      if (!createdQuestion) {
+        continue;
+      }
+
+      await prisma.questionLearningObjective.createMany({
+        data: questionSpec.learningObjectiveCodes.map((code) => {
+          const objective = objectivesByCode.get(code);
+          if (!objective) {
+            throw new Error(`Learning objective not found for code ${code}`);
+          }
+          return {
+            questionId: createdQuestion.id,
+            learningObjectiveId: objective.id,
+          };
+        }),
+      });
+    }
   }
 
   await prisma.courseChangeLog.create({
@@ -356,7 +358,10 @@ async function main() {
         assetRoot: demoSeed.cleanup.assetRoot,
         moduleCount: demoSeed.modules.length,
         lessonCount: demoSeed.lessons.length,
-        questionCount: demoSeed.assessment.questions.length,
+        questionCount: demoSeed.assessments.reduce(
+          (total, assessment) => total + assessment.questions.length,
+          0
+        ),
       },
     },
   });

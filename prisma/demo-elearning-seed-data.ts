@@ -26,6 +26,20 @@ export type DemoElearningModuleSpec = LmsSeedModuleSpec & {
   assetPaths: string[];
 };
 
+export type DemoElearningAssessmentSpec = {
+  title: string;
+  description: string;
+  passPercentage: number;
+  maxAttempts: number;
+  timeLimitMinutes: number;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
+  showFeedbackImmediately: boolean;
+  isRequiredForCompletion: boolean;
+  lessonSlug: string;
+  questions: LmsSeedQuestionSpec[];
+};
+
 export type DemoElearningSeedSpec = {
   cleanup: {
     courseSlug: string;
@@ -68,19 +82,7 @@ export type DemoElearningSeedSpec = {
   competencyReferences: LmsSeedCompetencyReferenceSpec[];
   evaluationForm: LmsSeedEvaluationFormSpec;
   lessons: DemoElearningLessonSpec[];
-  assessment: {
-    title: string;
-    description: string;
-    passPercentage: number;
-    maxAttempts: number;
-    timeLimitMinutes: number;
-    shuffleQuestions: boolean;
-    shuffleOptions: boolean;
-    showFeedbackImmediately: boolean;
-    isRequiredForCompletion: boolean;
-    lessonSlug: string;
-    questions: LmsSeedQuestionSpec[];
-  };
+  assessments: DemoElearningAssessmentSpec[];
 };
 
 const module1AssetRoot = `${DEMO_ELEARNING_ASSET_ROOT}/module-1`;
@@ -100,7 +102,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         "Tijdelijke voorbeeld-e-learning op basis van aangeleverd geaccrediteerd materiaal. Bedoeld als demo voor praktijkhouders; later schoon te verwijderen of te vervangen door eigen Fy-Fit content.",
       audience: "Praktijkhouders, reviewers en Fy-Fit teamleden die de LMS-demo beoordelen",
       learningObjectives:
-        "De deelnemer herkent complexiteit in manueeltherapeutische casuïstiek, redeneert systemisch en past interventies iteratief aan op basis van respons en context. De deelnemer past het biopsychosociaal model toe als dynamisch netwerk waarin biologische, psychologische en sociale factoren elkaar voortdurend beïnvloeden.",
+        "De deelnemer herkent complexiteit in manueeltherapeutische casuïstiek, redeneert systemisch en past interventies iteratief aan op basis van respons en context. De deelnemer past het biopsychosociaal model toe als dynamisch netwerk waarin biologische, psychologische en sociale factoren elkaar voortdurend beïnvloeden. De deelnemer vat de kernprincipes samen en vertaalt deze naar de eigen dagelijkse praktijk.",
       goal:
         "Inzicht geven in complexiteit binnen de manuele therapie en laten zien hoe een accreditatie-ready e-learning in de Fy-Fit Academy kan worden opgebouwd.",
       focus:
@@ -127,16 +129,16 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
       accreditationKind: "VAKINHOUDELIJK",
       versionDate: "2026-05-01T08:00:00.000Z",
       requiredQuestionCount: 10,
-      studyLoadMinutes: 180,
+      studyLoadMinutes: 210,
       status: "PUBLISHED",
       isMandatory: false,
       publishedAt: "2026-05-01T08:00:00.000Z",
       revisionDueAt: "2026-11-01T08:00:00.000Z",
     },
     version: {
-      versionNumber: "demo-12B.1",
+      versionNumber: "demo-12C.1",
       changeSummary:
-        "Sprint 12B: tijdelijke demo-e-learning uitgebreid met Module 2 over het biopsychosociaal model als dynamisch systeem, inclusief afbeeldingen, lessen, reflectiecasus en toetsvragen.",
+        "Sprint 12C: tijdelijke demo-e-learning afgerond met Module 3 voor samenvatting, praktijktransfer en evaluatie, plus modulegebonden toetsmomenten na de inhoudelijke modules.",
       isActive: true,
     },
     modules: [
@@ -193,6 +195,25 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
           `${module2AssetRoot}/images/image1.png`,
           `${module2AssetRoot}/images/image2.png`,
         ],
+      },
+      {
+        key: "module-3-samenvatting-afsluiting",
+        title: "Module 3: Samenvatting en afsluiting",
+        description:
+          "Afsluitende module met samenvatting van de kernprincipes, praktijktransfer en evaluatie-uitnodiging.",
+        introduction:
+          "Je vat de belangrijkste inzichten uit complexiteitsdenken en het BPS-model samen en vertaalt ze naar je dagelijkse praktijk.",
+        summary:
+          "De e-learning laat zien dat klachten en herstel vaak niet-lineair verlopen. De therapeut werkt als gids in een netwerk van invloeden, herkent patronen, stelt hypothesen bij en blijft flexibel handelen.",
+        order: 3,
+        estimatedMinutes: 30,
+        workForms: ["TEKST", "REFLECTIE"],
+        lessonSlugs: [
+          "module-3-samenvatting-kernprincipes",
+          "module-3-reflectie-praktijktransfer",
+          "module-3-afsluiting-evaluatie",
+        ],
+        assetPaths: [],
       },
     ],
     learningObjectives: [
@@ -495,24 +516,58 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Toets: BPS-model als dynamisch systeem",
         description: "Beantwoord de toetsvragen. Norm: 70%, maximaal 3 pogingen.",
         type: "ASSESSMENT",
-        content: "Maak de toetsbank met vragen over Module 1 en Module 2. De toets gebruikt 70% als norm, maximaal 3 pogingen en gerandomiseerde volgorde.",
+        content: "Maak de Module 2-toets. De toets gebruikt 70% als norm, maximaal 3 pogingen en gerandomiseerde volgorde.",
         order: 14,
         isRequired: true,
         estimatedMinutes: 10,
       },
+      {
+        slug: "module-3-samenvatting-kernprincipes",
+        title: "Samenvatting van de kernprincipes",
+        description: "Overzicht van de belangrijkste inzichten uit Module 1 en Module 2.",
+        type: "TEXT",
+        content:
+          "Module 1 liet zien dat klachten niet altijd lineair of voorspelbaar herstellen. Complexe systemen kenmerken zich door emergentie, niet-lineariteit en adaptiviteit. Module 2 verdiepte het biopsychosociaal model als dynamisch netwerk: biologische, psychologische en sociale factoren beïnvloeden elkaar voortdurend. Klinisch redeneren betekent daardoor denken in relaties, patronen en feedback in plaats van losse invuloefeningen.",
+        order: 15,
+        isRequired: true,
+        estimatedMinutes: 10,
+      },
+      {
+        slug: "module-3-reflectie-praktijktransfer",
+        title: "Reflectie: praktijktransfer",
+        description: "Vertaal de inzichten naar je eigen dagelijkse praktijk.",
+        type: "REFLECTION",
+        content:
+          "Denk terug aan een patiënt uit je praktijk waarbij het herstel grillig verliep. Hoe kijk je nu, met de kennis uit deze e-learning, naar de factoren die mogelijk meespeelden? Welke verbanden zie je die je eerder misschien over het hoofd zag? En welk ander handelen zou je nu overwegen in je dagelijkse praktijk?",
+        order: 16,
+        isRequired: true,
+        estimatedMinutes: 10,
+      },
+      {
+        slug: "module-3-afsluiting-evaluatie",
+        title: "Afsluiting en evaluatie",
+        description: "Rond de tijdelijke demo-e-learning af en vul de evaluatie in.",
+        type: "TEXT",
+        content:
+          "Deze afsluitende les markeert het einde van de tijdelijke demo-e-learning. De inhoud is bedoeld om praktijkhouders en reviewers te laten zien hoe een accreditatie-ready leerroute eruit kan zien. Vul na afronding de evaluatie in: algemene indruk, inhoudelijke beoordeling, praktische toepasbaarheid, didactiek, inzicht/bewustwording, verbeterpunten en aanbeveling.",
+        order: 17,
+        isRequired: true,
+        estimatedMinutes: 10,
+      },
     ],
-    assessment: {
-      title: "Kennistoets Modules 1-2: Complexiteit en biopsychosociaal systeemdenken",
-      description: "Toets op complexiteitsdenken, BPS als dynamisch netwerk, patroonherkenning, persoonsgerichte zorg en integrale interventies.",
-      passPercentage: 70,
-      maxAttempts: 3,
-      timeLimitMinutes: 20,
-      shuffleQuestions: true,
-      shuffleOptions: true,
-      showFeedbackImmediately: true,
-      isRequiredForCompletion: true,
-      lessonSlug: "module-2-toets-bps-dynamisch-systeem",
-      questions: [
+    assessments: [
+      {
+        title: "Kennistoets Module 1: Complexiteit in de manuele therapie",
+        description: "Toets na Module 1 op complexiteitsdenken, belichaamd-enactief redeneren, variabiliteit en emergentie.",
+        passPercentage: 70,
+        maxAttempts: 3,
+        timeLimitMinutes: 20,
+        shuffleQuestions: true,
+        shuffleOptions: true,
+        showFeedbackImmediately: true,
+        isRequiredForCompletion: true,
+        lessonSlug: "module-1-toets-complexiteit",
+        questions: [
         {
           key: "m1-q1",
           type: "MULTIPLE_CHOICE",
@@ -589,6 +644,20 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
             { label: "Je voorkomt complexiteit door elk onderdeel apart te behandelen.", isCorrect: false },
           ],
         },
+        ],
+      },
+      {
+        title: "Kennistoets Module 2: Het biopsychosociaal model als dynamisch systeem",
+        description: "Toets na Module 2 op BPS als dynamisch netwerk, patroonherkenning, persoonsgerichte zorg en integrale interventies.",
+        passPercentage: 70,
+        maxAttempts: 3,
+        timeLimitMinutes: 20,
+        shuffleQuestions: true,
+        shuffleOptions: true,
+        showFeedbackImmediately: true,
+        isRequiredForCompletion: true,
+        lessonSlug: "module-2-toets-bps-dynamisch-systeem",
+        questions: [
         {
           key: "m2-q1",
           type: "MULTIPLE_CHOICE",
@@ -669,7 +738,8 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
             { label: "Standaardprotocollen elimineren complexiteit grotendeels.", isCorrect: false },
           ],
         },
-      ],
-    },
+        ],
+      },
+    ],
   };
 }
