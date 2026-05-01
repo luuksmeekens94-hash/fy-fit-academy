@@ -10,6 +10,7 @@ import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
 import { getLearnerLmsRedirectPath } from "@/lib/lms/route-access";
+import { getReviewerPreviewMode } from "@/lib/lms/reviewer-preview";
 import {
   getCertificateForCourseAndUser,
   getCourseDetail,
@@ -60,10 +61,9 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
     notFound();
   }
 
-  const isReviewerPreview = user.role === "REVIEWER";
-  const canPreviewWithoutEnrollment = user.role === "BEHEERDER" || isReviewerPreview;
+  const previewState = getReviewerPreviewMode(user.role, Boolean(enrollment));
 
-  if (!enrollment && !canPreviewWithoutEnrollment) {
+  if (!enrollment && !previewState.canViewWithoutEnrollment) {
     notFound();
   }
 
@@ -78,7 +78,7 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
   const progressEntries = course.activeVersion
     ? await getLessonProgressForVersion(user.id, course.activeVersion.id)
     : [];
-  const participantReport = canPreviewWithoutEnrollment
+  const participantReport = previewState.canViewWithoutEnrollment
     ? await getCourseParticipantCompletionReport(course.id)
     : [];
 
@@ -95,7 +95,7 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
           <div className="space-y-3">
             <div className="flex flex-wrap gap-3">
               <StatusBadge
-                label={enrollment?.status ?? (isReviewerPreview ? "REVIEWER_PREVIEW" : "BEHEER_PREVIEW")}
+                label={enrollment?.status ?? previewState.label}
                 tone={enrollment ? getEnrollmentTone(enrollment.status) : "brand"}
               />
               {course.isMandatory ? <StatusBadge label="Verplicht" tone="brand" /> : null}
@@ -126,6 +126,18 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
         </div>
       </section>
 
+      {previewState.isPreview ? (
+        <section className="rounded-[28px] border border-[var(--brand)] bg-[var(--brand-soft)] p-5">
+          <div className="flex flex-wrap items-center gap-3">
+            <StatusBadge label={previewState.label} tone="brand" />
+            <StatusBadge label="geen datavervuiling" tone="success" />
+          </div>
+          <p className="mt-3 text-sm leading-7 text-[var(--brand-deep)]">
+            Previewmodus actief: je kunt inhoud, leerdoelen, literatuur, toetsopbouw, evaluatie en rapportages bekijken zonder inschrijving, voortgang, toetspogingen, evaluaties of certificaten aan te maken.
+          </p>
+        </section>
+      ) : null}
+
       <section className="grid gap-4 lg:grid-cols-3">
         <StatCard
           label="Lessen"
@@ -144,10 +156,10 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
         />
       </section>
 
-      {canPreviewWithoutEnrollment ? (
+      {previewState.canViewWithoutEnrollment ? (
         <AccreditationPanel
           course={course}
-          mode={isReviewerPreview ? "reviewer" : "beheer"}
+          mode={previewState.mode === "reviewer" ? "reviewer" : "beheer"}
           completionReport={participantReport}
         />
       ) : null}

@@ -17,6 +17,7 @@ import { buildAccreditationChecklist } from "@/lib/lms/accreditation-checklist";
 import { assertAccreditationPublishable } from "@/lib/lms/accreditation-evidence";
 import { issueCertificate } from "@/lib/lms/certificates";
 import { getCourseDetail } from "@/lib/lms/queries";
+import { canMutateLearnerProgress } from "@/lib/lms/reviewer-preview";
 import { isCourseCompleted } from "@/lib/lms/rules";
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -311,6 +312,10 @@ export async function startEnrollmentAction(formData: FormData) {
   const courseId = getString(formData, "courseId");
 
   assert(courseId, "Cursus ontbreekt.");
+  assert(
+    canMutateLearnerProgress(user.role, true),
+    "Reviewer-/beheerpreview mag geen inschrijvingen of voortgang aanmaken."
+  );
 
   await assertCourseAccessibleForUser({
     userId: user.id,
@@ -340,6 +345,10 @@ export async function completeLessonAction(formData: FormData) {
 
   assert(courseId, "Cursus ontbreekt.");
   assert(lessonId, "Les ontbreekt.");
+  assert(
+    canMutateLearnerProgress(user.role, true),
+    "Reviewer-/beheerpreview mag geen lesvoortgang aanmaken."
+  );
 
   await assertCourseAccessibleForUser({
     userId: user.id,
@@ -409,6 +418,10 @@ export async function startAssessmentAttemptAction(formData: FormData) {
 
   assert(courseId, "Cursus ontbreekt.");
   assert(assessmentId, "Toets ontbreekt.");
+  assert(
+    canMutateLearnerProgress(user.role, true),
+    "Reviewer-/beheerpreview mag geen toetspogingen aanmaken."
+  );
 
   await assertCourseAccessibleForUser({
     userId: user.id,
@@ -489,6 +502,10 @@ export async function submitAssessmentAttemptAction(formData: FormData) {
 
   assert(courseId, "Cursus ontbreekt.");
   assert(attemptId, "Toetspoging ontbreekt.");
+  assert(
+    canMutateLearnerProgress(user.role, true),
+    "Reviewer-/beheerpreview mag geen toetsresultaten opslaan."
+  );
 
   await assertCourseAccessibleForUser({
     userId: user.id,

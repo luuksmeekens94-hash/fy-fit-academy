@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
 import { getLearnerLmsRedirectPath } from "@/lib/lms/route-access";
+import { getReviewerPreviewMode } from "@/lib/lms/reviewer-preview";
 import {
   getAssessmentDetail,
   getCourseDetail,
@@ -46,10 +47,9 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
     notFound();
   }
 
-  const isReviewerPreview = user.role === "REVIEWER";
-  const canPreviewWithoutEnrollment = user.role === "BEHEERDER" || isReviewerPreview;
+  const previewState = getReviewerPreviewMode(user.role, Boolean(enrollment));
 
-  if (!enrollment && !canPreviewWithoutEnrollment) {
+  if (!enrollment && !previewState.canViewWithoutEnrollment) {
     notFound();
   }
 
@@ -88,7 +88,11 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
     notFound();
   }
 
-  const canCompleteLesson = Boolean(enrollment) && lesson.type !== "ASSESSMENT" && progress?.status !== "COMPLETED";
+  const canCompleteLesson =
+    previewState.canMutateProgress &&
+    Boolean(enrollment) &&
+    lesson.type !== "ASSESSMENT" &&
+    progress?.status !== "COMPLETED";
 
   return (
     <div className="space-y-6">
@@ -102,7 +106,7 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
         <div className="flex flex-wrap items-center gap-3">
           <StatusBadge label={lesson.type} tone="neutral" />
           <StatusBadge
-            label={enrollment ? progress?.status ?? "NOT_STARTED" : isReviewerPreview ? "REVIEWER_PREVIEW" : "BEHEER_PREVIEW"}
+            label={enrollment ? progress?.status ?? "NOT_STARTED" : previewState.label}
             tone={enrollment ? getProgressTone(progress?.status ?? "NOT_STARTED") : "brand"}
           />
           {lesson.isRequired ? <StatusBadge label="Verplicht" tone="brand" /> : null}
@@ -114,11 +118,23 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
         </div>
       </section>
 
-      {lesson.type === "ASSESSMENT" && assessment && enrollment ? (
+      {previewState.isPreview ? (
+        <section className="rounded-[28px] border border-[var(--brand)] bg-[var(--brand-soft)] p-5">
+          <div className="flex flex-wrap items-center gap-3">
+            <StatusBadge label={previewState.label} tone="brand" />
+            <StatusBadge label="read-only" tone="success" />
+          </div>
+          <p className="mt-3 text-sm leading-7 text-[var(--brand-deep)]">
+            Reviewer-preview actief: deze les kan volledig bekeken worden, maar knoppen voor voortgang, toetspogingen en resultaatopslag zijn uitgeschakeld om rapportages schoon te houden.
+          </p>
+        </section>
+      ) : null}
+
+      {lesson.type === "ASSESSMENT" && assessment && previewState.canMutateProgress ? (
         <AssessmentRunner courseId={courseId} assessment={assessment} initialAttempts={attempts} />
       ) : null}
 
-      {lesson.type === "ASSESSMENT" && assessment && !enrollment ? (
+      {lesson.type === "ASSESSMENT" && assessment && !previewState.canMutateProgress ? (
         <section className="card-surface rounded-[32px] p-6">
           <div className="flex flex-wrap items-center gap-3">
             <StatusBadge label="Toetspreview" tone="brand" />
