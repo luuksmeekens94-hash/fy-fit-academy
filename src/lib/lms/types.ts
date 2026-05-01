@@ -122,11 +122,20 @@ export type CompetencyReferenceSummary = {
   description: string | null;
 };
 
+export type EvaluationQuestionSummary = {
+  id: string;
+  label: string;
+  type: "SCALE_1_5" | "TEXT" | "YES_NO";
+  order: number;
+  isRequired: boolean;
+};
+
 export type EvaluationFormSummary = {
   id: string;
   title: string;
   isRequired: boolean;
   questionCount: number;
+  questions: EvaluationQuestionSummary[];
 };
 
 export type CourseChangeLogSummary = {

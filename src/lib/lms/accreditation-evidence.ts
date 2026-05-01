@@ -1,4 +1,10 @@
 import type { AccreditationChecklistResult } from "./accreditation-checklist";
+import {
+  buildAccreditationDossierPolishChecklist,
+  buildStandardEvaluationQuestionTemplate,
+  formatStandardEvaluationQuestionsForDossier,
+  STANDARD_EVALUATION_FORM_TITLE,
+} from "./accreditation-template.ts";
 import type { CourseDetail } from "./types";
 
 function formatDate(value: Date | null) {
@@ -50,6 +56,30 @@ export function buildAccreditationEvidenceExport(
   const assessments = version?.assessments ?? [];
   const evaluations = version?.evaluationForms ?? [];
   const changeLogs = version?.changeLogs ?? [];
+
+  const standardEvaluationQuestions = buildStandardEvaluationQuestionTemplate();
+  const hasStandardEvaluationTemplate = evaluations.some(
+    (evaluation) =>
+      evaluation.isRequired &&
+      evaluation.questionCount >= standardEvaluationQuestions.length &&
+      (evaluation.title === STANDARD_EVALUATION_FORM_TITLE ||
+        standardEvaluationQuestions.every((templateQuestion) =>
+          evaluation.questions?.some((question) =>
+            question.label.toLowerCase().includes(templateQuestion.domain.split("-")[0]) ||
+            question.label.toLowerCase().includes(templateQuestion.label.split(":")[0].toLowerCase())
+          )
+        )),
+  );
+  const dossierPolish = buildAccreditationDossierPolishChecklist({
+    isPublishable: checklist.isPublishable,
+    hasStandardEvaluationTemplate,
+    hasEvidenceExport: true,
+    hasParticipantReport: true,
+    hasReviewerPreview: Boolean(course.reviewerName),
+    hasCertificateProofDownloads: true,
+    hasChangeLog: changeLogs.length > 0,
+    hasRemainingCertificateEvidenceGaps: false,
+  });
 
   const authorLines = course.authorExperts.length
     ? course.authorExperts.map((expert) =>
@@ -128,6 +158,32 @@ export function buildAccreditationEvidenceExport(
     evaluations.length
       ? bullet(evaluations.map((evaluation) => `${evaluation.title}: ${evaluation.questionCount} vragen, verplicht: ${evaluation.isRequired ? "ja" : "nee"}`))
       : "- Geen evaluatieformulier vastgelegd",
+    "",
+    "### Standaard evaluatievragen Kwaliteitshuis",
+    evaluations.length
+      ? evaluations
+          .map((evaluation) => [
+            `**${evaluation.title}**`,
+            evaluation.questions.length
+              ? formatStandardEvaluationQuestionsForDossier(
+                  evaluation.questions.map((question) => ({
+                    domain: question.label.toLowerCase(),
+                    label: question.label,
+                    type: question.type,
+                    order: question.order,
+                    isRequired: question.isRequired,
+                  })),
+                )
+              : "Geen vraaglabels beschikbaar; pas indien nodig de standaardtemplate toe.",
+          ].join("\n"))
+          .join("\n\n")
+      : formatStandardEvaluationQuestionsForDossier(),
+    "",
+    "## Inzendcheck / polish",
+    bullet([
+      dossierPolish.summary,
+      ...dossierPolish.items.map((entry) => `${entry.status.toUpperCase()} — ${entry.label}: ${entry.message}`),
+    ]),
     "",
     "## Bewijs van afronding / rapportagevelden",
     bullet([

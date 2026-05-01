@@ -172,7 +172,13 @@ function mapCourseDetail(course: {
       id: string;
       title: string;
       isRequired: boolean;
-      questions: { id: string }[];
+      questions: {
+        id: string;
+        label: string;
+        type: "SCALE_1_5" | "TEXT" | "YES_NO";
+        order: number;
+        isRequired: boolean;
+      }[];
     }[];
     changeLogs: {
       id: string;
@@ -279,6 +285,15 @@ function mapCourseDetail(course: {
             title: form.title,
             isRequired: form.isRequired,
             questionCount: form.questions.length,
+            questions: [...form.questions]
+              .sort((left, right) => left.order - right.order)
+              .map((question) => ({
+                id: question.id,
+                label: question.label,
+                type: question.type,
+                order: question.order,
+                isRequired: question.isRequired,
+              })),
           })),
           changeLogs: activeVersion.changeLogs.map((entry) => ({
             id: entry.id,

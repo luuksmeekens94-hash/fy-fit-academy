@@ -15,6 +15,10 @@ import {
 } from "@/lib/lms/accreditation-admin";
 import { buildAccreditationChecklist } from "@/lib/lms/accreditation-checklist";
 import { assertAccreditationPublishable } from "@/lib/lms/accreditation-evidence";
+import {
+  buildStandardEvaluationQuestionTemplate,
+  STANDARD_EVALUATION_FORM_TITLE,
+} from "@/lib/lms/accreditation-template";
 import { issueCertificate } from "@/lib/lms/certificates";
 import { getCourseDetail } from "@/lib/lms/queries";
 import { canMutateLearnerProgress } from "@/lib/lms/reviewer-preview";
@@ -838,6 +842,60 @@ export async function saveAssessmentAccreditationRulesAction(formData: FormData)
         changedById: user.id,
         changeType: "ASSESSMENT_RULES",
         summary: `Toetsnormen bijgewerkt voor ${assessment.title}.`,
+      },
+    });
+  });
+
+  await revalidateLearningPaths({ courseId });
+}
+
+export async function applyStandardEvaluationTemplateAction(formData: FormData) {
+  const user = await requireAccreditationManager();
+  const courseId = getString(formData, "courseId");
+  assert(courseId, "Cursus ontbreekt.");
+
+  const { activeVersion } = await getActiveVersionForManagement(courseId);
+  const questions = buildStandardEvaluationQuestionTemplate();
+
+  await prisma.$transaction(async (tx) => {
+    const existingForm = await tx.evaluationForm.findFirst({
+      where: { courseVersionId: activeVersion.id, title: STANDARD_EVALUATION_FORM_TITLE },
+      select: { id: true },
+    });
+
+    const form = existingForm
+      ? await tx.evaluationForm.update({
+          where: { id: existingForm.id },
+          data: { isRequired: true },
+          select: { id: true },
+        })
+      : await tx.evaluationForm.create({
+          data: {
+            courseVersionId: activeVersion.id,
+            title: STANDARD_EVALUATION_FORM_TITLE,
+            isRequired: true,
+          },
+          select: { id: true },
+        });
+
+    await tx.evaluationQuestion.deleteMany({ where: { evaluationFormId: form.id } });
+    await tx.evaluationQuestion.createMany({
+      data: questions.map((question) => ({
+        evaluationFormId: form.id,
+        label: question.label,
+        type: question.type,
+        order: question.order,
+        isRequired: question.isRequired,
+      })),
+    });
+
+    await tx.courseChangeLog.create({
+      data: {
+        courseId,
+        courseVersionId: activeVersion.id,
+        changedById: user.id,
+        changeType: "EVALUATION_TEMPLATE",
+        summary: "Standaardevaluatie Kwaliteitshuis toegepast.",
       },
     });
   });

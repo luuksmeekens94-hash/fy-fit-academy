@@ -63,7 +63,21 @@ const completeCourse = {
     competencies: [
       { id: "comp-1", moduleId: "module-1", name: "Communicator", framework: "CanMEDS", description: null },
     ],
-    evaluationForms: [{ id: "eval-1", title: "Evaluatie", isRequired: true, questionCount: 7 }],
+    evaluationForms: [{
+      id: "eval-1",
+      title: "Standaardevaluatie Kwaliteitshuis Fysiotherapie",
+      isRequired: true,
+      questionCount: 7,
+      questions: [
+        { id: "eq-1", label: "Niveau/diepgang: de inhoud had voldoende diepgang.", type: "SCALE_1_5" as const, order: 1, isRequired: true },
+        { id: "eq-2", label: "Praktijkrelevantie: de scholing sluit aan bij de praktijk.", type: "SCALE_1_5" as const, order: 2, isRequired: true },
+        { id: "eq-3", label: "Toepasbaarheid: ik kan de kennis direct toepassen.", type: "SCALE_1_5" as const, order: 3, isRequired: true },
+        { id: "eq-4", label: "Kwaliteit leerstof: materiaal en bronnen waren duidelijk.", type: "SCALE_1_5" as const, order: 4, isRequired: true },
+        { id: "eq-5", label: "Toets passend bij leerstof: vragen sloten aan op inhoud.", type: "SCALE_1_5" as const, order: 5, isRequired: true },
+        { id: "eq-6", label: "Geschatte versus werkelijke studielast kwam overeen.", type: "SCALE_1_5" as const, order: 6, isRequired: true },
+        { id: "eq-7", label: "Welke verbeterpunten of opmerkingen heb je?", type: "TEXT" as const, order: 7, isRequired: true },
+      ],
+    }],
     changeLogs: [{ id: "log-1", changedAt: new Date("2026-04-30T00:00:00.000Z"), changeType: "PUBLISHED", summary: "Accreditatieversie ingericht.", changedByName: "Sjoerd" }],
     lessons: [{ id: "lesson-1", moduleId: "module-1", title: "Intro", slug: "intro", type: "TEXT" as const, estimatedMinutes: 20, isRequired: true, order: 1 }],
     assessments: [
@@ -108,6 +122,10 @@ test("buildAccreditationEvidenceExport renders a Kwaliteitshuis-ready markdown d
   assert.match(dossier, /70% norm/);
   assert.match(dossier, /max\. 3 pogingen/);
   assert.match(dossier, /Reviewer: Accreditatiecommissie Reviewer/);
+  assert.match(dossier, /Standaard evaluatievragen Kwaliteitshuis/);
+  assert.match(dossier, /Niveau\/diepgang/);
+  assert.match(dossier, /Inzendcheck \/ polish/);
+  assert.match(dossier, /Inzendklaar/);
   assert.match(dossier, /Wijzigingslog/);
 });
 

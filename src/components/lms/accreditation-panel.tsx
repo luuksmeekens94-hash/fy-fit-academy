@@ -1,4 +1,5 @@
 import {
+  applyStandardEvaluationTemplateAction,
   publishCourseAccreditationReadyAction,
   saveAssessmentAccreditationRulesAction,
   saveCourseAccreditationMetadataAction,
@@ -7,6 +8,11 @@ import {
 import { StatusBadge } from "@/components/status-badge";
 import { buildAccreditationChecklist } from "@/lib/lms/accreditation-checklist";
 import { buildAccreditationEvidenceExport } from "@/lib/lms/accreditation-evidence";
+import {
+  buildAccreditationDossierPolishChecklist,
+  buildStandardEvaluationQuestionTemplate,
+  STANDARD_EVALUATION_FORM_TITLE,
+} from "@/lib/lms/accreditation-template";
 import {
   exportParticipantCompletionReportCsv,
   exportParticipantCompletionReportMarkdown,
@@ -139,6 +145,20 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
   const assessments = course.activeVersion?.assessments ?? [];
   const evaluationForms = course.activeVersion?.evaluationForms ?? [];
   const changeLogs = course.activeVersion?.changeLogs ?? [];
+  const standardEvaluationQuestions = buildStandardEvaluationQuestionTemplate();
+  const hasStandardEvaluationTemplate = evaluationForms.some(
+    (form) => form.title === STANDARD_EVALUATION_FORM_TITLE && form.isRequired && form.questionCount >= standardEvaluationQuestions.length,
+  );
+  const dossierPolish = buildAccreditationDossierPolishChecklist({
+    isPublishable: checklist.isPublishable,
+    hasStandardEvaluationTemplate,
+    hasEvidenceExport: true,
+    hasParticipantReport: true,
+    hasReviewerPreview: Boolean(course.reviewerName),
+    hasCertificateProofDownloads: completionReport.length === 0 || completionReport.some((row) => row.certificateId),
+    hasChangeLog: changeLogs.length > 0,
+    hasRemainingCertificateEvidenceGaps: completionReport.some((row) => row.certificateAvailable && row.professionalRegistrationNumber === "Niet vastgelegd"),
+  });
   const evidenceExport = buildAccreditationEvidenceExport(course, checklist);
   const participantReportMarkdown = exportParticipantCompletionReportMarkdown(completionReport);
   const participantReportCsv = exportParticipantCompletionReportCsv(completionReport);
@@ -195,6 +215,37 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
               Nog {checklist.criticalOpenCount} kritieke blokkade(s). Los deze op voordat de e-learning live mag.
             </p>
           ) : null}
+        </div>
+      ) : null}
+
+      {mode === "beheer" ? (
+        <div className="mt-6 rounded-[28px] border border-[var(--border)] bg-white/85 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-950">Sprint 11 inzendcheck</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+                Laatste dossier-polish vóór indienen: standaardevaluatie, export, reviewer-preview, certificaatbewijs en wijzigingslog.
+              </p>
+              <p className="mt-2 text-sm font-semibold text-[var(--brand-deep)]">{dossierPolish.summary}</p>
+            </div>
+            <form action={applyStandardEvaluationTemplateAction}>
+              <input type="hidden" name="courseId" value={course.id} />
+              <button type="submit" className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white">
+                Pas standaardevaluatie toe
+              </button>
+            </form>
+          </div>
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {dossierPolish.items.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-[var(--border)] bg-white p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-950">{item.label}</p>
+                  <StatusBadge label={item.status} tone={getChecklistTone(item.status)} />
+                </div>
+                <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{item.message}</p>
+              </div>
+            ))}
+          </div>
         </div>
       ) : null}
 
@@ -404,6 +455,13 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
               <div key={form.id} className="rounded-2xl bg-white/85 p-4 text-sm leading-6 text-[var(--ink-soft)]">
                 <p className="font-semibold text-slate-950">{form.title}</p>
                 <p>{form.questionCount} evaluatievragen • verplicht: {form.isRequired ? "ja" : "nee"}</p>
+                {form.questions.length ? (
+                  <ol className="mt-3 list-decimal space-y-1 pl-5 text-xs leading-5 text-[var(--ink-soft)]">
+                    {form.questions.map((question) => (
+                      <li key={question.id}>{question.label}</li>
+                    ))}
+                  </ol>
+                ) : null}
               </div>
             ))}
             {!assessments.length && !evaluationForms.length ? <p className="text-sm text-[var(--ink-soft)]">Nog geen toets/evaluatie vastgelegd.</p> : null}
