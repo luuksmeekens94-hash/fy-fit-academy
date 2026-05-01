@@ -46,7 +46,33 @@ test("demo seed includes Sprint 12A module 1 with goal, focus, objectives, video
   ]);
 });
 
-test("demo module 1 assessment follows accreditation rules and links every question to objectives", () => {
+test("demo seed includes Sprint 12B module 2 with BPS system lessons, images and objectives", () => {
+  const spec = buildDemoElearningSeedSpec();
+  const module2 = spec.modules.find((module) => module.key === "module-2-bps-dynamisch-systeem");
+
+  assert.ok(module2);
+  assert.equal(module2.title, "Module 2: Het biopsychosociaal model als dynamisch systeem");
+  assert.equal(module2.order, 2);
+  assert.equal(module2.workForms.includes("TEKST"), true);
+  assert.equal(module2.workForms.includes("CASUS"), true);
+  assert.equal(module2.workForms.includes("REFLECTIE"), true);
+  assert.equal(module2.workForms.includes("TOETS"), true);
+
+  assert.equal(spec.learningObjectives.filter((objective) => objective.moduleKey === module2.key).length, 6);
+  assert.equal(spec.lessons.filter((lesson) => module2.lessonSlugs.includes(lesson.slug)).length, module2.lessonSlugs.length);
+
+  assert.deepEqual(module2.assetPaths, [
+    `${DEMO_ELEARNING_ASSET_ROOT}/module-2/images/image1.png`,
+    `${DEMO_ELEARNING_ASSET_ROOT}/module-2/images/image2.png`,
+  ]);
+
+  const networkLesson = spec.lessons.find((lesson) => lesson.slug === "module-2-bps-dynamisch-netwerk");
+  assert.ok(networkLesson);
+  assert.match(networkLesson.content, /biopsychosociaal model als dynamisch netwerk/i);
+  assert.match(networkLesson.content, /module-2\/images\/image1\.png/);
+});
+
+test("demo modules 1 and 2 assessment follows accreditation rules and links every question to objectives", () => {
   const spec = buildDemoElearningSeedSpec();
   const objectiveCodes = new Set(spec.learningObjectives.map((objective) => objective.code));
 
@@ -54,7 +80,9 @@ test("demo module 1 assessment follows accreditation rules and links every quest
   assert.equal(spec.assessment.maxAttempts, 3);
   assert.equal(spec.assessment.shuffleQuestions, true);
   assert.equal(spec.assessment.shuffleOptions, true);
-  assert.equal(spec.assessment.questions.length, 5);
+  assert.equal(spec.assessment.lessonSlug, "module-2-toets-bps-dynamisch-systeem");
+  assert.equal(spec.assessment.questions.length, 10);
+  assert.equal(spec.assessment.questions.filter((question) => question.key.startsWith("m2-")).length, 5);
   assert.equal(
     spec.assessment.questions.every(
       (question) =>
