@@ -262,11 +262,17 @@ export type CertificateSummary = {
   id: string;
   courseId: string;
   courseTitle: string;
+  participantName: string | null;
+  registrationNumber: string | null;
+  completedAt: Date | null;
   issuedAt: Date;
   scorePercentage: number | null;
   studyLoadMinutes: number | null;
+  attemptCount: number | null;
+  evaluationCompleted: boolean;
   certificateCode: string;
   versionNumber: string;
+  accreditationRegister: string | null;
 };
 
 // ─── Team rapportage ──────────────────────────────────────────────────────────

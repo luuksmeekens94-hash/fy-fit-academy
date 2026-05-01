@@ -596,15 +596,24 @@ model CourseChangeLog {
 }
 
 model Certificate {
-  id               String        @id @default(cuid())
-  userId           String
-  courseId         String
-  courseVersionId  String
-  issuedAt         DateTime      @default(now())
-  scorePercentage  Float?
-  studyLoadMinutes Int?
-  certificateCode  String        @unique @default(cuid())
-  user             User          @relation("CertificateUser", fields: [userId], references: [id])
-  course           Course        @relation(fields: [courseId], references: [id])
-  courseVersion    CourseVersion @relation(fields: [courseVersionId], references: [id])
+  id                            String             @id @default(cuid())
+  userId                        String
+  courseId                      String
+  courseVersionId               String
+  issuedAt                      DateTime           @default(now())
+  scorePercentage               Float?
+  studyLoadMinutes              Int?
+  certificateCode               String             @unique @default(cuid())
+  participantName               String?
+  registrationNumber            String?
+  courseTitle                   String?
+  completedAt                   DateTime?
+  attemptCount                  Int?
+  evaluationCompleted           Boolean            @default(false)
+  courseVersionNumber           String?
+  accreditationRegisterSnapshot String?
+  accreditationKindSnapshot     AccreditationKind?
+  user                          User               @relation("CertificateUser", fields: [userId], references: [id])
+  course                        Course             @relation(fields: [courseId], references: [id])
+  courseVersion                 CourseVersion      @relation(fields: [courseVersionId], references: [id])
 }

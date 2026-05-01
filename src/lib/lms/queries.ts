@@ -72,18 +72,32 @@ function mapCertificateSummary(certificate: {
   scorePercentage: number | null;
   studyLoadMinutes: number | null;
   certificateCode: string;
-  course: { title: string };
+  participantName: string | null;
+  registrationNumber: string | null;
+  courseTitle: string | null;
+  completedAt: Date | null;
+  attemptCount: number | null;
+  evaluationCompleted: boolean;
+  courseVersionNumber: string | null;
+  accreditationRegisterSnapshot: string | null;
+  course: { title: string; accreditationRegister: string | null };
   courseVersion: { versionNumber: string };
 }): CertificateSummary {
   return {
     id: certificate.id,
     courseId: certificate.courseId,
-    courseTitle: certificate.course.title,
+    courseTitle: certificate.courseTitle ?? certificate.course.title,
+    participantName: certificate.participantName,
+    registrationNumber: certificate.registrationNumber,
+    completedAt: certificate.completedAt,
     issuedAt: certificate.issuedAt,
     scorePercentage: certificate.scorePercentage,
     studyLoadMinutes: certificate.studyLoadMinutes,
+    attemptCount: certificate.attemptCount,
+    evaluationCompleted: certificate.evaluationCompleted,
     certificateCode: certificate.certificateCode,
-    versionNumber: certificate.courseVersion.versionNumber,
+    versionNumber: certificate.courseVersionNumber ?? certificate.courseVersion.versionNumber,
+    accreditationRegister: certificate.accreditationRegisterSnapshot ?? certificate.course.accreditationRegister,
   };
 }
 
@@ -751,18 +765,20 @@ export const getCertificateEvidence = cache(
       userId: certificate.userId,
       courseId: certificate.courseId,
       certificateCode: certificate.certificateCode,
-      participantName: certificate.user.name,
-      professionalRegistrationNumber: certificate.user.professionalRegistrationNumber,
-      courseTitle: certificate.course.title,
-      completedAt: enrollment?.completedAt ?? certificate.issuedAt,
+      participantName: certificate.participantName ?? certificate.user.name,
+      professionalRegistrationNumber:
+        certificate.registrationNumber ?? certificate.user.professionalRegistrationNumber,
+      courseTitle: certificate.courseTitle ?? certificate.course.title,
+      completedAt: certificate.completedAt ?? enrollment?.completedAt ?? certificate.issuedAt,
       issuedAt: certificate.issuedAt,
       scorePercentage: certificate.scorePercentage,
-      attemptCount: attempts.length,
-      evaluationCompleted: evaluationSubmission !== null,
+      attemptCount: certificate.attemptCount ?? attempts.length,
+      evaluationCompleted: certificate.evaluationCompleted || evaluationSubmission !== null,
       studyLoadMinutes: certificate.studyLoadMinutes ?? certificate.course.studyLoadMinutes,
-      versionNumber: certificate.courseVersion.versionNumber,
-      accreditationRegister: certificate.course.accreditationRegister,
-      accreditationKind: certificate.course.accreditationKind,
+      versionNumber: certificate.courseVersionNumber ?? certificate.courseVersion.versionNumber,
+      accreditationRegister:
+        certificate.accreditationRegisterSnapshot ?? certificate.course.accreditationRegister,
+      accreditationKind: certificate.accreditationKindSnapshot ?? certificate.course.accreditationKind,
     };
   }
 );

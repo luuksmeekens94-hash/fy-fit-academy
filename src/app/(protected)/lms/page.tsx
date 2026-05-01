@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { CourseCard } from "@/components/lms/course-card";
@@ -62,11 +63,18 @@ export default async function LmsOverviewPage() {
       )}
 
       <section className="card-surface rounded-[32px] p-6">
-        <h2 className="text-xl font-semibold text-slate-950">Korte stand van zaken</h2>
-        <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
-          Je hebt op dit moment {completedCount} cursus{completedCount === 1 ? "" : "sen"} afgerond.
-          De eerste medewerkerflow van het LMS is hiermee zichtbaar; toetsafname en certificaatweergave worden in de volgende stap verder aangesloten op de UI.
-        </p>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-950">Korte stand van zaken</h2>
+            <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
+              Je hebt op dit moment {completedCount} cursus{completedCount === 1 ? "" : "sen"} afgerond.
+              Je certificaten staan in een apart archief en zijn daar direct print-/PDF-waardig te downloaden.
+            </p>
+          </div>
+          <Link className="btn-primary shrink-0" href="/lms/certificates">
+            Mijn certificaten
+          </Link>
+        </div>
       </section>
     </div>
   );
