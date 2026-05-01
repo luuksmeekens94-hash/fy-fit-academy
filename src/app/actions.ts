@@ -11,6 +11,7 @@ import { clearSession, createSession, requireRole, requireUser } from "@/lib/aut
 import { getAuthUserByEmail, getUserById } from "@/lib/data";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
+import { backfillCertificateSnapshots } from "@/lib/lms/certificates";
 import { normalizeProfessionalRegistrationNumber } from "@/lib/lms/participant-report";
 
 function getString(formData: FormData, key: string) {
@@ -319,6 +320,13 @@ export async function saveMyProfessionalRegistrationAction(formData: FormData) {
 
   revalidatePath("/mijn-gegevens");
   revalidatePath("/lms");
+}
+
+export async function backfillCertificateSnapshotsAction() {
+  await requireRole([Role.BEHEERDER]);
+  await backfillCertificateSnapshots();
+  revalidatePath("/admin");
+  revalidatePath("/lms/certificates");
 }
 
 export async function saveCategoryAction(formData: FormData) {

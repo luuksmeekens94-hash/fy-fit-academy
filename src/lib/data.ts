@@ -5,6 +5,7 @@ import { cache } from "react";
 import { ModulePublicationStatus, type Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { buildCertificateEvidenceAudit } from "@/lib/lms/certificate-backfill";
 import type {
   AcademyModule,
   Category,
@@ -450,6 +451,45 @@ export const getTeamMembers = cache(async (teamleaderId: string) => {
   });
 
   return members.map(mapUser);
+});
+
+export const getCertificateEvidenceAdminAudit = cache(async () => {
+  const certificates = await prisma.certificate.findMany({
+    select: {
+      id: true,
+      participantName: true,
+      registrationNumber: true,
+      courseTitle: true,
+      completedAt: true,
+      attemptCount: true,
+      evaluationCompleted: true,
+      courseVersionNumber: true,
+      accreditationRegisterSnapshot: true,
+      accreditationKindSnapshot: true,
+      issuedAt: true,
+      certificateCode: true,
+      user: { select: { name: true } },
+      course: { select: { title: true } },
+    },
+    orderBy: { issuedAt: "desc" },
+  });
+
+  const audit = buildCertificateEvidenceAudit(certificates);
+
+  return {
+    ...audit,
+    items: audit.items.map((item) => {
+      const certificate = certificates.find((entry) => entry.id === item.certificateId);
+
+      return {
+        ...item,
+        certificateCode: certificate?.certificateCode ?? item.certificateId,
+        participantName: certificate?.participantName ?? certificate?.user.name ?? "Onbekende deelnemer",
+        courseTitle: certificate?.courseTitle ?? certificate?.course.title ?? "Onbekende e-learning",
+        issuedAt: certificate?.issuedAt ?? null,
+      };
+    }),
+  };
 });
 
 export async function getAdminOverview() {

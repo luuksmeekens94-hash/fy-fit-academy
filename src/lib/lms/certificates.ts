@@ -3,10 +3,11 @@
 import { prisma } from "@/lib/prisma";
 import { buildCertificateSnapshot } from "./certificate-snapshot";
 
-async function buildCertificateSnapshotForUser(params: {
+export async function buildCertificateSnapshotForUser(params: {
   userId: string;
   courseId: string;
   courseVersionId: string;
+  completedAtFallback?: Date;
 }) {
   const [user, course, courseVersion, enrollment, attempts, evaluationSubmissions] = await Promise.all([
     prisma.user.findUnique({
@@ -58,7 +59,7 @@ async function buildCertificateSnapshotForUser(params: {
     participantName: user.name,
     professionalRegistrationNumber: user.professionalRegistrationNumber,
     courseTitle: course.title,
-    completedAt: enrollment?.completedAt ?? new Date(),
+    completedAt: enrollment?.completedAt ?? params.completedAtFallback ?? new Date(),
     attemptCount: attempts.length,
     evaluationCompleted: courseVersion.evaluationForms.length === 0 || evaluationSubmissions.length > 0,
     versionNumber: courseVersion.versionNumber,
@@ -88,7 +89,17 @@ export async function issueCertificate(params: {
   });
 
   if (existing) {
-    if (snapshot && (!existing.participantName || !existing.courseTitle || existing.attemptCount === null)) {
+    if (
+      snapshot &&
+      (!existing.participantName ||
+        !existing.registrationNumber ||
+        !existing.courseTitle ||
+        existing.completedAt === null ||
+        existing.attemptCount === null ||
+        !existing.courseVersionNumber ||
+        !existing.accreditationRegisterSnapshot ||
+        existing.accreditationKindSnapshot === null)
+    ) {
       return prisma.certificate.update({
         where: { id: existing.id },
         data: snapshot,
@@ -108,4 +119,54 @@ export async function issueCertificate(params: {
       ...(snapshot ?? {}),
     },
   });
+}
+
+export async function backfillCertificateSnapshots(certificateIds?: string[]) {
+  const certificates = await prisma.certificate.findMany({
+    where: certificateIds?.length ? { id: { in: certificateIds } } : undefined,
+    orderBy: { issuedAt: "asc" },
+  });
+
+  let scanned = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (const certificate of certificates) {
+    scanned += 1;
+
+    const needsBackfill =
+      !certificate.participantName ||
+      !certificate.registrationNumber ||
+      !certificate.courseTitle ||
+      certificate.completedAt === null ||
+      certificate.attemptCount === null ||
+      !certificate.courseVersionNumber ||
+      !certificate.accreditationRegisterSnapshot ||
+      certificate.accreditationKindSnapshot === null;
+
+    if (!needsBackfill) {
+      skipped += 1;
+      continue;
+    }
+
+    const snapshot = await buildCertificateSnapshotForUser({
+      userId: certificate.userId,
+      courseId: certificate.courseId,
+      courseVersionId: certificate.courseVersionId,
+      completedAtFallback: certificate.issuedAt,
+    });
+
+    if (!snapshot) {
+      skipped += 1;
+      continue;
+    }
+
+    await prisma.certificate.update({
+      where: { id: certificate.id },
+      data: snapshot,
+    });
+    updated += 1;
+  }
+
+  return { scanned, updated, skipped };
 }

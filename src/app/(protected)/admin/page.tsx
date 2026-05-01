@@ -1,4 +1,5 @@
 import {
+  backfillCertificateSnapshotsAction,
   deactivateUserAction,
   deleteCategoryAction,
   deleteDocumentAction,
@@ -14,7 +15,7 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth";
-import { getAdminOverview, listActiveUsers } from "@/lib/data";
+import { getAdminOverview, getCertificateEvidenceAdminAudit, listActiveUsers } from "@/lib/data";
 
 function formatModuleSections(
   sections: Array<{ order: number; title: string; type: string; content: string }>,
@@ -42,9 +43,25 @@ function formatPathSteps(
     .join("\n");
 }
 
+function formatAdminDate(value: Date | null) {
+  if (!value) {
+    return "Niet vastgelegd";
+  }
+
+  return new Intl.DateTimeFormat("nl-NL", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(value);
+}
+
 export default async function AdminPage() {
   await requireRole(["BEHEERDER"]);
-  const [overview, activeUsers] = await Promise.all([getAdminOverview(), listActiveUsers()]);
+  const [overview, activeUsers, certificateAudit] = await Promise.all([
+    getAdminOverview(),
+    listActiveUsers(),
+    getCertificateEvidenceAdminAudit(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -70,6 +87,76 @@ export default async function AdminPage() {
             <p className="mt-5 text-4xl font-semibold text-slate-950">{metric.value}</p>
           </div>
         ))}
+      </section>
+
+      <section className="card-surface rounded-[32px] p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
+              Certificaatbewijscontrole
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+              Snapshotkwaliteit voor accreditatiebewijs
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">
+              Controleer of oude certificaten alle bewijsvelden vastgelegd hebben. De backfill vult ontbrekende snapshots aan op basis van bestaande gebruiker-, cursus-, toets- en evaluatiedata.
+            </p>
+          </div>
+          <form action={backfillCertificateSnapshotsAction}>
+            <button type="submit" className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white">
+              Backfill certificaatsnapshots
+            </button>
+          </form>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-5">
+          {[
+            { label: "Totaal", value: certificateAudit.totalCertificates },
+            { label: "Compleet", value: certificateAudit.completeSnapshots },
+            { label: "Onvolledig", value: certificateAudit.incompleteSnapshots },
+            { label: "Backfillable", value: certificateAudit.backfillableSnapshots },
+            { label: "Registratie mist", value: certificateAudit.missingRegistrationNumbers },
+          ].map((metric) => (
+            <div key={metric.label} className="rounded-[24px] border border-[var(--border)] bg-white/85 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-soft)]">{metric.label}</p>
+              <p className="mt-2 text-3xl font-semibold text-slate-950">{metric.value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 space-y-3">
+          {certificateAudit.items.slice(0, 8).map((item) => (
+            <div key={item.certificateId} className="rounded-[24px] border border-[var(--border)] bg-white/85 p-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    <StatusBadge label={item.isComplete ? "Compleet" : "Actie nodig"} tone={item.isComplete ? "success" : "warning"} />
+                    <StatusBadge label={item.certificateCode} tone="neutral" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-950">{item.courseTitle}</h3>
+                  <p className="mt-1 text-sm text-[var(--ink-soft)]">
+                    {item.participantName} · uitgereikt {formatAdminDate(item.issuedAt)}
+                  </p>
+                  {item.missingFields.length ? (
+                    <p className="mt-2 text-sm text-[var(--danger)]">
+                      Mist: {item.missingFields.join(", ")}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-sm text-[var(--ink-soft)]">Alle snapshotvelden zijn aanwezig.</p>
+                  )}
+                </div>
+                <a className="rounded-full border border-[var(--border)] px-5 py-3 text-sm font-semibold text-slate-900" href={item.downloadPath}>
+                  Bekijk bewijs
+                </a>
+              </div>
+            </div>
+          ))}
+          {certificateAudit.items.length > 8 ? (
+            <p className="text-sm text-[var(--ink-soft)]">
+              Toont de eerste 8 certificaten. Gebruik de deelnemersrapportage per cursus voor het volledige exportoverzicht.
+            </p>
+          ) : null}
+        </div>
       </section>
 
       <section className="grid gap-6">
