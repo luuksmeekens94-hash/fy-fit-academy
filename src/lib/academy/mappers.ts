@@ -296,7 +296,7 @@ export function buildAcademyLessonDetailView(params: {
     order: params.lesson.order,
     isRequired: params.lesson.isRequired,
     estimatedMinutes: params.lesson.estimatedMinutes,
-    canCompleteLesson: params.lesson.type !== "ASSESSMENT" && lessonStatus !== "COMPLETED",
+    status: lessonStatus,
     course: {
       id: params.course.id,
       slug: params.course.slug,

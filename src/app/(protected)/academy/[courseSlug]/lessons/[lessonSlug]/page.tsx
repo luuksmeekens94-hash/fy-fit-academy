@@ -87,9 +87,17 @@ export default async function AcademyLessonDetailPage({
               >
                 Terug naar e-learning
               </Link>
-              {lesson.canCompleteLesson ? (
-                <AcademyCompleteLessonButton courseId={lesson.course.id} lessonId={lesson.id} />
-              ) : null}
+              {lesson.type !== "ASSESSMENT" ? (
+                <AcademyCompleteLessonButton
+                  courseId={lesson.course.id}
+                  lessonId={lesson.id}
+                  isCompleted={lesson.status === "COMPLETED"}
+                />
+              ) : (
+                <span className="inline-flex rounded-full bg-[var(--brand-soft)] px-5 py-3 text-sm font-semibold text-[var(--brand-deep)] ring-1 ring-[var(--border)]">
+                  Rond de toets af om deze les te voltooien
+                </span>
+              )}
             </div>
 
             {lesson.sidebar.nextLesson ? (

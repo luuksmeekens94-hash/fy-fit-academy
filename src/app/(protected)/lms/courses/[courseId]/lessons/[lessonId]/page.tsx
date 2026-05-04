@@ -90,11 +90,6 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
     notFound();
   }
 
-  const canCompleteLesson =
-    previewState.canMutateProgress &&
-    Boolean(enrollment) &&
-    lesson.type !== "ASSESSMENT" &&
-    progress?.status !== "COMPLETED";
   const lessonMedia = extractLessonMedia(lesson.content);
 
   return (
@@ -162,17 +157,29 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
           Terug naar cursus
         </Link>
 
-        {canCompleteLesson ? (
-          <form action={completeLessonAction}>
-            <input type="hidden" name="courseId" value={courseId} />
-            <input type="hidden" name="lessonId" value={lesson.id} />
-            <button
-              type="submit"
-              className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
-            >
-              Markeer les als afgerond
-            </button>
-          </form>
+        {lesson.type !== "ASSESSMENT" && previewState.canMutateProgress ? (
+          progress?.status === "COMPLETED" ? (
+            <span className="inline-flex rounded-full bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-100">
+              Les afgerond
+            </span>
+          ) : (
+            <form action={completeLessonAction}>
+              <input type="hidden" name="courseId" value={courseId} />
+              <input type="hidden" name="lessonId" value={lesson.id} />
+              <button
+                type="submit"
+                className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
+              >
+                Markeer les als afgerond
+              </button>
+            </form>
+          )
+        ) : null}
+
+        {lesson.type === "ASSESSMENT" && previewState.canMutateProgress ? (
+          <span className="inline-flex rounded-full bg-[var(--brand-soft)] px-5 py-3 text-sm font-semibold text-[var(--brand-deep)] ring-1 ring-[var(--border)]">
+            Rond de toets af om deze les te voltooien
+          </span>
         ) : null}
       </section>
 

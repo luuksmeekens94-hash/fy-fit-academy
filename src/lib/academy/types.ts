@@ -104,7 +104,7 @@ export type AcademyLessonDetailView = {
   order: number;
   isRequired: boolean;
   estimatedMinutes: number;
-  canCompleteLesson: boolean;
+  status: LessonProgressInfo["status"];
   course: Pick<AcademyCourseDetailView, "id" | "slug" | "title">;
   enrollment: Pick<AcademyCourseDetailView, "progressPercentage" | "progressLabel"> & {
     status: EnrollmentDetail["status"];
