@@ -4,38 +4,46 @@ type LessonMediaBlockProps = {
   media: LessonMedia;
 };
 
+function MediaVideo({ src }: { src: string }) {
+  return (
+    <video
+      src={src}
+      controls
+      preload="metadata"
+      className="my-6 w-full rounded-[24px] border border-[var(--border)] bg-slate-950"
+    />
+  );
+}
+
+function MediaImage({ src }: { src: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt="Afbeelding bij lesmateriaal"
+      className="my-6 w-full rounded-[24px] border border-[var(--border)] bg-white object-contain"
+    />
+  );
+}
+
 export function LessonMediaBlock({ media }: LessonMediaBlockProps) {
   return (
-    <>
-      {media.text ? <p className="whitespace-pre-line">{media.text}</p> : null}
+    <div className="space-y-1">
+      {media.blocks.map((block, index) => {
+        if (block.type === "video") {
+          return <MediaVideo key={`${block.src}-${index}`} src={block.src} />;
+        }
 
-      {media.videos.length > 0 ? (
-        <div className="mt-6 space-y-4">
-          {media.videos.map((videoPath) => (
-            <video
-              key={videoPath}
-              src={videoPath}
-              controls
-              preload="metadata"
-              className="w-full rounded-[24px] border border-[var(--border)] bg-slate-950"
-            />
-          ))}
-        </div>
-      ) : null}
+        if (block.type === "image") {
+          return <MediaImage key={`${block.src}-${index}`} src={block.src} />;
+        }
 
-      {media.images.length > 0 ? (
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          {media.images.map((imagePath) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={imagePath}
-              src={imagePath}
-              alt="Afbeelding bij lesmateriaal"
-              className="w-full rounded-[24px] border border-[var(--border)] bg-white object-contain"
-            />
-          ))}
-        </div>
-      ) : null}
-    </>
+        return (
+          <p key={`text-${index}`} className="whitespace-pre-line">
+            {block.text}
+          </p>
+        );
+      })}
+    </div>
   );
 }

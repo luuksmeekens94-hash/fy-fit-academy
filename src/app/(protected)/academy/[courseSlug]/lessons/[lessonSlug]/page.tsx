@@ -77,15 +77,26 @@ export default async function AcademyLessonDetailPage({
             />
           ) : null}
 
-          <section className="flex flex-wrap items-center gap-3">
-            <Link
-              href={`/academy/${lesson.course.slug}`}
-              className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
-            >
-              Terug naar e-learning
-            </Link>
-            {lesson.canCompleteLesson ? (
-              <AcademyCompleteLessonButton courseId={lesson.course.id} lessonId={lesson.id} />
+          <section className="flex flex-wrap items-center justify-between gap-3 rounded-[28px] border border-[var(--border)] bg-white p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href={`/academy/${lesson.course.slug}`}
+                className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
+              >
+                Terug naar e-learning
+              </Link>
+              {lesson.canCompleteLesson ? (
+                <AcademyCompleteLessonButton courseId={lesson.course.id} lessonId={lesson.id} />
+              ) : null}
+            </div>
+
+            {lesson.sidebar.nextLesson ? (
+              <Link
+                href={lesson.sidebar.nextLesson.href}
+                className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
+              >
+                Volgende les: {lesson.sidebar.nextLesson.title} →
+              </Link>
             ) : null}
           </section>
         </div>

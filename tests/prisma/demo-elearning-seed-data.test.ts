@@ -48,6 +48,10 @@ test("demo seed includes Sprint 12A module 1 with goal, focus, objectives, video
     `${DEMO_ELEARNING_ASSET_ROOT}/module-1/images/image3.png`,
     `${DEMO_ELEARNING_ASSET_ROOT}/module-1/images/image4.png`,
   ]);
+
+  const conceptLesson = spec.lessons.find((lesson) => lesson.slug === "module-1-complexiteit-begrijpen");
+  assert.ok(conceptLesson);
+  assert.match(conceptLesson.content, /Figuur 1\. Emergentie\n\n\/lms\/demo-geaccrediteerde-elearning\/module-1\/images\/image1\.png/);
 });
 
 test("demo seed includes Sprint 12B module 2 with BPS system lessons, images and objectives", () => {
@@ -73,7 +77,7 @@ test("demo seed includes Sprint 12B module 2 with BPS system lessons, images and
   const networkLesson = spec.lessons.find((lesson) => lesson.slug === "module-2-bps-dynamisch-netwerk");
   assert.ok(networkLesson);
   assert.match(networkLesson.content, /biopsychosociaal model als dynamisch netwerk/i);
-  assert.match(networkLesson.content, /module-2\/images\/image1\.png/);
+  assert.match(networkLesson.content, /Figuur 1\.Conceptuele weergave van het biopsychosociaal model als een netwerk\.\n\n\/lms\/demo-geaccrediteerde-elearning\/module-2\/images\/image1\.png/);
 });
 
 test("demo seed includes Sprint 12C module 3 with summary, reflection and evaluation close-out", () => {
