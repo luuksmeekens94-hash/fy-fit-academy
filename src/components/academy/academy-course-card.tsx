@@ -24,39 +24,41 @@ export function AcademyCourseCard({ course }: AcademyCourseCardProps) {
   return (
     <Link
       href={course.href}
-      className="card-surface rounded-[32px] p-6 transition hover:-translate-y-0.5"
+      className="card-surface rounded-[22px] p-5 transition hover:-translate-y-0.5 hover:border-[var(--teal)]"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-3">
-          <div className="inline-flex rounded-full bg-[var(--teal-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--teal)]">
-            E-learning
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-full bg-[var(--teal-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--teal)]">
+              E-learning
+            </div>
+            <StatusBadge label={course.status} tone={course.status === "COMPLETED" ? "success" : course.status === "IN_PROGRESS" ? "warning" : "neutral"} />
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-slate-950">{course.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{course.description}</p>
+            <h2 className="text-xl font-semibold text-slate-950">{course.title}</h2>
+            <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--ink-soft)]">{course.description}</p>
           </div>
         </div>
         <StatusBadge label={course.assignmentLabel} tone={course.assignmentLabel === "Verplicht" ? "brand" : "neutral"} />
       </div>
 
       {course.goal ? (
-        <p className="mt-4 rounded-[24px] bg-[var(--brand-soft)] px-4 py-3 text-sm leading-6 text-[var(--brand-deep)]">
+        <p className="mt-4 rounded-[18px] bg-[var(--sage-soft)] px-4 py-3 text-sm leading-6 text-[var(--teal)]">
           {course.goal}
         </p>
       ) : null}
 
-      <div className="mt-5">
+      <div className="mt-4">
         <ProgressBar value={course.progressPercentage} label={course.progressLabel} />
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-3">
-        <StatusBadge label={course.status} tone={course.status === "COMPLETED" ? "success" : course.status === "IN_PROGRESS" ? "warning" : "neutral"} />
+      <div className="mt-4 flex flex-wrap items-center gap-3">
         <StatusBadge label={`${course.studyLoadMinutes} minuten`} tone="neutral" />
+        <span className="text-sm text-[var(--ink-soft)]">Deadline {formatDate(course.deadlineAt)}</span>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--ink-soft)]">
-        <span>Deadline {formatDate(course.deadlineAt)}</span>
-        <span className="font-semibold text-[var(--brand-deep)]">{course.ctaLabel}</span>
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-3 text-sm text-[var(--ink-soft)]">
+        <span className="font-semibold text-[var(--teal)]">{course.ctaLabel}</span>
       </div>
     </Link>
   );

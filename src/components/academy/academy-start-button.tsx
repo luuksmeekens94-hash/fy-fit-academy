@@ -11,7 +11,7 @@ export function AcademyStartButton({ courseId, isStarted }: AcademyStartButtonPr
       <input type="hidden" name="courseId" value={courseId} />
       <button
         type="submit"
-        className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
+        className="btn-primary px-5 py-3 text-sm"
       >
         {isStarted ? "Hervat e-learning" : "Start e-learning"}
       </button>

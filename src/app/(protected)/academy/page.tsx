@@ -31,18 +31,18 @@ export default async function AcademyPage({ searchParams }: AcademyPageProps) {
         description="Hier zie je welke e-learnings voor je klaarstaan, waar je bent gebleven en wat nu de slimste volgende stap is."
       />
 
-      <section className="card-surface rounded-[32px] p-6">
-        <form className="grid gap-4 lg:grid-cols-[1fr_140px]">
+      <section className="card-surface rounded-[24px] p-4">
+        <form className="grid gap-3 lg:grid-cols-[1fr_132px]">
           <input
             type="search"
             name="q"
             defaultValue={params.q}
             placeholder="Zoek op titel, beschrijving of doel"
-            className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+            className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]"
           />
           <button
             type="submit"
-            className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
+            className="btn-primary px-5 py-3 text-sm"
           >
             Filteren
           </button>
@@ -50,13 +50,13 @@ export default async function AcademyPage({ searchParams }: AcademyPageProps) {
       </section>
 
       {filteredCourses.length ? (
-        <section className="grid gap-5 xl:grid-cols-2">
+        <section className="grid gap-4 xl:grid-cols-2">
           {filteredCourses.map((course) => (
             <AcademyCourseCard key={course.id} course={course} />
           ))}
         </section>
       ) : (
-        <section className="card-surface rounded-[32px] p-6">
+        <section className="card-surface rounded-[24px] p-6">
           <p className="text-base leading-7 text-[var(--ink-soft)]">
             Er staan nog geen e-learnings voor je klaar die passen bij deze zoekopdracht.
           </p>

@@ -20,13 +20,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   return (
     <main className="min-h-screen bg-transparent px-4 py-6 sm:px-6">
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-5xl items-center justify-center">
-        <section className="hero-panel soft-grid relative w-full overflow-hidden rounded-[44px] px-6 py-8 sm:px-10 sm:py-10">
-          <div className="diamond-shape right-16 top-10 h-24 w-24 opacity-80" />
-          <div className="orb-ring right-28 top-0 h-32 w-32" />
+        <section className="hero-panel soft-grid relative w-full overflow-hidden rounded-[30px] px-6 py-8 sm:px-10 sm:py-10">
+          <div className="diamond-shape right-16 top-10 h-20 w-20 opacity-20" />
+          <div className="orb-ring right-28 top-0 h-28 w-28 opacity-40" />
 
           <div className="relative mx-auto flex max-w-xl flex-col items-center text-center">
             <div className="brand-chip">Fy-fit Academy</div>
-            <div className="mt-6 h-2 w-full max-w-[560px] rounded-full bg-[var(--brand)]" />
+            <div className="accent-line mt-6" />
 
             <div className="mt-8 space-y-4">
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]">
@@ -37,7 +37,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               </h1>
             </div>
 
-            <div className="frost-panel mt-8 w-full rounded-[34px] p-6 text-left sm:p-8">
+            <div className="frost-panel mt-8 w-full rounded-[24px] p-6 text-left sm:p-8">
               <div className="space-y-3">
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]">
                   Welkom terug

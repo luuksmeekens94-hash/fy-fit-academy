@@ -14,27 +14,27 @@ export function AppShell({ user, children }: AppShellProps) {
   return (
     <div className="min-h-screen bg-transparent">
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col px-4 py-4 lg:px-6">
-        <div className="hero-panel rounded-[36px] px-6 py-6 text-[var(--foreground)] lg:px-8">
-          <div className="soft-grid absolute inset-0 rounded-[36px]" />
-          <div className="diamond-shape right-16 top-10 h-24 w-24 opacity-35" />
-          <div className="orb-ring right-28 top-0 h-32 w-32 opacity-60" />
-          <div className="relative flex flex-col gap-6">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-5 lg:flex-1">
+        <div className="hero-panel rounded-[24px] px-5 py-5 text-[var(--foreground)] lg:px-7">
+          <div className="soft-grid absolute inset-0 rounded-[28px]" />
+          <div className="diamond-shape right-16 top-10 hidden h-20 w-20 opacity-20 md:block" />
+          <div className="orb-ring right-28 top-0 hidden h-28 w-28 opacity-40 md:block" />
+          <div className="relative flex flex-col gap-4">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-3 lg:flex-1">
                 <div className="brand-chip">Fy-fit Academy</div>
                 <div className="accent-line" />
-                <div className="space-y-3">
-                  <h1 className="max-w-4xl text-4xl font-semibold tracking-tight text-[var(--foreground)] lg:text-6xl">
-                    Welkom bij jouw persoonlijke omgeving.
+                <div>
+                  <h1 className="max-w-3xl text-3xl font-semibold tracking-tight text-[var(--foreground)] lg:text-4xl">
+                    Leren, ontwikkelen en borgen in de praktijk.
                   </h1>
                 </div>
               </div>
               <div className="group relative z-20 self-start">
-                <div className="frost-panel flex items-center gap-3 rounded-[30px] px-5 py-4 lg:min-w-[340px]">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand-soft)] font-semibold text-[var(--brand)]">
+                <div className="frost-panel flex items-center gap-3 rounded-[22px] px-4 py-3 lg:min-w-[320px]">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--sage-soft)] font-semibold text-[var(--teal)]">
                     {initials(user.name)}
                   </div>
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full border border-dashed border-[var(--border)] bg-white/90 text-xs font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-dashed border-[var(--border)] bg-white/90 text-xs font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
                     foto
                   </div>
                   <div className="min-w-0 flex-1">
@@ -43,8 +43,8 @@ export function AppShell({ user, children }: AppShellProps) {
                   </div>
                 </div>
 
-                <div className="pointer-events-none absolute right-0 top-full pt-3 w-72 translate-y-2 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                  <div className="card-surface rounded-[28px] p-3">
+                <div className="pointer-events-none invisible absolute right-0 top-full w-72 translate-y-2 pt-3 opacity-0 transition duration-200 group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                  <div className="card-surface rounded-[22px] p-3">
                     <nav className="space-y-1">
                       <Link href="/" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
                         Dashboard

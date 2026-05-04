@@ -21,7 +21,7 @@ export function AcademyCompleteLessonButton({ courseId, lessonId, isCompleted = 
       <input type="hidden" name="lessonId" value={lessonId} />
       <button
         type="submit"
-        className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
+        className="btn-primary px-5 py-3 text-sm"
       >
         Markeer les als afgerond
       </button>

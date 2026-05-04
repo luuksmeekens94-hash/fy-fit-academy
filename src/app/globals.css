@@ -1,17 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f3ec;
-  --foreground: #1f211d;
+  --background: #f4f5f1;
+  --foreground: #181d1a;
   --card: #fffdfa;
-  --card-strong: #f1eadf;
+  --card-strong: #eef0ea;
   --muted: #7c756b;
   --border: rgba(47, 42, 35, 0.1);
-  --brand: #c9822a;
-  --brand-deep: #8c591c;
-  --brand-soft: #f6ead7;
-  --teal: #466a62;
-  --teal-soft: #e7efeb;
+  --brand: #b96f1f;
+  --brand-deep: #744711;
+  --brand-soft: #f3e2ca;
+  --teal: #315f58;
+  --teal-soft: #ddebe5;
+  --sage: #6d7f5f;
+  --sage-soft: #e6ebe0;
   --ink-soft: #48443d;
   --ink-muted: #6f685f;
   --success: #0a7f50;
@@ -37,8 +39,8 @@
 
 html {
   background:
-    radial-gradient(circle at top left, rgba(216, 146, 46, 0.08), transparent 22%),
-    radial-gradient(circle at bottom right, rgba(214, 205, 191, 0.22), transparent 24%),
+    linear-gradient(135deg, rgba(49, 95, 88, 0.08), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(185, 111, 31, 0.08), transparent 26%),
     var(--background);
 }
 
@@ -61,7 +63,7 @@ textarea {
 }
 
 .card-surface {
-  background: linear-gradient(180deg, rgba(255, 253, 250, 0.98), rgba(255, 250, 244, 0.96));
+  background: linear-gradient(180deg, rgba(255, 253, 250, 0.98), rgba(250, 248, 243, 0.96));
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
 }
@@ -100,8 +102,10 @@ textarea {
 
 .hero-panel {
   background:
-    linear-gradient(180deg, rgba(255, 253, 250, 0.98), rgba(248, 244, 238, 0.96)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0));
+    linear-gradient(90deg, rgba(255, 253, 250, 0.98), rgba(255, 253, 250, 0.9) 50%, rgba(255, 253, 250, 0.38)),
+    url("/academy-hero-bg.png");
+  background-position: center right;
+  background-size: cover;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
 }
@@ -118,25 +122,25 @@ textarea {
   width: 220px;
   height: 220px;
   border-radius: 9999px;
-  background: rgba(216, 146, 46, 0.1);
+  background: rgba(49, 95, 88, 0.04);
 }
 
 .soft-grid::after {
   content: "";
   position: absolute;
-  right: 64px;
-  top: 54px;
-  width: 112px;
-  height: 112px;
+  right: 72px;
+  top: 42px;
+  width: 96px;
+  height: 96px;
   transform: rotate(45deg);
-  background: rgba(216, 146, 46, 0.1);
+  background: rgba(185, 111, 31, 0.05);
 }
 
 .accent-line {
   width: min(560px, 100%);
-  height: 8px;
+  height: 5px;
   border-radius: 9999px;
-  background: var(--brand);
+  background: linear-gradient(90deg, var(--teal), var(--brand));
 }
 
 .brand-chip {
@@ -164,7 +168,7 @@ textarea {
 .orb-ring {
   position: absolute;
   border-radius: 9999px;
-  border: 12px solid rgba(216, 146, 46, 0.12);
+  border: 10px solid rgba(49, 95, 88, 0.1);
 }
 
 .glass-orb {
@@ -177,12 +181,25 @@ textarea {
 .diamond-shape {
   position: absolute;
   transform: rotate(45deg);
-  background: rgba(216, 146, 46, 0.38);
+  background: rgba(185, 111, 31, 0.18);
 }
 
 .frost-panel {
-  background: rgba(255, 253, 250, 0.78);
+  background: rgba(255, 253, 250, 0.82);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(234, 223, 206, 0.85);
   box-shadow: var(--shadow-soft);
+}
+
+.btn-primary {
+  border-radius: 9999px;
+  background: var(--teal);
+  color: #fff;
+  font-weight: 700;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.btn-primary:hover {
+  background: #244943;
+  transform: translateY(-1px);
 }

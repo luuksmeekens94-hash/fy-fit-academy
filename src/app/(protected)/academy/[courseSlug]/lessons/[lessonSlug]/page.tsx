@@ -40,7 +40,7 @@ export default async function AcademyLessonDetailPage({
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
-          <section className="card-surface overflow-hidden rounded-[34px] p-0">
+          <section className="card-surface overflow-hidden rounded-[24px] p-0">
             <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] bg-[linear-gradient(135deg,rgba(246,234,215,0.5),rgba(255,253,250,0.9))] px-6 py-5">
               <StatusBadge label={lesson.type} tone="neutral" />
               {lesson.isRequired ? <StatusBadge label="Verplicht" tone="brand" /> : null}
@@ -64,7 +64,7 @@ export default async function AcademyLessonDetailPage({
             </div>
 
             {lesson.type !== "ASSESSMENT" ? (
-              <div className="mx-3 mb-3 rounded-[30px] border border-[var(--border)] bg-white/88 px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:px-7 lg:px-9 lg:py-8">
+              <div className="mx-3 mb-3 rounded-[22px] border border-[var(--border)] bg-white/90 px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:px-7 lg:px-9 lg:py-8">
                 <LessonMediaBlock media={lessonMedia} />
               </div>
             ) : null}
@@ -79,11 +79,11 @@ export default async function AcademyLessonDetailPage({
             />
           ) : null}
 
-          <section className="flex flex-wrap items-center justify-between gap-3 rounded-[28px] border border-[var(--border)] bg-white p-4">
+          <section className="flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-[var(--border)] bg-white p-4">
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href={`/academy/${lesson.course.slug}`}
-                className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
+                className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--teal)]"
               >
                 Terug naar e-learning
               </Link>
@@ -103,7 +103,7 @@ export default async function AcademyLessonDetailPage({
             {lesson.sidebar.nextLesson ? (
               <Link
                 href={lesson.sidebar.nextLesson.href}
-                className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
+                className="btn-primary px-5 py-3 text-sm"
               >
                 Volgende les: {lesson.sidebar.nextLesson.title} →
               </Link>

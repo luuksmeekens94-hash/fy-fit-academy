@@ -9,8 +9,8 @@ type AcademyCourseHeroProps = {
 
 export function AcademyCourseHero({ course, action }: AcademyCourseHeroProps) {
   return (
-    <section className="card-surface overflow-hidden rounded-[34px] p-0">
-      <div className="border-b border-[var(--border)] bg-[linear-gradient(135deg,rgba(246,234,215,0.66),rgba(231,239,235,0.42),rgba(255,253,250,0.9))] px-6 py-5">
+    <section className="card-surface overflow-hidden rounded-[24px] p-0">
+      <div className="border-b border-[var(--border)] bg-[linear-gradient(135deg,rgba(221,235,229,0.76),rgba(255,253,250,0.92))] px-6 py-5">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-4">
             <div className="flex flex-wrap gap-3">
@@ -19,8 +19,10 @@ export function AcademyCourseHero({ course, action }: AcademyCourseHeroProps) {
               <StatusBadge label={`${course.studyLoadMinutes} minuten`} tone="neutral" />
             </div>
             <div className="space-y-2">
-              <h2 className="display-font text-3xl font-semibold tracking-[-0.03em] text-[var(--foreground)] md:text-4xl">{course.title}</h2>
-              <p className="max-w-3xl text-base leading-7 text-[var(--ink-soft)]">{course.description}</p>
+              <h2 className="text-2xl font-semibold text-[var(--foreground)]">Voortgang en status</h2>
+              <p className="max-w-3xl text-base leading-7 text-[var(--ink-soft)]">
+                Hervat waar je gebleven bent en werk de verplichte lessen en toets stap voor stap af.
+              </p>
             </div>
           </div>
           <div className="shrink-0">{action}</div>
