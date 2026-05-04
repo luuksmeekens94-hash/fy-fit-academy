@@ -20,7 +20,7 @@ export function AcademyLessonList({ lessons }: AcademyLessonListProps) {
         <Link
           key={lesson.id}
           href={lesson.href}
-          className="card-surface flex flex-col gap-4 rounded-[28px] p-5 transition hover:-translate-y-0.5 lg:flex-row lg:items-center lg:justify-between"
+          className="card-surface flex flex-col gap-4 rounded-[28px] p-5 transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(35,27,18,0.1)] lg:flex-row lg:items-center lg:justify-between"
         >
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-3">
@@ -31,8 +31,8 @@ export function AcademyLessonList({ lessons }: AcademyLessonListProps) {
               {lesson.isRequired ? <StatusBadge label="Verplicht" tone="brand" /> : null}
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-slate-950">{lesson.title}</h3>
-              <p className="mt-1 text-sm leading-6 text-[var(--ink-soft)]">{lesson.estimatedMinutes} minuten</p>
+              <h3 className="text-lg font-semibold tracking-[-0.02em] text-[var(--foreground)]">{lesson.title}</h3>
+              <p className="mt-1 text-sm leading-6 text-[var(--ink-muted)]">{lesson.estimatedMinutes} minuten</p>
             </div>
           </div>
 

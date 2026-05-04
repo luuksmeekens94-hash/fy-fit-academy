@@ -101,8 +101,8 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
       />
 
       {lesson.type !== "ASSESSMENT" ? (
-        <section className="card-surface rounded-[32px] p-6">
-          <div className="flex flex-wrap items-center gap-3">
+        <section className="card-surface overflow-hidden rounded-[34px] p-0">
+          <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] bg-[linear-gradient(135deg,rgba(246,234,215,0.5),rgba(255,253,250,0.9))] px-6 py-5">
             <StatusBadge label={lesson.type} tone="neutral" />
             <StatusBadge
               label={enrollment ? progress?.status ?? "NOT_STARTED" : previewState.label}
@@ -112,7 +112,7 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
             <StatusBadge label={`${lesson.estimatedMinutes} minuten`} tone="neutral" />
           </div>
 
-          <div className="mt-6 rounded-[28px] bg-white px-5 py-5 text-base leading-8 text-[var(--ink-soft)]">
+          <div className="mx-3 mb-3 mt-3 rounded-[30px] border border-[var(--border)] bg-white/88 px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:px-7 lg:px-9 lg:py-8">
             <LessonMediaBlock media={lessonMedia} />
           </div>
         </section>

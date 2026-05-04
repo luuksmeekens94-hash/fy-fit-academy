@@ -1,26 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f4ee;
-  --foreground: #141414;
+  --background: #f7f3ec;
+  --foreground: #1f211d;
   --card: #fffdfa;
-  --card-strong: #f6ede0;
-  --muted: #7c7268;
-  --border: #eadfce;
-  --brand: #d8922e;
-  --brand-deep: #b97a22;
-  --brand-soft: #f5ead6;
-  --teal: #9d9d9d;
-  --teal-soft: #ece9e3;
-  --ink-soft: #534f49;
+  --card-strong: #f1eadf;
+  --muted: #7c756b;
+  --border: rgba(47, 42, 35, 0.1);
+  --brand: #c9822a;
+  --brand-deep: #8c591c;
+  --brand-soft: #f6ead7;
+  --teal: #466a62;
+  --teal-soft: #e7efeb;
+  --ink-soft: #48443d;
+  --ink-muted: #6f685f;
   --success: #0a7f50;
   --success-soft: #e8f7f0;
   --warning: #9a6700;
   --warning-soft: #fff6da;
   --danger: #b42318;
   --danger-soft: #feeceb;
-  --shadow: 0 14px 38px rgba(34, 27, 17, 0.12);
-  --shadow-soft: 0 22px 42px rgba(34, 27, 17, 0.09);
+  --shadow: 0 1px 2px rgba(35, 27, 18, 0.05), 0 12px 32px rgba(35, 27, 18, 0.08);
+  --shadow-soft: 0 1px 2px rgba(35, 27, 18, 0.04), 0 24px 60px rgba(35, 27, 18, 0.08);
 }
 
 @theme inline {
@@ -60,9 +61,37 @@ textarea {
 }
 
 .card-surface {
-  background: linear-gradient(180deg, rgba(255, 253, 250, 0.98), rgba(255, 250, 244, 0.98));
+  background: linear-gradient(180deg, rgba(255, 253, 250, 0.98), rgba(255, 250, 244, 0.96));
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
+}
+
+.academy-info-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid rgba(47, 42, 35, 0.09);
+  background:
+    radial-gradient(circle at 16px 12px, rgba(201, 130, 42, 0.09), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 253, 250, 0.96));
+  box-shadow: 0 1px 1px rgba(35, 27, 18, 0.04), 0 18px 42px -34px rgba(35, 27, 18, 0.58);
+}
+
+.academy-info-card--featured {
+  background:
+    radial-gradient(circle at top right, rgba(70, 106, 98, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 253, 250, 0.98));
+}
+
+.lesson-prose {
+  color: var(--ink-soft);
+  font-size: 1.02rem;
+  line-height: 1.86;
+  letter-spacing: -0.008em;
+}
+
+.lesson-prose p {
+  max-width: 74ch;
 }
 
 .display-font {

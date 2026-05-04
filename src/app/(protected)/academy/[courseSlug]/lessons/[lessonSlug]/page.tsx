@@ -40,15 +40,15 @@ export default async function AcademyLessonDetailPage({
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
-          <section className="card-surface rounded-[32px] p-6">
-            <div className="flex flex-wrap items-center gap-3">
+          <section className="card-surface overflow-hidden rounded-[34px] p-0">
+            <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] bg-[linear-gradient(135deg,rgba(246,234,215,0.5),rgba(255,253,250,0.9))] px-6 py-5">
               <StatusBadge label={lesson.type} tone="neutral" />
               {lesson.isRequired ? <StatusBadge label="Verplicht" tone="brand" /> : null}
               <StatusBadge label={`${lesson.estimatedMinutes} minuten`} tone="neutral" />
               <StatusBadge label={lesson.enrollment.status} tone={lesson.enrollment.status === "COMPLETED" ? "success" : lesson.enrollment.status === "IN_PROGRESS" ? "warning" : "neutral"} />
             </div>
 
-            <div className="mt-6 grid gap-4">
+            <div className="grid gap-4 px-6 py-5">
               <AcademyStatusPanel
                 tone={lesson.completionState.tone}
                 title={lesson.completionState.title}
@@ -64,7 +64,7 @@ export default async function AcademyLessonDetailPage({
             </div>
 
             {lesson.type !== "ASSESSMENT" ? (
-              <div className="mt-6 rounded-[28px] bg-white px-5 py-5 text-base leading-8 text-[var(--ink-soft)]">
+              <div className="mx-3 mb-3 rounded-[30px] border border-[var(--border)] bg-white/88 px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:px-7 lg:px-9 lg:py-8">
                 <LessonMediaBlock media={lessonMedia} />
               </div>
             ) : null}
