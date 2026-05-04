@@ -91,7 +91,7 @@ test("demo seed includes Sprint 12C module 3 with summary, reflection and evalua
   const reflectionLesson = spec.lessons.find((lesson) => lesson.slug === "module-3-reflectie-praktijktransfer");
   assert.ok(reflectionLesson);
   assert.match(reflectionLesson.content, /grillig verliep/i);
-  assert.match(reflectionLesson.content, /dagelijkse praktijk/i);
+  assert.match(reflectionLesson.content, /Welk ander handelen zou je nu overwegen/i);
 });
 
 test("demo has a separate assessment after each inhoudelijke module", () => {

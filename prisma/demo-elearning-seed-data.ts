@@ -6,6 +6,26 @@ import type {
   LmsSeedModuleSpec,
   LmsSeedQuestionSpec,
 } from "./lms-seed-data.ts";
+import {
+  MODULE_1_ASSESSMENT_CONTENT,
+  MODULE_1_COMMUNITY_CONTENT,
+  MODULE_1_LESSON_1_CONTENT,
+  MODULE_1_LESSON_2_CONTENT,
+  MODULE_1_LESSON_3_4_CONTENT,
+  MODULE_1_LESSON_5_6_CONTENT,
+  MODULE_1_VIDEO_CONTENT,
+  MODULE_2_ASSESSMENT_CONTENT,
+  MODULE_2_COMMUNITY_CONTENT,
+  MODULE_2_INTRO_CONTENT,
+  MODULE_2_LESSON_1_CONTENT,
+  MODULE_2_LESSON_2_CONTENT,
+  MODULE_2_LESSON_3_CONTENT,
+  MODULE_2_LESSON_4_CONTENT,
+  MODULE_3_EVALUATION_CONTENT,
+  MODULE_3_REFLECTION_CONTENT,
+  MODULE_3_SUMMARY_CONTENT,
+} from "./demo-elearning-source-content";
+
 
 export const DEMO_ELEARNING_COURSE_SLUG = "demo-geaccrediteerde-elearning";
 export const DEMO_ELEARNING_ASSET_ROOT = "/lms/demo-geaccrediteerde-elearning";
@@ -374,7 +394,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Video: inleiding complexiteit in de manuele therapie",
         description: "Bekijk de introductievideo bij Module 1.",
         type: "VIDEO",
-        content: `Bekijk de video bij deze module.\n\nVideo: ${module1AssetRoot}/module-1-complexiteit.mp4`,
+        content: MODULE_1_VIDEO_CONTENT,
         assetPath: `${module1AssetRoot}/module-1-complexiteit.mp4`,
         order: 1,
         isRequired: true,
@@ -385,8 +405,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Les 1: Wanneer simpel complex wordt",
         description: "Drie scenario's laten zien hoe ogenschijnlijk vergelijkbare klachten verschillend kunnen verlopen.",
         type: "TEXT",
-        content:
-          "Een patiënt met eerste episode nekpijn na klussen kan voorspelbaar herstellen na mobilisaties en beweegadvies. Een tweede patiënt met dezelfde klacht blijkt terugkerende klachten, werkdruk, slecht slapen en frustratie te hebben. Een derde patiënt met lage rug- en beenklachten heeft comorbiditeit, beperkte gezondheidsvaardigheden en weinig sociale steun. Deze scenario's tonen verschillende niveaus van complexiteit en maken duidelijk dat onvoorspelbaar herstel vaak een kenmerk is van menselijke variabiliteit.",
+        content: MODULE_1_LESSON_1_CONTENT,
         order: 2,
         isRequired: true,
         estimatedMinutes: 12,
@@ -396,8 +415,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Les 2: Complexiteit begrijpen",
         description: "Conceptuele duiding van emergentie, niet-lineariteit en adaptiviteit.",
         type: "TEXT",
-        content:
-          "Een klok is gecompliceerd: veel onderdelen, maar voorspelbaar. Het menselijk lichaam is complex: onderdelen werken continu op elkaar in en het geheel is meer dan de som der delen. Emergentie beschrijft nieuwe patronen uit interacties. Niet-lineariteit verklaart waarom kleine veranderingen grote effecten kunnen hebben en grote interventies soms weinig doen. Adaptiviteit beschrijft hoe levende systemen zich aanpassen aan interne en externe prikkels.\n\nAfbeeldingen bij deze les:\n- /lms/demo-geaccrediteerde-elearning/module-1/images/image1.png\n- /lms/demo-geaccrediteerde-elearning/module-1/images/image2.png",
+        content: MODULE_1_LESSON_2_CONTENT,
         order: 3,
         isRequired: true,
         estimatedMinutes: 15,
@@ -407,8 +425,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Les 3-4: Biopsychosociaal redeneren en patroonherkenning",
         description: "Gebruik het BPS-model als dynamisch raamwerk en zoek naar patronen in plaats van één oorzaak.",
         type: "TEXT",
-        content:
-          "Complexiteit komt in de kliniek tot uiting via biologische, psychologische en sociale factoren. Deze factoren beïnvloeden elkaar voortdurend. Diagnostisch denken verschuift daardoor van lineair oorzaak-gevolg redeneren naar patroonherkenning en systeemanalyse. Je formuleert een werkhypothese over samenhangende factoren en toetst die iteratief door de respons op interventies te monitoren.\n\nAfbeeldingen bij deze les:\n- /lms/demo-geaccrediteerde-elearning/module-1/images/image3.png\n- /lms/demo-geaccrediteerde-elearning/module-1/images/image4.png",
+        content: MODULE_1_LESSON_3_4_CONTENT,
         order: 4,
         isRequired: true,
         estimatedMinutes: 15,
@@ -418,8 +435,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Les 5-6: Interveniëren in complexiteit en afronding",
         description: "Multifactoriële, iteratieve aanpak met ruimte om doelen bij te stellen.",
         type: "TEXT",
-        content:
-          "Interveniëren in complexiteit vraagt om meerdere aangrijpingspunten: manuele mobilisaties of oefentherapie, pijneducatie, stressmanagement, ontspanning en contextuele aanpassingen. Elke behandeling is ook een evaluatiemoment. Op basis van feedback stel je het plan bij. Succes meet je niet alleen als einddoel, maar ook als beter omgaan met fluctuaties, meer vertrouwen en verbeteringen in meerdere levensdomeinen.",
+        content: MODULE_1_LESSON_5_6_CONTENT,
         order: 5,
         isRequired: true,
         estimatedMinutes: 15,
@@ -429,8 +445,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Community-opdracht: casusreflectie en systeemanalyse",
         description: "Werk een fictieve schoudercasus systemisch uit.",
         type: "REFLECTION",
-        content:
-          "Casus: je behandelt een 39-jarige vrouw met langdurige schouderklachten. Na een aanvankelijke verbetering verslechtert de klacht onverwacht. Ze slaapt slecht, voelt zich overbelast door werk, jonge kinderen en mantelzorg, ervaart spanning en heeft weinig steun doordat haar partner veel in het buitenland werkt. Reflecteer op: 1) welke factoren maken het beloop onvoorspelbaar of niet-lineair? 2) welke werkhypothese past bij het biopsychosociaal model? 3) benoem drie interventies uit biologische, psychologische en sociale/contextuele domeinen en hoe je de respons monitort.",
+        content: MODULE_1_COMMUNITY_CONTENT,
         order: 6,
         isRequired: true,
         estimatedMinutes: 15,
@@ -440,7 +455,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Kennischeck: complexiteit in de manuele therapie",
         description: "Korte kennischeck bij Module 1. De centrale toets loopt door na Module 2.",
         type: "ASSESSMENT",
-        content: "Gebruik deze les als tussencheck. De formele toetsbank voor de tijdelijke demo wordt na Module 2 aangeboden en bevat vragen over Module 1 en 2.",
+        content: MODULE_1_ASSESSMENT_CONTENT,
         order: 7,
         isRequired: true,
         estimatedMinutes: 10,
@@ -450,8 +465,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Module 2 inleiding: nekpijn in biopsychosociale context",
         description: "Introductie van nekpijn als casus waarin lichamelijke, psychologische en contextuele factoren samenkomen.",
         type: "TEXT",
-        content:
-          "Module 2 verdiept het biopsychosociaal model als geïntegreerd en dynamisch systeem. De casus uit Module 1 wordt doorgetrokken: een 34-jarige man met terugkerende nekklachten waarbij werkdruk, slaap, frustratie en pijn elkaar beïnvloeden. De centrale vraag is niet welk domein de enige oorzaak is, maar hoe factoren elkaar versterken, afremmen en in de tijd veranderen.",
+        content: MODULE_2_INTRO_CONTENT,
         order: 8,
         isRequired: true,
         estimatedMinutes: 10,
@@ -461,8 +475,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Les 1: Het biopsychosociaal model als dynamisch netwerk",
         description: "Het BPS-model niet als drie losse lijstjes, maar als een netwerk van interacties.",
         type: "TEXT",
-        content:
-          `Het biopsychosociaal model als dynamisch netwerk betekent dat biologische, psychologische en sociale factoren elkaar voortdurend beïnvloeden. Stress kan spierspanning en pijngevoeligheid verhogen; pijn kan frustratie en angst voeden; beperkte sociale steun kan herstelgedrag onder druk zetten. Het geheel is meer dan de som der delen.\n\nAfbeelding bij deze les:\n- ${module2AssetRoot}/images/image1.png`,
+        content: MODULE_2_LESSON_1_CONTENT,
         order: 9,
         isRequired: true,
         estimatedMinutes: 15,
@@ -472,8 +485,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Les 2: Niet-lineariteit, adaptiviteit en terugkoppelingslussen",
         description: "Complexiteitsprincipes toegepast op het biopsychosociaal model.",
         type: "TEXT",
-        content:
-          `Niet-lineariteit verklaart waarom een kleine trigger zoals een slechte nacht of deadline disproportioneel veel pijn kan geven. Adaptiviteit beschrijft hoe de patiënt gedrag en lichaamshouding aanpast om pijn te vermijden; helpend op korte termijn, maar soms onderhoudend op lange termijn. Terugkoppelingslussen laten zien hoe pijn, angst, spierspanning, stress en vermijding elkaar kunnen versterken, maar ook hoe kleine positieve veranderingen een opwaartse spiraal kunnen starten.\n\nAfbeelding bij deze les:\n- ${module2AssetRoot}/images/image2.png`,
+        content: MODULE_2_LESSON_2_CONTENT,
         order: 10,
         isRequired: true,
         estimatedMinutes: 15,
@@ -483,8 +495,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Les 3: Klinisch redeneren in een biopsychosociaal systeem",
         description: "Van oorzaak zoeken naar patronen, werkhypothesen en iteratief toetsen.",
         type: "TEXT",
-        content:
-          "Diagnostiek in een biopsychosociaal systeem vraagt patroonherkenning: wanneer nemen klachten toe, wanneer verminderen ze en welke gebeurtenissen gingen eraan vooraf? Je formuleert een werkhypothese over samenhangende factoren en toetst die in de behandeling. Iedere sessie levert feedback op waarmee je het model bijstelt. Onzekerheid is daarbij geen fout, maar onderdeel van professioneel redeneren in complexe casuïstiek.",
+        content: MODULE_2_LESSON_3_CONTENT,
         order: 11,
         isRequired: true,
         estimatedMinutes: 15,
@@ -494,8 +505,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Les 4: Integrale en flexibele aanpak",
         description: "Interventies combineren over biologische, psychologische en sociale domeinen.",
         type: "TEXT",
-        content:
-          "Een integrale aanpak combineert meerdere aangrijpingspunten. Biologisch kun je mobilisaties, oefentherapie en graded exposure inzetten. Psychologisch werk je aan veiligheid, pijneducatie, catastroferen, motivatie en vertrouwen. Sociaal/contextueel kijk je naar werkdruk, steun, ergonomie, belasting en participatie. Je hoeft niet alles tegelijk te doen; je kiest prioriteiten samen met de patiënt en stuurt bij op respons.",
+        content: MODULE_2_LESSON_4_CONTENT,
         order: 12,
         isRequired: true,
         estimatedMinutes: 15,
@@ -505,8 +515,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Community-opdracht: biopsychosociale analyse na whiplash",
         description: "Analyseer een casus met aanhoudende nek- en hoofdpijn na een kop-staartbotsing.",
         type: "REFLECTION",
-        content:
-          "Casus: een 28-jarige vrouw heeft zes maanden na een kop-staartbotsing nog nekpijn en hoofdpijn. Er is geen ernstige weefselschade gevonden, maar ze vermijdt autorijden, slaapt slecht, sport niet meer, werkt minder en blijft bang dat er iets ernstigs over het hoofd is gezien. Reflecteer op: 1) welke factoren maken het beloop onvoorspelbaar of niet-lineair? 2) welke werkhypothese past bij het samenspel tussen biologische, psychologische en sociale factoren? 3) noem drie interventies uit verschillende domeinen en beschrijf hoe je het effect monitort.",
+        content: MODULE_2_COMMUNITY_CONTENT,
         order: 13,
         isRequired: true,
         estimatedMinutes: 15,
@@ -516,7 +525,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Toets: BPS-model als dynamisch systeem",
         description: "Beantwoord de toetsvragen. Norm: 70%, maximaal 3 pogingen.",
         type: "ASSESSMENT",
-        content: "Maak de Module 2-toets. De toets gebruikt 70% als norm, maximaal 3 pogingen en gerandomiseerde volgorde.",
+        content: MODULE_2_ASSESSMENT_CONTENT,
         order: 14,
         isRequired: true,
         estimatedMinutes: 10,
@@ -526,8 +535,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Samenvatting van de kernprincipes",
         description: "Overzicht van de belangrijkste inzichten uit Module 1 en Module 2.",
         type: "TEXT",
-        content:
-          "Module 1 liet zien dat klachten niet altijd lineair of voorspelbaar herstellen. Complexe systemen kenmerken zich door emergentie, niet-lineariteit en adaptiviteit. Module 2 verdiepte het biopsychosociaal model als dynamisch netwerk: biologische, psychologische en sociale factoren beïnvloeden elkaar voortdurend. Klinisch redeneren betekent daardoor denken in relaties, patronen en feedback in plaats van losse invuloefeningen.",
+        content: MODULE_3_SUMMARY_CONTENT,
         order: 15,
         isRequired: true,
         estimatedMinutes: 10,
@@ -537,8 +545,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Reflectie: praktijktransfer",
         description: "Vertaal de inzichten naar je eigen dagelijkse praktijk.",
         type: "REFLECTION",
-        content:
-          "Denk terug aan een patiënt uit je praktijk waarbij het herstel grillig verliep. Hoe kijk je nu, met de kennis uit deze e-learning, naar de factoren die mogelijk meespeelden? Welke verbanden zie je die je eerder misschien over het hoofd zag? En welk ander handelen zou je nu overwegen in je dagelijkse praktijk?",
+        content: MODULE_3_REFLECTION_CONTENT,
         order: 16,
         isRequired: true,
         estimatedMinutes: 10,
@@ -548,8 +555,7 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
         title: "Afsluiting en evaluatie",
         description: "Rond de tijdelijke demo-e-learning af en vul de evaluatie in.",
         type: "TEXT",
-        content:
-          "Deze afsluitende les markeert het einde van de tijdelijke demo-e-learning. De inhoud is bedoeld om praktijkhouders en reviewers te laten zien hoe een accreditatie-ready leerroute eruit kan zien. Vul na afronding de evaluatie in: algemene indruk, inhoudelijke beoordeling, praktische toepasbaarheid, didactiek, inzicht/bewustwording, verbeterpunten en aanbeveling.",
+        content: MODULE_3_EVALUATION_CONTENT,
         order: 17,
         isRequired: true,
         estimatedMinutes: 10,
