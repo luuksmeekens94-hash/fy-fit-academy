@@ -38,7 +38,7 @@ export default async function AcademyPage({ searchParams }: AcademyPageProps) {
             name="q"
             defaultValue={params.q}
             placeholder="Zoek op titel, beschrijving of doel"
-            className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]"
+            className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
           />
           <button
             type="submit"

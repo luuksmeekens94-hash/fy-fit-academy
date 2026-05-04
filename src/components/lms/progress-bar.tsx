@@ -14,11 +14,11 @@ export function ProgressBar({ value, label }: ProgressBarProps) {
         <span>{label ?? "Voortgang"}</span>
         <span>{clampedValue}%</span>
       </div>
-      <div className="h-3 overflow-hidden rounded-full bg-[var(--sage-soft)]">
+      <div className="h-3 overflow-hidden rounded-full bg-[var(--brand-soft)]">
         <div
           className={cn(
-            "h-full rounded-full bg-[var(--teal)] transition-all",
-            clampedValue === 100 ? "bg-[var(--success)]" : "bg-[var(--teal)]",
+            "h-full rounded-full bg-[var(--brand)] transition-all",
+            clampedValue === 100 ? "bg-[var(--success)]" : "bg-[var(--brand)]",
           )}
           style={{ width: `${clampedValue}%` }}
         />

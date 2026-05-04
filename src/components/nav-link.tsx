@@ -18,12 +18,12 @@ export function NavLink({ href, label }: NavLinkProps) {
     <Link
       href={href}
       className={cn(
-        "rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--teal)]",
+        "rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]",
         active
-          ? "bg-[var(--teal)] text-white shadow-sm"
-          : "bg-white/82 text-[var(--ink-soft)] hover:border-[var(--teal)] hover:text-[var(--foreground)]",
+          ? "bg-[var(--brand)] text-white shadow-sm"
+          : "bg-white/82 text-[var(--ink-soft)] hover:border-[var(--brand)] hover:text-[var(--foreground)]",
       )}
-      style={{ border: active ? "1px solid var(--teal)" : "1px solid var(--border)" }}
+      style={{ border: active ? "1px solid var(--brand)" : "1px solid var(--border)" }}
     >
       {label}
     </Link>

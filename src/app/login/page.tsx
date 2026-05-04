@@ -32,7 +32,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]">
                 Persoonlijke en professionele groei
               </p>
-              <h1 className="text-4xl font-semibold tracking-tight text-[var(--foreground)] sm:text-5xl">
+            <h1 className="text-4xl font-semibold text-[var(--foreground)] sm:text-5xl">
                 Inloggen
               </h1>
             </div>

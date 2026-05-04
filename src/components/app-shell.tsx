@@ -24,7 +24,7 @@ export function AppShell({ user, children }: AppShellProps) {
                 <div className="brand-chip">Fy-fit Academy</div>
                 <div className="accent-line" />
                 <div>
-                  <h1 className="max-w-3xl text-3xl font-semibold tracking-tight text-[var(--foreground)] lg:text-4xl">
+                  <h1 className="max-w-3xl text-3xl font-semibold text-[var(--foreground)] lg:text-4xl">
                     Leren, ontwikkelen en borgen in de praktijk.
                   </h1>
                 </div>

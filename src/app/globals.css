@@ -7,10 +7,10 @@
   --card-strong: #eef0ea;
   --muted: #7c756b;
   --border: rgba(47, 42, 35, 0.1);
-  --brand: #b96f1f;
-  --brand-deep: #744711;
-  --brand-soft: #f3e2ca;
-  --teal: #315f58;
+  --brand: #d68121;
+  --brand-deep: #8d4f12;
+  --brand-soft: #f7e5cf;
+  --teal: #3f6c66;
   --teal-soft: #ddebe5;
   --sage: #6d7f5f;
   --sage-soft: #e6ebe0;
@@ -39,8 +39,8 @@
 
 html {
   background:
-    linear-gradient(135deg, rgba(49, 95, 88, 0.08), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(185, 111, 31, 0.08), transparent 26%),
+    linear-gradient(135deg, rgba(214, 129, 33, 0.1), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(63, 108, 102, 0.08), transparent 26%),
     var(--background);
 }
 
@@ -140,7 +140,7 @@ textarea {
   width: min(560px, 100%);
   height: 5px;
   border-radius: 9999px;
-  background: linear-gradient(90deg, var(--teal), var(--brand));
+  background: linear-gradient(90deg, var(--brand), var(--brand-deep));
 }
 
 .brand-chip {
@@ -193,13 +193,13 @@ textarea {
 
 .btn-primary {
   border-radius: 9999px;
-  background: var(--teal);
+  background: var(--brand);
   color: #fff;
   font-weight: 700;
   transition: background 160ms ease, transform 160ms ease;
 }
 
 .btn-primary:hover {
-  background: #244943;
+  background: var(--brand-deep);
   transform: translateY(-1px);
 }
