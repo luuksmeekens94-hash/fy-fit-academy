@@ -3,9 +3,11 @@ import { notFound, redirect } from "next/navigation";
 
 import { completeLessonAction } from "@/app/lms-actions";
 import { AssessmentRunner } from "@/components/lms/assessment-runner";
+import { LessonMediaBlock } from "@/components/lms/lesson-media-block";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
+import { extractLessonMedia } from "@/lib/lms/lesson-media";
 import { getLearnerLmsRedirectPath } from "@/lib/lms/route-access";
 import { getReviewerPreviewMode } from "@/lib/lms/reviewer-preview";
 import {
@@ -31,17 +33,6 @@ function getProgressTone(status: string) {
   }
 
   return "brand" as const;
-}
-
-function extractLessonMedia(content: string) {
-  const mediaPaths = Array.from(
-    new Set(content.match(/\/lms\/[^\s)]+\.(?:mp4|png|jpg|jpeg|webp)/gi) ?? [])
-  );
-
-  return {
-    videos: mediaPaths.filter((path) => path.toLowerCase().endsWith(".mp4")),
-    images: mediaPaths.filter((path) => /\.(png|jpg|jpeg|webp)$/i.test(path)),
-  };
 }
 
 export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPageProps) {
@@ -126,35 +117,7 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
         </div>
 
         <div className="mt-6 rounded-[28px] bg-white px-5 py-5 text-base leading-8 text-[var(--ink-soft)]">
-          <p className="whitespace-pre-line">{lesson.content}</p>
-
-          {lessonMedia.videos.length > 0 ? (
-            <div className="mt-6 space-y-4">
-              {lessonMedia.videos.map((videoPath) => (
-                <video
-                  key={videoPath}
-                  src={videoPath}
-                  controls
-                  preload="metadata"
-                  className="w-full rounded-[24px] border border-[var(--border)] bg-slate-950"
-                />
-              ))}
-            </div>
-          ) : null}
-
-          {lessonMedia.images.length > 0 ? (
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {lessonMedia.images.map((imagePath) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={imagePath}
-                  src={imagePath}
-                  alt="Afbeelding bij lesmateriaal"
-                  className="w-full rounded-[24px] border border-[var(--border)] bg-white object-cover"
-                />
-              ))}
-            </div>
-          ) : null}
+          <LessonMediaBlock media={lessonMedia} />
         </div>
       </section>
 

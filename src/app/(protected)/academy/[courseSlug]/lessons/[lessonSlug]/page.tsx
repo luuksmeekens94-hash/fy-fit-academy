@@ -5,10 +5,12 @@ import { AcademyCompleteLessonButton } from "@/components/academy/academy-comple
 import { AcademyLessonSidebar } from "@/components/academy/academy-lesson-sidebar";
 import { AcademyStatusPanel } from "@/components/academy/academy-status-panel";
 import { AssessmentRunner } from "@/components/lms/assessment-runner";
+import { LessonMediaBlock } from "@/components/lms/lesson-media-block";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
 import { getAcademyLessonBySlugsForUser } from "@/lib/academy/queries";
+import { extractLessonMedia } from "@/lib/lms/lesson-media";
 
 export default async function AcademyLessonDetailPage({
   params,
@@ -25,6 +27,8 @@ export default async function AcademyLessonDetailPage({
   if (!lesson) {
     notFound();
   }
+
+  const lessonMedia = extractLessonMedia(lesson.content);
 
   return (
     <div className="space-y-6">
@@ -60,7 +64,7 @@ export default async function AcademyLessonDetailPage({
             </div>
 
             <div className="mt-6 rounded-[28px] bg-white px-5 py-5 text-base leading-8 text-[var(--ink-soft)]">
-              <p>{lesson.content}</p>
+              <LessonMediaBlock media={lessonMedia} />
             </div>
           </section>
 
