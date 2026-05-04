@@ -105,21 +105,23 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
         description={lesson.description ?? "Deze les hoort bij het eerste LMS-traject van de Academy."}
       />
 
-      <section className="card-surface rounded-[32px] p-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <StatusBadge label={lesson.type} tone="neutral" />
-          <StatusBadge
-            label={enrollment ? progress?.status ?? "NOT_STARTED" : previewState.label}
-            tone={enrollment ? getProgressTone(progress?.status ?? "NOT_STARTED") : "brand"}
-          />
-          {lesson.isRequired ? <StatusBadge label="Verplicht" tone="brand" /> : null}
-          <StatusBadge label={`${lesson.estimatedMinutes} minuten`} tone="neutral" />
-        </div>
+      {lesson.type !== "ASSESSMENT" ? (
+        <section className="card-surface rounded-[32px] p-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <StatusBadge label={lesson.type} tone="neutral" />
+            <StatusBadge
+              label={enrollment ? progress?.status ?? "NOT_STARTED" : previewState.label}
+              tone={enrollment ? getProgressTone(progress?.status ?? "NOT_STARTED") : "brand"}
+            />
+            {lesson.isRequired ? <StatusBadge label="Verplicht" tone="brand" /> : null}
+            <StatusBadge label={`${lesson.estimatedMinutes} minuten`} tone="neutral" />
+          </div>
 
-        <div className="mt-6 rounded-[28px] bg-white px-5 py-5 text-base leading-8 text-[var(--ink-soft)]">
-          <LessonMediaBlock media={lessonMedia} />
-        </div>
-      </section>
+          <div className="mt-6 rounded-[28px] bg-white px-5 py-5 text-base leading-8 text-[var(--ink-soft)]">
+            <LessonMediaBlock media={lessonMedia} />
+          </div>
+        </section>
+      ) : null}
 
       {previewState.isPreview ? (
         <section className="rounded-[28px] border border-[var(--brand)] bg-[var(--brand-soft)] p-5">

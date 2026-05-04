@@ -63,9 +63,11 @@ export default async function AcademyLessonDetailPage({
               ) : null}
             </div>
 
-            <div className="mt-6 rounded-[28px] bg-white px-5 py-5 text-base leading-8 text-[var(--ink-soft)]">
-              <LessonMediaBlock media={lessonMedia} />
-            </div>
+            {lesson.type !== "ASSESSMENT" ? (
+              <div className="mt-6 rounded-[28px] bg-white px-5 py-5 text-base leading-8 text-[var(--ink-soft)]">
+                <LessonMediaBlock media={lessonMedia} />
+              </div>
+            ) : null}
           </section>
 
           {lesson.type === "ASSESSMENT" && lesson.assessment ? (

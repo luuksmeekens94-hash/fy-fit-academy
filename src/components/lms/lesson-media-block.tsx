@@ -1,4 +1,5 @@
 import type { LessonMedia } from "@/lib/lms/lesson-media";
+import { parseLessonRichText } from "@/lib/lms/lesson-rich-text";
 
 type LessonMediaBlockProps = {
   media: LessonMedia;
@@ -26,9 +27,38 @@ function MediaImage({ src }: { src: string }) {
   );
 }
 
+function LessonText({ text }: { text: string }) {
+  const blocks = parseLessonRichText(text);
+
+  return (
+    <div className="space-y-5">
+      {blocks.map((block, index) => {
+        if (block.type === "bulletList") {
+          return (
+            <ul key={`list-${index}`} className="space-y-4 pl-5">
+              {block.items.map((item, itemIndex) => (
+                <li key={`${item.label ?? item.text}-${itemIndex}`} className="list-disc pl-2 marker:text-[var(--brand)]">
+                  {item.label ? <span className="font-semibold italic text-slate-900">{item.label}: </span> : null}
+                  <span>{item.text}</span>
+                </li>
+              ))}
+            </ul>
+          );
+        }
+
+        return (
+          <p key={`text-${index}`} className="whitespace-pre-line">
+            {block.text}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 export function LessonMediaBlock({ media }: LessonMediaBlockProps) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-5">
       {media.blocks.map((block, index) => {
         if (block.type === "video") {
           return <MediaVideo key={`${block.src}-${index}`} src={block.src} />;
@@ -38,11 +68,7 @@ export function LessonMediaBlock({ media }: LessonMediaBlockProps) {
           return <MediaImage key={`${block.src}-${index}`} src={block.src} />;
         }
 
-        return (
-          <p key={`text-${index}`} className="whitespace-pre-line">
-            {block.text}
-          </p>
-        );
+        return <LessonText key={`text-${index}`} text={block.text} />;
       })}
     </div>
   );
