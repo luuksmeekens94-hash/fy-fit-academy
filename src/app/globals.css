@@ -7,9 +7,12 @@
   --card-strong: #eef0ea;
   --muted: #7c756b;
   --border: rgba(47, 42, 35, 0.1);
-  --brand: #d68121;
+  --brand: #df821c;
+  --brand-hot: #ef6f25;
+  --brand-gold: #f3b35d;
   --brand-deep: #8d4f12;
-  --brand-soft: #f7e5cf;
+  --brand-soft: #f9e4ca;
+  --brand-wash: #fff3e4;
   --teal: #3f6c66;
   --teal-soft: #ddebe5;
   --sage: #6d7f5f;
@@ -39,8 +42,9 @@
 
 html {
   background:
-    linear-gradient(135deg, rgba(214, 129, 33, 0.1), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(63, 108, 102, 0.08), transparent 26%),
+    linear-gradient(135deg, rgba(239, 111, 37, 0.12), transparent 35%),
+    linear-gradient(220deg, rgba(243, 179, 93, 0.16), transparent 42%),
+    radial-gradient(circle at bottom right, rgba(63, 108, 102, 0.07), transparent 26%),
     var(--background);
 }
 
@@ -63,7 +67,9 @@ textarea {
 }
 
 .card-surface {
-  background: linear-gradient(180deg, rgba(255, 253, 250, 0.98), rgba(250, 248, 243, 0.96));
+  background:
+    linear-gradient(145deg, rgba(255, 247, 237, 0.78), transparent 42%),
+    linear-gradient(180deg, rgba(255, 253, 250, 0.98), rgba(250, 248, 243, 0.96));
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
 }
@@ -101,13 +107,28 @@ textarea {
 }
 
 .hero-panel {
+  position: relative;
+  overflow: hidden;
   background:
-    linear-gradient(90deg, rgba(255, 253, 250, 0.98), rgba(255, 253, 250, 0.9) 50%, rgba(255, 253, 250, 0.38)),
+    linear-gradient(90deg, rgba(255, 253, 250, 0.98), rgba(255, 248, 238, 0.9) 48%, rgba(255, 229, 197, 0.34)),
     url("/academy-hero-bg.png");
   background-position: center right;
   background-size: cover;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
+}
+
+.hero-panel::after {
+  content: "";
+  position: absolute;
+  right: clamp(1rem, 5vw, 5rem);
+  bottom: -3.25rem;
+  width: min(31rem, 54vw);
+  aspect-ratio: 1;
+  background: url("/fyfit-poppetje-faded.png") center / contain no-repeat;
+  opacity: 0.5;
+  pointer-events: none;
+  mix-blend-mode: multiply;
 }
 
 .soft-grid {
@@ -140,7 +161,7 @@ textarea {
   width: min(560px, 100%);
   height: 5px;
   border-radius: 9999px;
-  background: linear-gradient(90deg, var(--brand), var(--brand-deep));
+  background: linear-gradient(90deg, var(--brand-hot), var(--brand), var(--brand-gold));
 }
 
 .brand-chip {
@@ -155,6 +176,58 @@ textarea {
   font-weight: 600;
   color: var(--ink-soft);
   box-shadow: 0 10px 26px rgba(34, 27, 17, 0.08);
+}
+
+.brand-chip__mark {
+  height: 1.35rem;
+  width: 1.35rem;
+  object-fit: contain;
+}
+
+.brand-mark-surface {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.brand-mark-surface::after {
+  content: "";
+  position: absolute;
+  right: -2.25rem;
+  bottom: -2.75rem;
+  z-index: -1;
+  width: 10rem;
+  aspect-ratio: 1;
+  background: url("/fyfit-poppetje-faded.png") center / contain no-repeat;
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+.brand-mark-surface--lesson::after {
+  right: -1.75rem;
+  bottom: -2rem;
+  width: 8rem;
+  opacity: 0.28;
+}
+
+.academy-gradient-panel {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(239, 111, 37, 0.2), rgba(243, 179, 93, 0.1) 46%, rgba(255, 253, 250, 0.94)),
+    linear-gradient(180deg, rgba(255, 253, 250, 0.94), rgba(255, 246, 235, 0.98));
+}
+
+.academy-gradient-panel::after {
+  content: none;
+}
+
+.brand-mark-surface > *,
+.academy-gradient-panel > *,
+.hero-panel > * {
+  position: relative;
+  z-index: 1;
 }
 
 .watermark-logo {

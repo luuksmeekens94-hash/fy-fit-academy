@@ -10,7 +10,7 @@ type AcademyCourseHeroProps = {
 export function AcademyCourseHero({ course, action }: AcademyCourseHeroProps) {
   return (
     <section className="card-surface overflow-hidden rounded-[24px] p-0">
-      <div className="border-b border-[var(--border)] bg-[linear-gradient(135deg,rgba(221,235,229,0.76),rgba(255,253,250,0.92))] px-6 py-5">
+      <div className="academy-gradient-panel border-b border-[var(--border)] px-6 py-5">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-4">
             <div className="flex flex-wrap gap-3">

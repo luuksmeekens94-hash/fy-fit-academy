@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 import { logoutAction } from "@/app/actions";
 import { NavLink } from "@/components/nav-link";
@@ -21,7 +22,17 @@ export function AppShell({ user, children }: AppShellProps) {
           <div className="relative flex flex-col gap-4">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-3 lg:flex-1">
-                <div className="brand-chip">Fy-fit Academy</div>
+                <div className="brand-chip">
+                  <Image
+                    className="brand-chip__mark"
+                    src="/fyfit-poppetje.png"
+                    alt=""
+                    aria-hidden="true"
+                    width={24}
+                    height={24}
+                  />
+                  Fy-fit Academy
+                </div>
                 <div className="accent-line" />
                 <div>
                   <h1 className="max-w-3xl text-3xl font-semibold text-[var(--foreground)] lg:text-4xl">
