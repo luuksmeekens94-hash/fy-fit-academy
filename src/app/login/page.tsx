@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Image from "next/image";
 
 import { loginAction } from "@/app/actions";
 import { getSessionUser } from "@/lib/auth";
@@ -25,14 +26,24 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <div className="orb-ring right-28 top-0 h-28 w-28 opacity-40" />
 
           <div className="relative mx-auto flex max-w-xl flex-col items-center text-center">
-            <div className="brand-chip">Fy-fit Academy</div>
+            <div className="brand-chip">
+              <Image
+                className="brand-chip__mark"
+                src="/fyfit-poppetje.png"
+                alt=""
+                aria-hidden="true"
+                width={24}
+                height={24}
+              />
+              Fy-fit Academy
+            </div>
             <div className="accent-line mt-6" />
 
             <div className="mt-8 space-y-4">
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--brand)]">
                 Persoonlijke en professionele groei
               </p>
-            <h1 className="text-4xl font-semibold text-[var(--foreground)] sm:text-5xl">
+              <h1 className="text-4xl font-semibold text-[var(--foreground)] sm:text-5xl">
                 Inloggen
               </h1>
             </div>
