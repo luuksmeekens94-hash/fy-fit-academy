@@ -108,7 +108,7 @@ textarea {
 
 .hero-panel {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   background:
     linear-gradient(90deg, rgba(255, 253, 250, 0.98), rgba(255, 248, 238, 0.9) 48%, rgba(255, 229, 197, 0.34)),
     url("/academy-hero-bg.png");
@@ -122,7 +122,8 @@ textarea {
   content: "";
   position: absolute;
   right: clamp(1rem, 5vw, 5rem);
-  bottom: -3.25rem;
+  bottom: 0;
+  z-index: 0;
   width: min(31rem, 54vw);
   aspect-ratio: 1;
   background: url("/fyfit-poppetje-faded.png") center / contain no-repeat;
