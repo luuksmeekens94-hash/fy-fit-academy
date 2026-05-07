@@ -16,7 +16,7 @@ export function StatusBadge({ label, tone = "neutral" }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex rounded-full px-3 py-1 text-xs font-bold tracking-[0.08em]",
+        "inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold tracking-[0.08em]",
         toneClasses[tone],
       )}
     >
