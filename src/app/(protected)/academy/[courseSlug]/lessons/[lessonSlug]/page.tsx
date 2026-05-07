@@ -43,7 +43,7 @@ export default async function AcademyLessonDetailPage({
           <section className="card-surface overflow-hidden rounded-[24px] p-0">
             <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] bg-[linear-gradient(135deg,rgba(246,234,215,0.5),rgba(255,253,250,0.9))] px-6 py-5">
               <StatusBadge label={lesson.type} tone="neutral" />
-              {lesson.isRequired ? <StatusBadge label="Verplicht" tone="brand" /> : null}
+              {lesson.isRequired ? <StatusBadge label="Need to know" tone="brand" /> : null}
               <StatusBadge label={`${lesson.estimatedMinutes} minuten`} tone="neutral" />
               <StatusBadge label={lesson.enrollment.status} tone={lesson.enrollment.status === "COMPLETED" ? "success" : lesson.enrollment.status === "IN_PROGRESS" ? "warning" : "neutral"} />
             </div>

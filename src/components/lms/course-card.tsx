@@ -47,8 +47,8 @@ export function CourseCard({ enrollment }: CourseCardProps) {
             <h2 className="text-2xl font-semibold text-slate-950">{enrollment.courseTitle}</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
               {enrollment.assignmentType === "REQUIRED"
-                ? "Verplichte scholing binnen het LMS-traject."
-                : "Optionele cursus binnen het LMS-traject."}
+                ? "Need-to-know basiskennis binnen het LMS-traject."
+                : "Nice-to-know verdieping binnen het LMS-traject."}
             </p>
           </div>
         </div>
@@ -62,7 +62,7 @@ export function CourseCard({ enrollment }: CourseCardProps) {
       <div className="mt-5 flex flex-wrap gap-3 text-xs font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
         <span>Deadline {formatDate(enrollment.deadlineAt)}</span>
         <span>•</span>
-        <span>{enrollment.assignmentType === "REQUIRED" ? "Verplicht" : "Optioneel"}</span>
+        <span>{enrollment.assignmentType === "REQUIRED" ? "Need to know" : "Nice to know"}</span>
       </div>
     </Link>
   );

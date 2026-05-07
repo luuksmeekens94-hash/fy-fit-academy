@@ -39,7 +39,7 @@ export function AcademyCourseCard({ course }: AcademyCourseCardProps) {
             <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--ink-soft)]">{course.description}</p>
           </div>
         </div>
-        <StatusBadge label={course.assignmentLabel} tone={course.assignmentLabel === "Verplicht" ? "brand" : "neutral"} />
+        <StatusBadge label={course.assignmentLabel} tone={course.assignmentLabel === "Need to know" ? "brand" : "neutral"} />
       </div>
 
       {course.goal ? (

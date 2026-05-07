@@ -214,7 +214,7 @@ export default async function AdminPage() {
             </div>
             <label className="flex items-center gap-3 text-sm font-medium text-slate-900">
               <input type="checkbox" name="isRequired" className="h-4 w-4" />
-              Verplichte module
+              Need-to-know module
             </label>
             <textarea name="sections" rows={6} placeholder="1||Intro||TEXT||Inhoud" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 font-mono text-sm outline-none focus:border-[var(--teal)]" required />
             <button type="submit" className="rounded-full bg-[var(--teal)] px-5 py-3 text-sm font-semibold text-white">Module aanmaken</button>
@@ -224,7 +224,7 @@ export default async function AdminPage() {
               <div key={module.id} className="rounded-[24px] border border-[var(--border)] bg-white/85 p-5">
                 <div className="mb-4 flex flex-wrap gap-3">
                   <StatusBadge label={module.status} tone="warning" />
-                  {module.isRequired ? <StatusBadge label="Verplicht" tone="brand" /> : null}
+                  {module.isRequired ? <StatusBadge label="Need to know" tone="brand" /> : null}
                 </div>
                 <form action={saveModuleAction} className="grid gap-3">
                   <input type="hidden" name="moduleId" value={module.id} />
@@ -246,7 +246,7 @@ export default async function AdminPage() {
                   </div>
                   <label className="flex items-center gap-3 text-sm font-medium text-slate-900">
                     <input type="checkbox" name="isRequired" defaultChecked={module.isRequired} className="h-4 w-4" />
-                    Verplichte module
+                    Need-to-know module
                   </label>
                   <textarea name="sections" rows={6} defaultValue={formatModuleSections(module.sections)} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 font-mono text-sm outline-none focus:border-[var(--teal)]" required />
                   <button type="submit" className="rounded-full bg-[var(--teal)] px-5 py-3 text-sm font-semibold text-white">Opslaan</button>

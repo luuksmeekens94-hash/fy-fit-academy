@@ -28,7 +28,7 @@ export function AcademyLessonList({ lessons }: AcademyLessonListProps) {
                 {lesson.order}
               </span>
               <StatusBadge label={lesson.type} tone="neutral" />
-              {lesson.isRequired ? <StatusBadge label="Verplicht" tone="brand" /> : null}
+              <StatusBadge label={lesson.isRequired ? "Need to know" : "Nice to know"} tone={lesson.isRequired ? "brand" : "neutral"} />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-[var(--foreground)]">{lesson.title}</h3>

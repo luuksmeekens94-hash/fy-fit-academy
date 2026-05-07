@@ -98,7 +98,7 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
                 label={enrollment?.status ?? previewState.label}
                 tone={enrollment ? getEnrollmentTone(enrollment.status) : "brand"}
               />
-              {course.isMandatory ? <StatusBadge label="Verplicht" tone="brand" /> : null}
+              {course.isMandatory ? <StatusBadge label="Need to know" tone="brand" /> : null}
               <StatusBadge label={`${course.studyLoadMinutes} minuten`} tone="neutral" />
             </div>
             <p className="max-w-3xl text-sm leading-7 text-[var(--ink-soft)]">
@@ -145,9 +145,9 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
           detail="Aantal lessen dat op dit moment als afgerond staat geregistreerd."
         />
         <StatCard
-          label="Verplichte toetsen"
+          label="Need-to-know toetsen"
           value={enrollment ? `${enrollment.passedRequiredAssessmentCount}/${enrollment.requiredAssessmentCount}` : `${course.activeVersion?.assessments.filter((assessment) => assessment.isRequiredForCompletion).length ?? 0}`}
-          detail="Aantal verplichte toetsen dat al met een voldoende resultaat is afgesloten."
+          detail="Aantal need-to-know toetsen dat al met een voldoende resultaat is afgesloten."
         />
         <StatCard
           label="Deadline"
@@ -188,7 +188,7 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold text-slate-950">Lessen en onderdelen</h2>
           <p className="text-sm leading-7 text-[var(--ink-soft)]">
-            Werk de verplichte lessen af en rond daarna de toetsles af om de cursus volledig te voltooien.
+            Doorloop de need-to-know lessen en rond daarna de toetsles af om de cursus volledig te voltooien.
           </p>
         </div>
         <LessonList course={course} progressEntries={progressEntries} />

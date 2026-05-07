@@ -108,7 +108,7 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
               label={enrollment ? progress?.status ?? "NOT_STARTED" : previewState.label}
               tone={enrollment ? getProgressTone(progress?.status ?? "NOT_STARTED") : "brand"}
             />
-            {lesson.isRequired ? <StatusBadge label="Verplicht" tone="brand" /> : null}
+            {lesson.isRequired ? <StatusBadge label="Need to know" tone="brand" /> : null}
             <StatusBadge label={`${lesson.estimatedMinutes} minuten`} tone="neutral" />
           </div>
 
@@ -187,7 +187,7 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
         <h2 className="text-xl font-semibold text-slate-950">Cursuscontext</h2>
         <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
           {enrollment
-            ? `Je voortgang in deze cursus staat momenteel op ${enrollment.progress}%. Werk de verplichte lessen af en rond daarna de toets af om het certificaat vrij te spelen.`
+            ? `Je voortgang in deze cursus staat momenteel op ${enrollment.progress}%. Doorloop de need-to-know lessen en rond daarna de toets af om het certificaat vrij te spelen.`
             : "Previewmodus: je bekijkt de lesinhoud zonder voortgang, toetsresultaten of certificaatdata aan te maken."}
         </p>
       </section>

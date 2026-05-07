@@ -32,6 +32,22 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
 
     return document.isPublished && matchesQuery && matchesType && matchesCategory;
   });
+  const protocolCategory = categories.find((category) => category.name.toLowerCase().includes("protocol"));
+  const externalCourseCategory = categories.find((category) => category.name.toLowerCase().includes("extern"));
+  const spotlightSections = [
+    {
+      title: "Protocollen en werkafspraken",
+      text: "Een vaste plek voor protocollen, formats en afspraken die praktijkbreed gelijk worden gebruikt.",
+      href: protocolCategory ? `/bibliotheek?category=${protocolCategory.id}` : "/bibliotheek?type=PROTOCOL",
+      count: documents.filter((document) => document.type === "PROTOCOL" || document.categoryId === protocolCategory?.id).length,
+    },
+    {
+      title: "Extern cursusmateriaal",
+      text: "Presentaties, PDFs en samenvattingen uit externe cursussen zodat opgedane kennis intern herbruikbaar wordt.",
+      href: externalCourseCategory ? `/bibliotheek?category=${externalCourseCategory.id}` : "/bibliotheek?q=cursus",
+      count: documents.filter((document) => document.categoryId === externalCourseCategory?.id || document.tags.includes("extern")).length,
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -40,6 +56,21 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
         title="Actuele documenten en kernboodschappen"
         description="De bibliotheek bundelt protocollen, formats en werkafspraken zodat iedereen met dezelfde informatie werkt."
       />
+
+      <section className="grid gap-4 md:grid-cols-2">
+        {spotlightSections.map((section) => (
+          <Link key={section.title} href={section.href} className="card-surface rounded-[28px] p-5 transition hover:-translate-y-0.5 hover:border-[var(--brand)]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--brand-deep)]">Afdeling</p>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-950">{section.title}</h2>
+              </div>
+              <StatusBadge label={`${section.count} items`} tone="neutral" />
+            </div>
+            <p className="mt-3 text-sm leading-6 text-[var(--ink-soft)]">{section.text}</p>
+          </Link>
+        ))}
+      </section>
 
       <section className="card-surface rounded-[32px] p-6">
         <form className="grid gap-4 xl:grid-cols-[1fr_220px_220px_140px]">

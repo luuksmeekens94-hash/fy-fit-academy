@@ -30,6 +30,12 @@ export default async function DevelopmentPage() {
       documents: await getVisibleDevelopmentDocuments(user.id, member.id),
     })),
   );
+  const gesprekDocumenten = documents.filter((document) =>
+    ["Beoordelingsgesprek", "Functioneringsgesprek", "Profielgesprek"].includes(document.category),
+  );
+  const overigeDocumenten = documents.filter((document) =>
+    !["Beoordelingsgesprek", "Functioneringsgesprek", "Profielgesprek"].includes(document.category),
+  );
 
   return (
     <div className="space-y-6">
@@ -84,11 +90,14 @@ export default async function DevelopmentPage() {
             />
             <textarea
               name="description"
-              placeholder="Omschrijf kort wat je wil versterken en hoe je dat terug wil zien."
-              rows={3}
+              placeholder="Maak je doel SMART: Specifiek, Meetbaar, Acceptabel, Realistisch en Tijdgebonden. Bijvoorbeeld: binnen 6 weken in 3 consulten de hulpvraag, samenvatting en vervolgstap expliciet afronden."
+              rows={4}
               className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
               required
             />
+            <div className="rounded-2xl border border-[var(--brand)]/20 bg-white/75 px-4 py-3 text-xs leading-5 text-[var(--brand-deep)]">
+              <strong>SMART-check:</strong> benoem concreet gedrag, hoe je voortgang zichtbaar wordt, waarom het past, wat haalbaar is en wanneer je het evalueert.
+            </div>
             <input
               name="targetDate"
               type="date"
@@ -111,27 +120,58 @@ export default async function DevelopmentPage() {
             <h2 className="mt-2 text-2xl font-semibold text-slate-950">
               Ontwikkelmap
             </h2>
-            <div className="mt-6 space-y-4">
-              {documents.map((document) => (
-                <div
-                  key={document.id}
-                  className="rounded-[24px] border border-[var(--border)] bg-white/85 p-5"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="text-lg font-semibold text-slate-950">{document.title}</h3>
-                    <StatusBadge
-                      label={document.visibility === "PRIVATE" ? "Privé" : "Zichtbaar voor begeleider"}
-                      tone={document.visibility === "PRIVATE" ? "neutral" : "warning"}
-                    />
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-                    {document.description}
-                  </p>
-                  <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
-                    {document.category} · bijgewerkt {formatDate(document.updatedAt)}
-                  </p>
+            <div className="mt-6 space-y-5">
+              <div className="rounded-[24px] border border-[var(--teal)]/20 bg-white/75 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-base font-semibold text-slate-950">Gespreksdocumenten</h3>
+                  <StatusBadge label={`${gesprekDocumenten.length} items`} tone="neutral" />
                 </div>
-              ))}
+                <p className="mt-1 text-sm leading-6 text-[var(--ink-soft)]">
+                  Beoordelingsgesprekken, functioneringsgesprekken en profielgesprekken staan hier apart van POP-notities.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {gesprekDocumenten.length > 0 ? gesprekDocumenten.map((document) => (
+                    <div key={document.id} className="rounded-[20px] border border-[var(--border)] bg-white p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h4 className="font-semibold text-slate-950">{document.title}</h4>
+                        <StatusBadge label={document.category} tone="brand" />
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{document.description}</p>
+                      <p className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
+                        {document.visibility === "PRIVATE" ? "Privé" : "Zichtbaar voor begeleider"} · bijgewerkt {formatDate(document.updatedAt)}
+                      </p>
+                    </div>
+                  )) : (
+                    <p className="rounded-[20px] bg-white px-4 py-3 text-sm text-[var(--ink-soft)]">
+                      Nog geen gespreksdocumenten toegevoegd.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-base font-semibold text-slate-950">POP, bewijs en reflectie</h3>
+                {overigeDocumenten.map((document) => (
+                  <div
+                    key={document.id}
+                    className="rounded-[24px] border border-[var(--border)] bg-white/85 p-5"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="text-lg font-semibold text-slate-950">{document.title}</h3>
+                      <StatusBadge
+                        label={document.visibility === "PRIVATE" ? "Privé" : "Zichtbaar voor begeleider"}
+                        tone={document.visibility === "PRIVATE" ? "neutral" : "warning"}
+                      />
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+                      {document.description}
+                    </p>
+                    <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
+                      {document.category} · bijgewerkt {formatDate(document.updatedAt)}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
             <form action={addDevelopmentDocumentAction} className="mt-6 grid gap-3 rounded-[28px] bg-[var(--teal-soft)] p-5">
               <h3 className="text-lg font-semibold text-slate-950">Document toevoegen</h3>
@@ -149,11 +189,18 @@ export default async function DevelopmentPage() {
                 required
               />
               <div className="grid gap-3 sm:grid-cols-2">
-                <input
+                <select
                   name="category"
-                  placeholder="Categorie, bijvoorbeeld POP"
+                  defaultValue="POP"
                   className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]"
-                />
+                >
+                  <option value="POP">POP</option>
+                  <option value="Bewijs">Bewijs</option>
+                  <option value="Reflectie">Reflectie</option>
+                  <option value="Beoordelingsgesprek">Beoordelingsgesprek</option>
+                  <option value="Functioneringsgesprek">Functioneringsgesprek</option>
+                  <option value="Profielgesprek">Profielgesprek</option>
+                </select>
                 <select
                   name="visibility"
                   defaultValue="TEAM"

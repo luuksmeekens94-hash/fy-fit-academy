@@ -15,13 +15,13 @@ export function AcademyCourseHero({ course, action }: AcademyCourseHeroProps) {
           <div className="space-y-4">
             <div className="flex flex-wrap gap-3">
               <StatusBadge label={course.status} tone={course.status === "COMPLETED" ? "success" : course.status === "IN_PROGRESS" ? "warning" : "neutral"} />
-              {course.isMandatory ? <StatusBadge label="Verplicht" tone="brand" /> : <StatusBadge label="Aanbevolen" tone="neutral" />}
+              {course.isMandatory ? <StatusBadge label="Need to know" tone="brand" /> : <StatusBadge label="Nice to know" tone="neutral" />}
               <StatusBadge label={`${course.studyLoadMinutes} minuten`} tone="neutral" />
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold text-[var(--foreground)]">Voortgang en status</h2>
               <p className="max-w-3xl text-base leading-7 text-[var(--ink-soft)]">
-                Hervat waar je gebleven bent en werk de verplichte lessen en toets stap voor stap af.
+                Hervat waar je gebleven bent: need-to-know onderdelen eerst, nice-to-know verdieping daarna.
               </p>
             </div>
           </div>

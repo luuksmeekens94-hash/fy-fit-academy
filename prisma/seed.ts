@@ -66,9 +66,11 @@ async function main() {
     prisma.category.create({ data: { name: "Communicatie", icon: "Gesprek", order: 2 } }),
     prisma.category.create({ data: { name: "Lage rug", icon: "Rug", order: 3 } }),
     prisma.category.create({ data: { name: "Onboarding", icon: "Start", order: 4 } }),
+    prisma.category.create({ data: { name: "Protocollen", icon: "Protocol", order: 5 } }),
+    prisma.category.create({ data: { name: "Extern cursusmateriaal", icon: "Cursus", order: 6 } }),
   ]);
 
-  const [organisatie, communicatie, rug] = categories;
+  const [organisatie, communicatie, rug, , protocollen, externCursusmateriaal] = categories;
 
   const admin = await prisma.user.create({
     data: {
@@ -378,6 +380,32 @@ async function main() {
         categoryId: organisatie.id,
         isPublished: true,
       },
+      {
+        title: "Protocol dossiervoering en overdracht",
+        type: DocumentType.PROTOCOL,
+        summary:
+          "Praktijkbreed protocol voor verslaglegging, overdracht en vindbaarheid van actuele afspraken.",
+        content:
+          "<p>Leg klinisch redeneren, gemaakte afspraken en follow-up kort maar herleidbaar vast.</p><p>Gebruik bij overdracht dezelfde kern: hulpvraag, bevinding, plan, aandachtspunt en eerstvolgende stap.</p><p>Controleer altijd of je met de meest actuele protocolversie werkt.</p>",
+        tags: ["protocol", "dossier", "overdracht"],
+        version: "1.0",
+        ownerId: admin.id,
+        categoryId: protocollen.id,
+        isPublished: true,
+      },
+      {
+        title: "Extern cursusmateriaal communicatie",
+        type: DocumentType.OVERIG,
+        summary:
+          "Voorbeeldplek voor slides, PDFs en kerninzichten uit externe cursussen die intern gedeeld mogen worden.",
+        content:
+          "<p>Gebruik deze afdeling om externe kennis praktisch door te vertalen naar Fy-fit taal.</p><p>Voorbeelden: presentatie communicatiecursus, PDF dry needling, of een samenvatting met toepasbare consultzinnen.</p><p>Noteer bij elk materiaal de bron, datum en wie de inhoud intern heeft ingebracht.</p>",
+        tags: ["extern", "cursus", "communicatie"],
+        version: "0.1",
+        ownerId: teamlead.id,
+        categoryId: externCursusmateriaal.id,
+        isPublished: true,
+      },
     ],
   });
 
@@ -477,6 +505,14 @@ async function main() {
           "Korte notitie over energieverdeling en ritme in de week. Alleen zichtbaar voor de medewerker zelf.",
         category: "Reflectie",
         visibility: Visibility.PRIVATE,
+      },
+      {
+        userId: medewerker1.id,
+        title: "Functioneringsgesprek voorjaar 2026",
+        description:
+          "Samenvatting van sterke punten, ontwikkelafspraken en twee SMART-doelen voor de komende gespreksperiode.",
+        category: "Functioneringsgesprek",
+        visibility: Visibility.TEAM,
       },
     ],
   });

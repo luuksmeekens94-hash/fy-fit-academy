@@ -199,7 +199,7 @@ export function buildAcademyCourseCardView(params: {
     progressPercentage: params.enrollment.progress,
     progressLabel: getProgressLabel(params.enrollment.progress),
     studyLoadMinutes: params.course.studyLoadMinutes,
-    assignmentLabel: params.enrollment.assignmentType === "REQUIRED" ? "Verplicht" : "Aanbevolen",
+    assignmentLabel: params.enrollment.assignmentType === "REQUIRED" ? "Need to know" : "Nice to know",
     deadlineAt: params.enrollment.deadlineAt,
     status: params.enrollment.status,
     ctaLabel: getCourseCtaLabel(params.enrollment.status),

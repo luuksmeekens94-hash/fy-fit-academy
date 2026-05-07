@@ -1,5 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
+import { addDevelopmentDocumentAction } from "@/app/actions";
+
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth";
@@ -105,7 +107,10 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
 
         <div className="card-surface rounded-[32px] p-6">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--teal)]">
-            POP-documenten
+            Documenten en gespreksverslagen
+          </p>
+          <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+            Voeg als begeleider beoordelingsgesprekken, functioneringsgesprekken of profielgesprekken toe aan de ontwikkelmap van {member.name.split(" ")[0]}.
           </p>
           <div className="mt-6 space-y-4">
             {documents.map((document) => (
@@ -116,7 +121,7 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold text-slate-950">{document.title}</h2>
                   <StatusBadge
-                    label={document.visibility === "PRIVATE" ? "Privé" : "Gedeeld"}
+                    label={document.category}
                     tone={document.visibility === "PRIVATE" ? "neutral" : "warning"}
                   />
                 </div>
@@ -124,11 +129,44 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
                   {document.description}
                 </p>
                 <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
-                  {document.category} · bijgewerkt {formatDate(document.updatedAt)}
+                  {document.visibility === "PRIVATE" ? "Privé" : "Gedeeld"} · bijgewerkt {formatDate(document.updatedAt)}
                 </p>
               </div>
             ))}
           </div>
+          <form action={addDevelopmentDocumentAction} className="mt-6 grid gap-3 rounded-[28px] bg-[var(--teal-soft)] p-5">
+            <input type="hidden" name="targetUserId" value={member.id} />
+            <h3 className="text-lg font-semibold text-slate-950">Gespreksdocument toevoegen</h3>
+            <input
+              name="title"
+              placeholder="Bijvoorbeeld: Functioneringsgesprek voorjaar 2026"
+              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]"
+              required
+            />
+            <textarea
+              name="description"
+              rows={3}
+              placeholder="Korte samenvatting, afspraken of verwijzing naar het document."
+              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]"
+              required
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <select name="category" defaultValue="Functioneringsgesprek" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]">
+                <option value="Beoordelingsgesprek">Beoordelingsgesprek</option>
+                <option value="Functioneringsgesprek">Functioneringsgesprek</option>
+                <option value="Profielgesprek">Profielgesprek</option>
+                <option value="POP">POP</option>
+                <option value="Bewijs">Bewijs</option>
+              </select>
+              <select name="visibility" defaultValue="TEAM" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]">
+                <option value="TEAM">Zichtbaar voor medewerker en begeleider</option>
+                <option value="PRIVATE">Alleen in dossier medewerker</option>
+              </select>
+            </div>
+            <button type="submit" className="rounded-full bg-[var(--teal)] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90">
+              Toevoegen aan ontwikkelmap
+            </button>
+          </form>
         </div>
       </section>
     </div>

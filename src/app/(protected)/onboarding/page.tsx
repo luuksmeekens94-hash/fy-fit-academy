@@ -73,6 +73,7 @@ export default async function OnboardingPage() {
                       />
                       <StatusBadge label={`Stap ${step.order}`} tone="neutral" />
                       <StatusBadge label={step.contentType} tone="brand" />
+                      <StatusBadge label={step.isRequired ? "Need to know" : "Nice to know"} tone={step.isRequired ? "brand" : "neutral"} />
                     </div>
                     <div>
                       <h2 className="text-2xl font-semibold text-slate-950">{step.title}</h2>

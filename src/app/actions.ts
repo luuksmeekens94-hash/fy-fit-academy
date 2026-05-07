@@ -170,18 +170,26 @@ export async function addDevelopmentDocumentAction(formData: FormData) {
   const title = getString(formData, "title");
   const description = getString(formData, "description");
   const category = getOptionalString(formData, "category") ?? "POP";
+  const targetUserId = getOptionalString(formData, "targetUserId") ?? user.id;
+  const targetUser = await getUserById(targetUserId);
   const visibility = ensureEnumValue(
     getString(formData, "visibility"),
     ["PRIVATE", "TEAM"] as const,
     "TEAM",
   );
+  const canAddForTarget =
+    targetUserId === user.id ||
+    user.role === Role.BEHEERDER ||
+    targetUser?.teamleaderId === user.id;
 
+  assert(targetUser, "Gebruiker niet gevonden.");
+  assert(canAddForTarget, "Niet toegestaan.");
   assert(title.length >= 3, "Titel moet minimaal 3 tekens hebben.");
   assert(description.length >= 10, "Omschrijving moet minimaal 10 tekens hebben.");
 
   await prisma.developmentDocument.create({
     data: {
-      userId: user.id,
+      userId: targetUser.id,
       title,
       description,
       category,
@@ -190,6 +198,8 @@ export async function addDevelopmentDocumentAction(formData: FormData) {
   });
 
   revalidatePath("/ontwikkeling");
+  revalidatePath(`/team/${targetUser.id}`);
+  revalidatePath("/team");
   revalidatePath("/");
 }
 

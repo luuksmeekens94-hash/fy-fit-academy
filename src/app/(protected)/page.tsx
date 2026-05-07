@@ -86,6 +86,31 @@ export default async function DashboardPage() {
         />
       </section>
 
+      <section className="card-surface rounded-[28px] border border-[var(--brand)]/20 p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">Praktijkbreed</p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-950">Mededelingen en deadlines</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">
+              Centrale plek voor gespreksperiodes, deadlines voor doelen en andere korte praktijkupdates.
+            </p>
+          </div>
+          <StatusBadge label="Nieuw" tone="brand" />
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {[
+            { title: "Gespreksronde", text: "Plan functionerings- en profielgesprekken in de afgesproken periode." },
+            { title: "Doelen aanleveren", text: "Werk je SMART-doelen bij voordat je gesprek plaatsvindt." },
+            { title: "Kennis delen", text: "Nieuwe externe cursusmaterialen kunnen in de bibliotheek worden gebundeld." },
+          ].map((item) => (
+            <div key={item.title} className="rounded-[22px] bg-white/85 p-4">
+              <h3 className="font-semibold text-slate-950">{item.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{item.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="card-surface rounded-[32px] p-6">
           <div className="flex items-start justify-between gap-4">

@@ -50,7 +50,7 @@ export default async function LmsOverviewPage() {
           detail="Cursussen die al gestart zijn en nog niet zijn afgerond."
         />
         <StatCard
-          label="Verplicht"
+          label="Need to know"
           value={String(requiredCount)}
           detail="Scholing die direct onderdeel is van jouw leerpad of teamafspraak."
         />
