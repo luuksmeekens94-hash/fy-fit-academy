@@ -11,6 +11,7 @@ import {
   getMyAttempts,
 } from "../lms/queries";
 import type { CourseDetail, EnrollmentDetail } from "../lms/types";
+import { isContentVisibleForUser } from "../content-visibility";
 import { prisma } from "../prisma";
 import {
   buildAcademyCourseCardView,
@@ -60,8 +61,35 @@ async function getPublishedAcademyCourses(): Promise<CourseDetail[]> {
   return entries.filter((entry): entry is CourseDetail => entry !== null);
 }
 
+async function getContentVisibilityUser(userId: string) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true, audienceProfile: true },
+  });
+}
+
+type ContentVisibilityDbUser = NonNullable<Awaited<ReturnType<typeof getContentVisibilityUser>>>;
+
+function isCourseVisibleForUser(course: CourseDetail, user: ContentVisibilityDbUser) {
+  return isContentVisibleForUser(
+    {
+      visibleToAll: course.visibleToAll,
+      visibleToRoles: course.visibleToRoles,
+      visibleToAudienceProfiles: course.visibleToAudienceProfiles,
+      visibleToUserIds: course.visibleToUserIds,
+    },
+    user,
+  );
+}
+
 export const getMyAcademyCourses = cache(async (userId: string): Promise<AcademyCourseCardView[]> => {
-  const courses = await getPublishedAcademyCourses();
+  const user = await getContentVisibilityUser(userId);
+
+  if (!user) {
+    return [];
+  }
+
+  const courses = (await getPublishedAcademyCourses()).filter((course) => isCourseVisibleForUser(course, user));
   const entries = await Promise.all(
     courses.map(async (course) => {
       const enrollmentDetail =
@@ -87,6 +115,14 @@ export const getAcademyCourseBySlugForUser = cache(
 
     if (!course || (!includeUnpublished && course.status !== "PUBLISHED")) {
       return null;
+    }
+
+    if (!includeUnpublished) {
+      const user = await getContentVisibilityUser(userId);
+
+      if (!user || !isCourseVisibleForUser(course, user)) {
+        return null;
+      }
     }
 
     const enrollment =
@@ -115,6 +151,14 @@ export const getAcademyLessonBySlugsForUser = cache(
 
     if (!course || !course.activeVersion || (!includeUnpublished && course.status !== "PUBLISHED")) {
       return null;
+    }
+
+    if (!includeUnpublished) {
+      const user = await getContentVisibilityUser(userId);
+
+      if (!user || !isCourseVisibleForUser(course, user)) {
+        return null;
+      }
     }
 
     const lessonSummary = course.activeVersion.lessons.find((lesson) => lesson.slug === lessonSlug);

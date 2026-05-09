@@ -107,6 +107,10 @@ function mapCourseDetail(course: {
   slug: string;
   description: string;
   audience: string | null;
+  visibleToAll: boolean;
+  visibleToRoles: CourseDetail["visibleToRoles"];
+  visibleToAudienceProfiles: CourseDetail["visibleToAudienceProfiles"];
+  visibleToUserIds: string[];
   learningObjectives: string | null;
   goal: string | null;
   focus: string | null;
@@ -218,6 +222,10 @@ function mapCourseDetail(course: {
     slug: course.slug,
     description: course.description,
     audience: course.audience,
+    visibleToAll: course.visibleToAll,
+    visibleToRoles: course.visibleToRoles,
+    visibleToAudienceProfiles: course.visibleToAudienceProfiles,
+    visibleToUserIds: course.visibleToUserIds,
     learningObjectives: course.learningObjectives,
     goal: course.goal,
     focus: course.focus,
@@ -417,6 +425,10 @@ export const getAllCourses = cache(async (): Promise<CourseSummary[]> => {
     studyLoadMinutes: course.studyLoadMinutes,
     accreditationRegister: course.accreditationRegister,
     accreditationKind: course.accreditationKind,
+    visibleToAll: course.visibleToAll,
+    visibleToRoles: course.visibleToRoles,
+    visibleToAudienceProfiles: course.visibleToAudienceProfiles,
+    visibleToUserIds: course.visibleToUserIds,
     versionDate: course.versionDate,
     requiredQuestionCount: course.requiredQuestionCount,
     authorName: course.author.name,

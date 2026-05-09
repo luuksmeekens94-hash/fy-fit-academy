@@ -15,6 +15,12 @@ enum Role {
   REVIEWER
 }
 
+enum AudienceProfile {
+  FYSIOTHERAPEUT
+  PRAKTIJKONDERSTEUNER
+  FITCOACH
+}
+
 enum ModulePublicationStatus {
   CONCEPT
   GEPUBLICEERD
@@ -132,6 +138,7 @@ model User {
   passwordHash          String
   name                  String
   role                  Role
+  audienceProfile       AudienceProfile        @default(FYSIOTHERAPEUT)
   team                  String?
   professionalRegistrationNumber String?
   title                 String
@@ -296,6 +303,10 @@ model Course {
   slug                  String            @unique
   description           String
   audience              String?
+  visibleToAll          Boolean           @default(true)
+  visibleToRoles        Role[]            @default([])
+  visibleToAudienceProfiles AudienceProfile[] @default([])
+  visibleToUserIds      String[]          @default([])
   learningObjectives    String?
   goal                  String?
   focus                 String?

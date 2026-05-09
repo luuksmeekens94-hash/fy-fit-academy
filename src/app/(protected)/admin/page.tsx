@@ -15,6 +15,7 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth";
+import { AUDIENCE_PROFILE_OPTIONS, getAudienceProfileLabel } from "@/lib/audience";
 import { getAdminOverview, getCertificateEvidenceAdminAudit, listActiveUsers } from "@/lib/data";
 
 function formatModuleSections(
@@ -352,7 +353,7 @@ export default async function AdminPage() {
               <input name="name" placeholder="Naam" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" required />
               <input name="email" type="email" placeholder="E-mailadres" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" required />
             </div>
-            <div className="grid gap-3 md:grid-cols-5">
+            <div className="grid gap-3 md:grid-cols-6">
               <select name="role" defaultValue="MEDEWERKER" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]">
                 <option value="MEDEWERKER">Medewerker</option>
                 <option value="TEAMLEIDER">Teamleider</option>
@@ -360,6 +361,11 @@ export default async function AdminPage() {
                 <option value="PRAKTIJKHOUDER">Praktijkhouder</option>
                 <option value="BEHEERDER">Beheerder</option>
                 <option value="REVIEWER">Reviewer</option>
+              </select>
+              <select name="audienceProfile" defaultValue="FYSIOTHERAPEUT" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]">
+                {AUDIENCE_PROFILE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
               <input name="team" placeholder="Team" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" />
               <input name="professionalRegistrationNumber" placeholder="BIG/KRF/SKF registratienummer" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" />
@@ -394,6 +400,7 @@ export default async function AdminPage() {
               <div key={user.id} className="rounded-[24px] border border-[var(--border)] bg-white/85 p-5">
                 <div className="mb-4 flex flex-wrap gap-3">
                   <StatusBadge label={user.role} tone="brand" />
+                  <StatusBadge label={getAudienceProfileLabel(user.audienceProfile)} tone="neutral" />
                   <StatusBadge label={user.isActive ? "Actief" : "Gedeactiveerd"} tone={user.isActive ? "success" : "warning"} />
                 </div>
                 <form action={saveUserAction} className="grid gap-3">
@@ -402,7 +409,7 @@ export default async function AdminPage() {
                     <input name="name" defaultValue={user.name} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" required />
                     <input name="email" type="email" defaultValue={user.email} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" required />
                   </div>
-                  <div className="grid gap-3 md:grid-cols-5">
+                  <div className="grid gap-3 md:grid-cols-6">
                     <select name="role" defaultValue={user.role} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]">
                       <option value="MEDEWERKER">Medewerker</option>
                       <option value="TEAMLEIDER">Teamleider</option>
@@ -410,6 +417,11 @@ export default async function AdminPage() {
                       <option value="PRAKTIJKHOUDER">Praktijkhouder</option>
                       <option value="BEHEERDER">Beheerder</option>
                       <option value="REVIEWER">Reviewer</option>
+                    </select>
+                    <select name="audienceProfile" defaultValue={user.audienceProfile} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]">
+                      {AUDIENCE_PROFILE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
                     </select>
                     <input name="team" defaultValue={user.team ?? ""} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" />
                     <input name="professionalRegistrationNumber" defaultValue={user.professionalRegistrationNumber ?? ""} placeholder="BIG/KRF/SKF" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]" />

@@ -1,11 +1,13 @@
 import {
   AccreditationKind,
+  AudienceProfile,
   AssignmentType,
   CourseStatus,
   EnrollmentStatus,
   LessonProgressStatus,
   LessonType,
   QuestionType,
+  Role,
   WorkForm,
 } from "@prisma/client";
 
@@ -28,6 +30,10 @@ export type CourseSummary = {
   studyLoadMinutes: number;
   accreditationRegister: string | null;
   accreditationKind: AccreditationKind;
+  visibleToAll: boolean;
+  visibleToRoles: Role[];
+  visibleToAudienceProfiles: AudienceProfile[];
+  visibleToUserIds: string[];
   versionDate: Date | null;
   requiredQuestionCount: number | null;
   authorName: string;
@@ -48,6 +54,10 @@ export type CourseDetail = {
   learnerOutcomes: string[];
   accreditationRegister: string | null;
   accreditationKind: AccreditationKind;
+  visibleToAll: boolean;
+  visibleToRoles: Role[];
+  visibleToAudienceProfiles: AudienceProfile[];
+  visibleToUserIds: string[];
   versionDate: Date | null;
   authorExperts: CourseAuthorExpert[];
   requiredQuestionCount: number | null;

@@ -23,6 +23,8 @@ import { issueCertificate } from "@/lib/lms/certificates";
 import { getCourseDetail } from "@/lib/lms/queries";
 import { canMutateLearnerProgress } from "@/lib/lms/reviewer-preview";
 import { isCourseCompleted } from "@/lib/lms/rules";
+import { AUDIENCE_PROFILES } from "@/lib/audience";
+import { isContentVisibleForUser } from "@/lib/content-visibility";
 import type { Role } from "@/lib/types";
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -30,6 +32,15 @@ function assert(condition: unknown, message: string): asserts condition {
     throw new Error(message);
   }
 }
+
+const COURSE_VISIBILITY_ROLES = [
+  "MEDEWERKER",
+  "TEAMLEIDER",
+  "PRAKTIJKMANAGER",
+  "PRAKTIJKHOUDER",
+  "BEHEERDER",
+  "REVIEWER",
+] as const satisfies Role[];
 
 function getString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -60,6 +71,20 @@ function getOptionalDate(formData: FormData, key: string) {
   const date = new Date(`${value}T00:00:00.000Z`);
   assert(!Number.isNaN(date.getTime()), `${key} moet een geldige datum zijn.`);
   return date;
+}
+
+function getAllowedArray<T extends string>(formData: FormData, key: string, allowed: readonly T[]) {
+  return formData
+    .getAll(key)
+    .map((value) => String(value))
+    .filter((value): value is T => allowed.includes(value as T));
+}
+
+function getCommaSeparatedStrings(formData: FormData, key: string) {
+  return getString(formData, key)
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
 }
 
 async function requireAccreditationManager() {
@@ -203,12 +228,30 @@ async function assertCourseAccessibleForUser(params: {
 }) {
   const course = await prisma.course.findUnique({
     where: { id: params.courseId },
-    select: { id: true, status: true },
+    select: {
+      id: true,
+      status: true,
+      visibleToAll: true,
+      visibleToRoles: true,
+      visibleToAudienceProfiles: true,
+      visibleToUserIds: true,
+    },
   });
 
   assert(course, "Cursus niet gevonden.");
+
+  if (params.role === "BEHEERDER" || params.role === "REVIEWER") {
+    return;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: params.userId },
+    select: { id: true, role: true, audienceProfile: true },
+  });
+
+  assert(user, "Gebruiker niet gevonden.");
   assert(
-    params.role === "BEHEERDER" || params.role === "REVIEWER" || course.status === "PUBLISHED",
+    course.status === "PUBLISHED" && isContentVisibleForUser(course, user),
     "Cursus is niet beschikbaar."
   );
 }
@@ -654,6 +697,10 @@ export async function saveCourseAccreditationMetadataAction(formData: FormData) 
   const requiredQuestionCount = getOptionalNumber(formData, "requiredQuestionCount");
   const accreditationKind = getString(formData, "accreditationKind");
   const changeSummary = getOptionalString(formData, "changeSummary") ?? "Accreditatie-metadata bijgewerkt.";
+  const visibleToAll = formData.get("visibleToAll") === "on" || formData.get("visibleToAll") === "true";
+  const visibleToRoles = getAllowedArray(formData, "visibleToRoles", COURSE_VISIBILITY_ROLES);
+  const visibleToAudienceProfiles = getAllowedArray(formData, "visibleToAudienceProfiles", AUDIENCE_PROFILES);
+  const visibleToUserIds = getCommaSeparatedStrings(formData, "visibleToUserIds");
 
   assert(title, "Titel is verplicht.");
   assert(description, "Beschrijving is verplicht.");
@@ -672,6 +719,10 @@ export async function saveCourseAccreditationMetadataAction(formData: FormData) 
         title,
         description,
         audience: getOptionalString(formData, "audience"),
+        visibleToAll,
+        visibleToRoles,
+        visibleToAudienceProfiles,
+        visibleToUserIds,
         accreditationRegister: getOptionalString(formData, "accreditationRegister"),
         accreditationKind,
         studyLoadMinutes,

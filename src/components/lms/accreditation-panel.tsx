@@ -6,6 +6,9 @@ import {
   saveCourseAccreditationStructureAction,
 } from "@/app/lms-actions";
 import { StatusBadge } from "@/components/status-badge";
+import { AUDIENCE_PROFILE_OPTIONS } from "@/lib/audience";
+import { summarizeContentVisibility } from "@/lib/content-visibility";
+import { getRoleLabel } from "@/lib/roles";
 import { buildAccreditationChecklist } from "@/lib/lms/accreditation-checklist";
 import { buildAccreditationEvidenceExport } from "@/lib/lms/accreditation-evidence";
 import {
@@ -117,6 +120,15 @@ function getChecklistTone(status: "complete" | "missing" | "warning") {
   return "neutral" as const;
 }
 
+const COURSE_VISIBILITY_ROLE_OPTIONS = [
+  "MEDEWERKER",
+  "TEAMLEIDER",
+  "PRAKTIJKMANAGER",
+  "PRAKTIJKHOUDER",
+  "BEHEERDER",
+  "REVIEWER",
+] as const;
+
 type AccreditationPanelProps = {
   course: CourseDetail;
   mode?: "beheer" | "reviewer";
@@ -162,6 +174,7 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
   const evidenceExport = buildAccreditationEvidenceExport(course, checklist);
   const participantReportMarkdown = exportParticipantCompletionReportMarkdown(completionReport);
   const participantReportCsv = exportParticipantCompletionReportCsv(completionReport);
+  const visibilitySummary = summarizeContentVisibility(course);
 
   return (
     <section className="card-surface rounded-[32px] p-6">
@@ -260,7 +273,45 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
             <div className="mt-4 grid gap-3">
               <input name="title" defaultValue={course.title} placeholder="Titel e-learning" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" required />
               <textarea name="description" defaultValue={course.description} rows={3} placeholder="Beschrijving" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" required />
-              <input name="audience" defaultValue={course.audience ?? ""} placeholder="Doelgroep" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+              <input name="audience" defaultValue={course.audience ?? ""} placeholder="Doelgroepomschrijving voor accreditatie" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+              <div className="rounded-2xl border border-[var(--border)] bg-white p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-950">Contentzichtbaarheid</p>
+                  <StatusBadge label={visibilitySummary} tone="brand" />
+                </div>
+                <p className="mt-2 text-xs leading-5 text-[var(--ink-soft)]">
+                  Bepaal welke learners deze gepubliceerde e-learning in de Academy zien. Admin/reviewer-preview loopt via de bestaande LMS-paden.
+                </p>
+                <label className="mt-3 flex items-center gap-3 text-sm font-medium text-slate-900">
+                  <input type="checkbox" name="visibleToAll" defaultChecked={course.visibleToAll} className="h-4 w-4" />
+                  Zichtbaar voor iedereen
+                </label>
+                <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-soft)]">Rollen</p>
+                    <div className="mt-2 grid gap-2">
+                      {COURSE_VISIBILITY_ROLE_OPTIONS.map((role) => (
+                        <label key={role} className="flex items-center gap-2 text-sm text-slate-900">
+                          <input type="checkbox" name="visibleToRoles" value={role} defaultChecked={course.visibleToRoles.includes(role)} className="h-4 w-4" />
+                          {getRoleLabel(role)}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-soft)]">Doelgroepen</p>
+                    <div className="mt-2 grid gap-2">
+                      {AUDIENCE_PROFILE_OPTIONS.map((option) => (
+                        <label key={option.value} className="flex items-center gap-2 text-sm text-slate-900">
+                          <input type="checkbox" name="visibleToAudienceProfiles" value={option.value} defaultChecked={course.visibleToAudienceProfiles.includes(option.value)} className="h-4 w-4" />
+                          {option.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <input name="visibleToUserIds" defaultValue={course.visibleToUserIds.join(", ")} placeholder="Specifieke account-id's, komma-gescheiden" className="mt-4 w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+              </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <input name="accreditationRegister" defaultValue={course.accreditationRegister ?? ""} placeholder="Register" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
                 <select name="accreditationKind" defaultValue={course.accreditationKind} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm">

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  AudienceProfile,
   LearningGoalStatus,
   Role,
 } from "@prisma/client";
@@ -543,6 +544,11 @@ export async function saveUserAction(formData: FormData) {
     ["MEDEWERKER", "TEAMLEIDER", "PRAKTIJKMANAGER", "PRAKTIJKHOUDER", "BEHEERDER", "REVIEWER"] as const,
     "MEDEWERKER",
   );
+  const audienceProfile = ensureEnumValue(
+    getString(formData, "audienceProfile"),
+    [AudienceProfile.FYSIOTHERAPEUT, AudienceProfile.PRAKTIJKONDERSTEUNER, AudienceProfile.FITCOACH] as const,
+    AudienceProfile.FYSIOTHERAPEUT,
+  );
   const team = getOptionalString(formData, "team");
   const professionalRegistrationNumber = normalizeProfessionalRegistrationNumber(
     getOptionalString(formData, "professionalRegistrationNumber"),
@@ -567,6 +573,7 @@ export async function saveUserAction(formData: FormData) {
       name,
       email,
       role,
+      audienceProfile,
       team: team ?? null,
       professionalRegistrationNumber,
       title,
@@ -596,6 +603,7 @@ export async function saveUserAction(formData: FormData) {
         email,
         passwordHash: await hashPassword(initialPassword),
         role,
+        audienceProfile,
         team: team ?? null,
         professionalRegistrationNumber,
         title,

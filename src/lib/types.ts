@@ -5,6 +5,7 @@ export type Role =
   | "PRAKTIJKHOUDER"
   | "BEHEERDER"
   | "REVIEWER";
+export type AudienceProfile = "FYSIOTHERAPEUT" | "PRAKTIJKONDERSTEUNER" | "FITCOACH";
 export type ModulePublicationStatus = "CONCEPT" | "GEPUBLICEERD" | "GEARCHIVEERD";
 
 export type OnboardingContentType =
@@ -30,6 +31,7 @@ export type User = {
   name: string;
   email: string;
   role: Role;
+  audienceProfile: AudienceProfile;
   team?: string | null;
   professionalRegistrationNumber?: string | null;
   title: string;
