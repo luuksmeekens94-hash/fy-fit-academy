@@ -5,6 +5,7 @@ import { addDevelopmentDocumentAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth";
+import { getAudienceProfileLabel } from "@/lib/audience";
 import { canMonitorPractice } from "@/lib/roles";
 import {
   getActiveOnboardingPath,
@@ -52,14 +53,27 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
     getOnboardingProgressForUser(member.id),
   ]);
   const onboarding = getOnboardingCompletion(onboardingPath?.steps ?? [], onboardingProgress);
+  const audienceLabel = getAudienceProfileLabel(member.audienceProfile);
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Teamlid detail"
         title={member.name}
-        description={`${member.title} · ${member.location}. Een rustig begeleidersbeeld van onboarding, academy en persoonlijke ontwikkeling.`}
+        description={`${member.title} · ${member.location}. Een rustig begeleidersbeeld van leren, informatie, onboarding en persoonlijke ontwikkeling.`}
       />
+
+      <section className="card-surface rounded-[28px] p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">Medewerkersprofiel</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+              Doelgroep kleurt voorbeelden en leercontext; ontwikkeldoelen en POP-notities blijven persoonlijk en vrij.
+            </p>
+          </div>
+          <StatusBadge label={audienceLabel} tone="brand" />
+        </div>
+      </section>
 
       <section className="grid gap-4 md:grid-cols-3">
         <div className="card-surface rounded-[28px] p-5">
@@ -92,10 +106,10 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
       <section className="grid gap-6 xl:grid-cols-2">
         <div className="card-surface rounded-[32px] p-6">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
-            Leerdoelen
+            Ontwikkeldoelen
           </p>
           <div className="mt-6 space-y-4">
-            {goals.map((goal) => (
+            {goals.length > 0 ? goals.map((goal) => (
               <div
                 key={goal.id}
                 className="rounded-[24px] border border-[var(--border)] bg-white/85 p-5"
@@ -109,7 +123,11 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
                   Doeldatum {formatDate(goal.targetDate)} · bijgewerkt {formatDate(goal.updatedAt)}
                 </p>
               </div>
-            ))}
+            )) : (
+              <p className="rounded-[20px] bg-white px-4 py-3 text-sm text-[var(--ink-soft)]">
+                Nog geen gedeelde ontwikkeldoelen zichtbaar voor begeleiding.
+              </p>
+            )}
           </div>
         </div>
 
@@ -118,10 +136,10 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
             Documenten en gespreksverslagen
           </p>
           <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-            Voeg als begeleider beoordelingsgesprekken, functioneringsgesprekken of profielgesprekken toe aan de ontwikkelmap van {member.name.split(" ")[0]}.
+            Voeg als begeleider een gespreksdocument, afspraak of ontwikkelnotitie toe aan de vrije ontwikkelmap van {member.name.split(" ")[0]}. Documenttypes zijn bedoeld voor ordening, niet als vaste POP-categorieën.
           </p>
           <div className="mt-6 space-y-4">
-            {documents.map((document) => (
+            {documents.length > 0 ? documents.map((document) => (
               <div
                 key={document.id}
                 className="rounded-[24px] border border-[var(--border)] bg-white/85 p-5"
@@ -140,14 +158,18 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
                   {document.visibility === "PRIVATE" ? "Privé" : "Gedeeld"} · bijgewerkt {formatDate(document.updatedAt)}
                 </p>
               </div>
-            ))}
+            )) : (
+              <p className="rounded-[20px] bg-white px-4 py-3 text-sm text-[var(--ink-soft)]">
+                Nog geen gedeelde documenten zichtbaar in deze ontwikkelmap.
+              </p>
+            )}
           </div>
           <form action={addDevelopmentDocumentAction} className="mt-6 grid gap-3 rounded-[28px] bg-[var(--teal-soft)] p-5">
             <input type="hidden" name="targetUserId" value={member.id} />
-            <h3 className="text-lg font-semibold text-slate-950">Gespreksdocument toevoegen</h3>
+            <h3 className="text-lg font-semibold text-slate-950">Documenttype toevoegen</h3>
             <input
               name="title"
-              placeholder="Bijvoorbeeld: Functioneringsgesprek voorjaar 2026"
+              placeholder="Bijvoorbeeld: Ontwikkelgesprek voorjaar 2026"
               className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]"
               required
             />

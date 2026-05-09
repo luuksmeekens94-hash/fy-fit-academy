@@ -5,6 +5,8 @@ import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
 import { getMyAcademyCourses } from "@/lib/academy/queries";
+import { getAudienceProfileLabel } from "@/lib/audience";
+import { getAudienceContextItems, getAudienceDashboardCopy } from "@/lib/dashboard-copy";
 import {
   canManageAcademy,
   canMonitorOwnTeam,
@@ -27,9 +29,9 @@ import {
   getOnboardingProgressForUser,
 } from "@/lib/data";
 import { formatDate, getOnboardingCompletion, getStatusTone } from "@/lib/utils";
-import type { Role } from "@/lib/types";
+import type { AudienceProfile, Role } from "@/lib/types";
 
-function getDashboardCopy(role: Role, firstName: string) {
+function getDashboardCopy(role: Role, firstName: string, audienceProfile: AudienceProfile) {
   if (role === "PRAKTIJKMANAGER") {
     return {
       eyebrow: "Praktijkmonitor",
@@ -39,11 +41,7 @@ function getDashboardCopy(role: Role, firstName: string) {
   }
 
   if (role === "PRAKTIJKHOUDER") {
-    return {
-      eyebrow: "Praktijkdashboard",
-      title: `Goed om je te zien, ${firstName}`,
-      description: "Combineer je eigen Academy-leerpad met een praktijkbreed monitorbeeld voor teams, onboarding en borging.",
-    };
+    return getAudienceDashboardCopy(audienceProfile, firstName);
   }
 
   if (role === "BEHEERDER") {
@@ -63,18 +61,10 @@ function getDashboardCopy(role: Role, firstName: string) {
   }
 
   if (role === "TEAMLEIDER") {
-    return {
-      eyebrow: "Dashboard",
-      title: `Goed om je te zien, ${firstName}`,
-      description: "Hier staat jouw persoonlijke leeromgeving met daarnaast een compact teamblok voor begeleiding.",
-    };
+    return getAudienceDashboardCopy(audienceProfile, firstName);
   }
 
-  return {
-    eyebrow: "Dashboard",
-    title: `Goed om je te zien, ${firstName}`,
-    description: "Hieronder staat jouw persoonlijke dashboard met je openstaande modules, leerdoelen, onboardingvoortgang en snelle vervolgstappen.",
-  };
+  return getAudienceDashboardCopy(audienceProfile, firstName);
 }
 
 export default async function DashboardPage() {
@@ -86,7 +76,10 @@ export default async function DashboardPage() {
   const hasTeamAccess = canOpenTeamRoutes(user.role);
   const hasAcademyManagement = canManageAcademy(user.role);
   const hasAccreditationReview = canReviewAccreditation(user.role);
-  const dashboardCopy = getDashboardCopy(user.role, user.name.split(" ")[0]);
+  const dashboardCopy = getDashboardCopy(user.role, user.name.split(" ")[0], user.audienceProfile);
+  const audienceLabel = getAudienceProfileLabel(user.audienceProfile);
+  const audienceContextItems = getAudienceContextItems(user.audienceProfile);
+  const personalQuickLinks = getAudienceDashboardCopy(user.audienceProfile, user.name.split(" ")[0]).quickLinks;
   const [
     modules,
     onboardingPath,
@@ -136,12 +129,12 @@ export default async function DashboardPage() {
         <StatCard
           label={hasPersonalLms ? "Openstaande e-learnings" : hasAccreditationReview ? "Previewmodus" : "Praktijkleden in beeld"}
           value={hasPersonalLms ? String(openAcademyCourses.length) : hasAccreditationReview ? "Veilig" : String(teamMembers.length)}
-          detail={hasPersonalLms ? "Nog te starten of af te ronden binnen jouw Academy-leerpad." : hasAccreditationReview ? "Reviewerweergave muteert geen voortgang of certificaten." : "Actieve collega’s zichtbaar in de praktijkmonitor."}
+          detail={hasPersonalLms ? `Nog te starten of af te ronden in jouw ${audienceLabel.toLowerCase()}-leerpad.` : hasAccreditationReview ? "Reviewerweergave muteert geen voortgang of certificaten." : "Actieve collega’s zichtbaar in de praktijkmonitor."}
         />
         <StatCard
-          label={hasPersonalDevelopment ? "Actieve leerdoelen" : hasAcademyManagement ? "Academybeheer" : "Monitorrol"}
+          label={hasPersonalDevelopment ? "Actieve ontwikkeldoelen" : hasAcademyManagement ? "Academybeheer" : "Monitorrol"}
           value={hasPersonalDevelopment ? String(goals.filter((goal) => goal.status !== "AFGEROND").length) : hasAcademyManagement ? "Actief" : getDashboardLabel(user.role)}
-          detail={hasPersonalDevelopment ? "Focusdoelen die je nu in je POP of kwartaalontwikkeling hebt staan." : hasAcademyManagement ? "Beheer loopt via Admin en LMS cockpit." : "Deze rol richt zich op overzicht in plaats van persoonlijke ontwikkelmap."}
+          detail={hasPersonalDevelopment ? "Eigen doelen, acties en reflecties die nu aandacht vragen." : hasAcademyManagement ? "Beheer loopt via Admin en LMS cockpit." : "Deze rol richt zich op overzicht in plaats van persoonlijke ontwikkelmap."}
         />
         <StatCard
           label={hasPersonalDevelopment && user.isOnboarding ? "Onboarding voortgang" : hasPersonalDevelopment ? "Ontwikkeldocumenten" : "Onboarding in praktijk"}
@@ -150,7 +143,7 @@ export default async function DashboardPage() {
             hasPersonalDevelopment && user.isOnboarding
               ? "Percentage afgeronde stappen in je huidige inwerkpad."
               : hasPersonalDevelopment
-                ? "Documenten, notities en POP-items in je ontwikkelomgeving."
+                ? "Documenten, notities en vrije POP-items in je persoonlijke ontwikkelomgeving."
                 : "Aantal collega’s met een actief inwerkpad in dit basisbeeld."
           }
         />
@@ -160,18 +153,18 @@ export default async function DashboardPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">Praktijkbreed</p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-950">Mededelingen en deadlines</h2>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-950">Mededelingen en ontwikkelupdates</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">
-              Centrale plek voor gespreksperiodes, deadlines voor doelen en andere korte praktijkupdates.
+              Centrale plek voor gespreksperiodes, ontwikkelmomenten en korte praktijkupdates voor alle medewerkers.
             </p>
           </div>
           <StatusBadge label="Nieuw" tone="brand" />
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {[
-            { title: "Gespreksronde", text: "Plan functionerings- en profielgesprekken in de afgesproken periode." },
-            { title: "Doelen aanleveren", text: "Werk je SMART-doelen bij voordat je gesprek plaatsvindt." },
-            { title: "Kennis delen", text: "Nieuwe externe cursusmaterialen kunnen in de bibliotheek worden gebundeld." },
+            { title: "Gespreksronde", text: "Bereid je ontwikkelgesprek voor met actuele doelen, acties en reflecties." },
+            { title: "Doelen bijwerken", text: "Werk je persoonlijke ontwikkeldoelen bij op een moment dat past bij jouw rol." },
+            { title: "Kennis delen", text: "Nieuwe leer- en informatiematerialen kunnen in de bibliotheek worden gebundeld." },
           ].map((item) => (
             <div key={item.title} className="rounded-[22px] bg-white/85 p-4">
               <h3 className="font-semibold text-slate-950">{item.title}</h3>
@@ -182,15 +175,38 @@ export default async function DashboardPage() {
       </section>
 
       {hasPersonalDevelopment ? (
+        <section className="card-surface rounded-[28px] border border-[var(--teal)]/20 p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--teal)]">Jouw profiel</p>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-950">Context voor je leer- en ontwikkelomgeving</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">
+                De structuur blijft voor iedereen gelijk; je doelgroep kleurt alleen voorbeelden, accenten en snelle vervolgstappen.
+              </p>
+            </div>
+            <StatusBadge label={audienceLabel} tone="brand" />
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {audienceContextItems.map((item) => (
+              <div key={item.title} className="rounded-[22px] bg-white/85 p-4">
+                <h3 className="font-semibold text-slate-950">{item.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {hasPersonalDevelopment ? (
         <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="card-surface rounded-[32px] p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
-                Mijn ritme
+                Mijn ontwikkeling
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-                Wat staat nu bovenaan
+                Wat staat nu bovenaan?
               </h2>
             </div>
             <Link
@@ -201,7 +217,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="mt-6 space-y-4">
-            {goals.slice(0, 3).map((goal) => (
+            {goals.length > 0 ? goals.slice(0, 3).map((goal) => (
               <div
                 key={goal.id}
                 className="rounded-[24px] border border-[var(--border)] bg-white/90 p-5"
@@ -217,7 +233,14 @@ export default async function DashboardPage() {
                   Doeldatum {formatDate(goal.targetDate)} · Laatst bijgewerkt {formatDate(goal.updatedAt)}
                 </p>
               </div>
-            ))}
+            )) : (
+              <div className="rounded-[24px] border border-dashed border-[var(--border)] bg-white/75 p-5">
+                <h3 className="text-lg font-semibold text-slate-950">Nog geen ontwikkeldoelen</h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+                  Start met één persoonlijk doel, actie of reflectie. Je POP blijft vrij en hoeft niet in vaste categorieën.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -226,11 +249,7 @@ export default async function DashboardPage() {
             Snel verder
           </p>
           <div className="mt-6 grid gap-4">
-            {[
-              { href: "/academy", title: "Academy", text: "Werk verder aan je e-learnings en toetsmomenten." },
-              { href: "/bibliotheek", title: "Bibliotheek", text: "Pak protocollen, kernboodschappen en formats erbij." },
-              { href: "/onboarding", title: "Onboarding", text: "Bekijk je volgende stap en buddy-notities." },
-            ]
+            {personalQuickLinks
               .filter((item) => item.href !== "/onboarding" || user.isOnboarding || user.role !== "MEDEWERKER")
               .map((item) => (
                 <Link
@@ -268,7 +287,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="mt-6 space-y-4">
-            {openAcademyCourses.slice(0, 3).map((course) => {
+            {openAcademyCourses.length > 0 ? openAcademyCourses.slice(0, 3).map((course) => {
               return (
                 <Link
                   key={course.id}
@@ -290,7 +309,14 @@ export default async function DashboardPage() {
                   </p>
                 </Link>
               );
-            })}
+            }) : (
+              <div className="rounded-[24px] border border-dashed border-[var(--border)] bg-white/75 p-5">
+                <h3 className="text-lg font-semibold text-slate-950">Geen openstaande e-learnings</h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+                  Je bent bij. Gebruik de bibliotheek of je ontwikkelmap om verder te reflecteren.
+                </p>
+              </div>
+            )}
           </div>
         </div>
         ) : null}
@@ -314,7 +340,7 @@ export default async function DashboardPage() {
               </Link>
             </div>
             <div className="mt-6 space-y-4">
-              {developmentDocuments.slice(0, 3).map((document) => (
+              {developmentDocuments.length > 0 ? developmentDocuments.slice(0, 3).map((document) => (
                 <div
                   key={document.id}
                   className="rounded-[24px] border border-[var(--border)] bg-white/85 p-5"
@@ -333,7 +359,14 @@ export default async function DashboardPage() {
                     {document.category} · Bijgewerkt {formatDate(document.updatedAt)}
                   </p>
                 </div>
-              ))}
+              )) : (
+                <div className="rounded-[24px] border border-dashed border-[var(--border)] bg-white/75 p-5">
+                  <h3 className="text-lg font-semibold text-slate-950">Nog geen documenten</h3>
+                  <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+                    Voeg een documenttype toe wanneer je een actie, reflectie of bewijsstuk wilt bewaren.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         ) : null}

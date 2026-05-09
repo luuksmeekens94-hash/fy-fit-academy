@@ -12,6 +12,7 @@ import {
 } from "@/lib/data";
 import { formatDate, getStatusTone } from "@/lib/utils";
 import { canUsePersonalDevelopment } from "@/lib/roles";
+import { getDevelopmentPromptCopy } from "@/lib/dashboard-copy";
 
 export default async function DevelopmentPage() {
   const user = await requireUser();
@@ -42,13 +43,14 @@ export default async function DevelopmentPage() {
   const overigeDocumenten = documents.filter((document) =>
     !["Beoordelingsgesprek", "Functioneringsgesprek", "Profielgesprek"].includes(document.category),
   );
+  const developmentCopy = getDevelopmentPromptCopy(user.audienceProfile);
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Mijn Ontwikkeling"
-        title="Persoonlijke doelen, POP en bewijslast"
-        description="Deze omgeving is bedoeld voor richting, niet voor administratieve ballast: doelen, documenten en basis monitoring staan logisch bij elkaar."
+        title="Persoonlijke ontwikkeldoelen, POP en reflectie"
+        description={`${developmentCopy.audienceLabel}: deze vrije POP-omgeving is bedoeld voor richting, acties, reflectie en voortgang. Geen vaste POP-categorieën; jouw eigen doel blijft leidend.`}
       />
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
@@ -56,7 +58,7 @@ export default async function DevelopmentPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
-                Leerdoelen
+                Ontwikkeldoelen
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">
                 Waar wil je zichtbaar in groeien?
@@ -68,7 +70,7 @@ export default async function DevelopmentPage() {
             />
           </div>
           <div className="mt-6 space-y-4">
-            {goals.map((goal) => (
+            {goals.length > 0 ? goals.map((goal) => (
               <div
                 key={goal.id}
                 className="rounded-[24px] border border-[var(--border)] bg-white/85 p-5"
@@ -84,19 +86,34 @@ export default async function DevelopmentPage() {
                   Doeldatum {formatDate(goal.targetDate)} · bijgewerkt {formatDate(goal.updatedAt)}
                 </p>
               </div>
-            ))}
+            )) : (
+              <div className="rounded-[24px] border border-dashed border-[var(--border)] bg-white/75 p-5">
+                <h3 className="text-lg font-semibold text-slate-950">Nog geen persoonlijk ontwikkeldoel</h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+                  {developmentCopy.intro}
+                </p>
+              </div>
+            )}
           </div>
           <form action={addLearningGoalAction} className="mt-6 grid gap-3 rounded-[28px] bg-[var(--brand-soft)] p-5">
-            <h3 className="text-lg font-semibold text-slate-950">Nieuw leerdoel toevoegen</h3>
+            <h3 className="text-lg font-semibold text-slate-950">Nieuw persoonlijk ontwikkeldoel toevoegen</h3>
+            <p className="text-sm leading-6 text-[var(--ink-soft)]">{developmentCopy.intro}</p>
+            <div className="flex flex-wrap gap-2">
+              {developmentCopy.quickFocuses.map((focus) => (
+                <span key={focus} className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-[var(--brand-deep)]">
+                  {focus}
+                </span>
+              ))}
+            </div>
             <input
               name="title"
-              placeholder="Bijvoorbeeld: consulten krachtiger structureren"
+              placeholder={developmentCopy.goalTitlePlaceholder}
               className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
               required
             />
             <textarea
               name="description"
-              placeholder="Maak je doel SMART: Specifiek, Meetbaar, Acceptabel, Realistisch en Tijdgebonden. Bijvoorbeeld: binnen 6 weken in 3 consulten de hulpvraag, samenvatting en vervolgstap expliciet afronden."
+              placeholder={developmentCopy.goalDescriptionPlaceholder}
               rows={4}
               className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
               required
@@ -113,7 +130,7 @@ export default async function DevelopmentPage() {
               type="submit"
               className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
             >
-              Leerdoel bewaren
+              Ontwikkeldoel bewaren
             </button>
           </form>
         </div>
@@ -121,11 +138,14 @@ export default async function DevelopmentPage() {
         <div className="space-y-6">
           <div className="card-surface rounded-[32px] p-6">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--teal)]">
-              POP-documenten
+              Ontwikkeldocumenten
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-              Ontwikkelmap
+              Vrije POP-omgeving
             </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+              POP is vrij: documenttypes helpen alleen met terugvinden en zijn geen vaste POP-categorieën.
+            </p>
             <div className="mt-6 space-y-5">
               <div className="rounded-[24px] border border-[var(--teal)]/20 bg-white/75 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -133,7 +153,7 @@ export default async function DevelopmentPage() {
                   <StatusBadge label={`${gesprekDocumenten.length} items`} tone="neutral" />
                 </div>
                 <p className="mt-1 text-sm leading-6 text-[var(--ink-soft)]">
-                  Beoordelingsgesprekken, functioneringsgesprekken en profielgesprekken staan hier apart van POP-notities.
+                  Gespreksdocumenten zijn documenttypes voor terugvinden. Ze staan apart van vrije POP-notities, acties en reflecties.
                 </p>
                 <div className="mt-4 space-y-3">
                   {gesprekDocumenten.length > 0 ? gesprekDocumenten.map((document) => (
@@ -157,7 +177,7 @@ export default async function DevelopmentPage() {
 
               <div className="space-y-4">
                 <h3 className="text-base font-semibold text-slate-950">POP, bewijs en reflectie</h3>
-                {overigeDocumenten.map((document) => (
+                {overigeDocumenten.length > 0 ? overigeDocumenten.map((document) => (
                   <div
                     key={document.id}
                     className="rounded-[24px] border border-[var(--border)] bg-white/85 p-5"
@@ -176,37 +196,47 @@ export default async function DevelopmentPage() {
                       {document.category} · bijgewerkt {formatDate(document.updatedAt)}
                     </p>
                   </div>
-                ))}
+                )) : (
+                  <p className="rounded-[20px] bg-white px-4 py-3 text-sm text-[var(--ink-soft)]">
+                    Nog geen vrije POP-documenten. Voeg een actie, reflectie of bewijsstuk toe wanneer het jou helpt.
+                  </p>
+                )}
               </div>
             </div>
             <form action={addDevelopmentDocumentAction} className="mt-6 grid gap-3 rounded-[28px] bg-[var(--teal-soft)] p-5">
               <h3 className="text-lg font-semibold text-slate-950">Document toevoegen</h3>
+              <p className="text-sm leading-6 text-[var(--ink-soft)]">
+                Kies een documenttype voor ordening; dit is geen vaste POP-categorie.
+              </p>
               <input
                 name="title"
-                placeholder="Bijvoorbeeld: POP Q3 of bewijsmap consultvoering"
+                placeholder={developmentCopy.documentTitlePlaceholder}
                 className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]"
                 required
               />
               <textarea
                 name="description"
                 rows={3}
-                placeholder="Korte samenvatting van wat je in dit document bewaart."
+                placeholder={developmentCopy.documentDescriptionPlaceholder}
                 className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]"
                 required
               />
               <div className="grid gap-3 sm:grid-cols-2">
-                <select
-                  name="category"
-                  defaultValue="POP"
-                  className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]"
-                >
-                  <option value="POP">POP</option>
-                  <option value="Bewijs">Bewijs</option>
-                  <option value="Reflectie">Reflectie</option>
-                  <option value="Beoordelingsgesprek">Beoordelingsgesprek</option>
-                  <option value="Functioneringsgesprek">Functioneringsgesprek</option>
-                  <option value="Profielgesprek">Profielgesprek</option>
-                </select>
+                <label className="grid gap-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Documenttype
+                  <select
+                    name="category"
+                    defaultValue="POP"
+                    className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm font-normal normal-case tracking-normal text-slate-900 outline-none focus:border-[var(--teal)]"
+                  >
+                    <option value="POP">POP</option>
+                    <option value="Bewijs">Bewijs</option>
+                    <option value="Reflectie">Reflectie</option>
+                    <option value="Beoordelingsgesprek">Beoordelingsgesprek</option>
+                    <option value="Functioneringsgesprek">Functioneringsgesprek</option>
+                    <option value="Profielgesprek">Profielgesprek</option>
+                  </select>
+                </label>
                 <select
                   name="visibility"
                   defaultValue="TEAM"
