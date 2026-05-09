@@ -7,7 +7,10 @@ import {
 } from "@/app/lms-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { AUDIENCE_PROFILE_OPTIONS } from "@/lib/audience";
-import { summarizeContentVisibility } from "@/lib/content-visibility";
+import {
+  CONTENT_VISIBILITY_PRESET_OPTIONS,
+  summarizeContentVisibility,
+} from "@/lib/content-visibility";
 import { getRoleLabel } from "@/lib/roles";
 import { buildAccreditationChecklist } from "@/lib/lms/accreditation-checklist";
 import { buildAccreditationEvidenceExport } from "@/lib/lms/accreditation-evidence";
@@ -282,6 +285,20 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
                 <p className="mt-2 text-xs leading-5 text-[var(--ink-soft)]">
                   Bepaal welke learners deze gepubliceerde e-learning in de Academy zien. Admin/reviewer-preview loopt via de bestaande LMS-paden.
                 </p>
+                <div className="mt-4 rounded-2xl border border-dashed border-[var(--brand)]/30 bg-[var(--brand-soft)]/55 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand-deep)]">Snelkeuze startset</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--ink-soft)]">
+                    Kies een startset om in één keer de juiste doelgroep te zetten. Laat op handmatig staan als je rollen, doelgroepen of specifieke accounts zelf combineert.
+                  </p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {CONTENT_VISIBILITY_PRESET_OPTIONS.map((option) => (
+                      <label key={option.value} className="flex items-center gap-2 rounded-2xl bg-white/80 px-3 py-2 text-sm text-slate-900">
+                        <input type="radio" name="visibilityPreset" value={option.value} defaultChecked={option.value === "MANUAL"} className="h-4 w-4" />
+                        {option.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
                 <label className="mt-3 flex items-center gap-3 text-sm font-medium text-slate-900">
                   <input type="checkbox" name="visibleToAll" defaultChecked={course.visibleToAll} className="h-4 w-4" />
                   Zichtbaar voor iedereen

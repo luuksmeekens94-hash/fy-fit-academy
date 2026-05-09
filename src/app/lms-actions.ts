@@ -24,7 +24,11 @@ import { getCourseDetail } from "@/lib/lms/queries";
 import { canMutateLearnerProgress } from "@/lib/lms/reviewer-preview";
 import { isCourseCompleted } from "@/lib/lms/rules";
 import { AUDIENCE_PROFILES } from "@/lib/audience";
-import { isContentVisibleForUser } from "@/lib/content-visibility";
+import {
+  applyContentVisibilityPreset,
+  isContentVisibilityPreset,
+  isContentVisibleForUser,
+} from "@/lib/content-visibility";
 import type { Role } from "@/lib/types";
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -697,10 +701,17 @@ export async function saveCourseAccreditationMetadataAction(formData: FormData) 
   const requiredQuestionCount = getOptionalNumber(formData, "requiredQuestionCount");
   const accreditationKind = getString(formData, "accreditationKind");
   const changeSummary = getOptionalString(formData, "changeSummary") ?? "Accreditatie-metadata bijgewerkt.";
-  const visibleToAll = formData.get("visibleToAll") === "on" || formData.get("visibleToAll") === "true";
-  const visibleToRoles = getAllowedArray(formData, "visibleToRoles", COURSE_VISIBILITY_ROLES);
-  const visibleToAudienceProfiles = getAllowedArray(formData, "visibleToAudienceProfiles", AUDIENCE_PROFILES);
-  const visibleToUserIds = getCommaSeparatedStrings(formData, "visibleToUserIds");
+  const visibilityPresetValue = getString(formData, "visibilityPreset");
+  const visibilityPreset = isContentVisibilityPreset(visibilityPresetValue) ? visibilityPresetValue : "MANUAL";
+  const manualVisibility = {
+    visibleToAll: formData.get("visibleToAll") === "on" || formData.get("visibleToAll") === "true",
+    visibleToRoles: getAllowedArray(formData, "visibleToRoles", COURSE_VISIBILITY_ROLES),
+    visibleToAudienceProfiles: getAllowedArray(formData, "visibleToAudienceProfiles", AUDIENCE_PROFILES),
+    visibleToUserIds: getCommaSeparatedStrings(formData, "visibleToUserIds"),
+  };
+  const visibility = visibilityPreset === "MANUAL"
+    ? manualVisibility
+    : applyContentVisibilityPreset(visibilityPreset);
 
   assert(title, "Titel is verplicht.");
   assert(description, "Beschrijving is verplicht.");
@@ -719,10 +730,10 @@ export async function saveCourseAccreditationMetadataAction(formData: FormData) 
         title,
         description,
         audience: getOptionalString(formData, "audience"),
-        visibleToAll,
-        visibleToRoles,
-        visibleToAudienceProfiles,
-        visibleToUserIds,
+        visibleToAll: visibility.visibleToAll,
+        visibleToRoles: visibility.visibleToRoles,
+        visibleToAudienceProfiles: visibility.visibleToAudienceProfiles,
+        visibleToUserIds: visibility.visibleToUserIds,
         accreditationRegister: getOptionalString(formData, "accreditationRegister"),
         accreditationKind,
         studyLoadMinutes,

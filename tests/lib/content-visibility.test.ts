@@ -2,7 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { getAudienceProfileLabel } from "../../src/lib/audience.ts";
-import { isContentVisibleForUser } from "../../src/lib/content-visibility.ts";
+import {
+  applyContentVisibilityPreset,
+  CONTENT_VISIBILITY_PRESET_OPTIONS,
+  getContentVisibilityPresetLabel,
+  isContentVisibilityPreset,
+  isContentVisibleForUser,
+} from "../../src/lib/content-visibility.ts";
 import type { ContentVisibilityTarget, ContentVisibilityUser } from "../../src/lib/content-visibility.ts";
 
 const user: ContentVisibilityUser = {
@@ -54,4 +60,41 @@ test("content is niet zichtbaar zonder match", () => {
 
 test("praktijkondersteuner label is beschikbaar", () => {
   assert.equal(getAudienceProfileLabel("PRAKTIJKONDERSTEUNER"), "Praktijkondersteuner");
+});
+
+test("zichtbaarheidspresets maken veilige startsets voor admin content", () => {
+  assert.deepEqual(applyContentVisibilityPreset("ALL"), {
+    visibleToAll: true,
+    visibleToRoles: [],
+    visibleToAudienceProfiles: [],
+    visibleToUserIds: [],
+  });
+  assert.deepEqual(applyContentVisibilityPreset("FYSIOTHERAPEUT"), {
+    visibleToAll: false,
+    visibleToRoles: [],
+    visibleToAudienceProfiles: ["FYSIOTHERAPEUT"],
+    visibleToUserIds: [],
+  });
+  assert.deepEqual(applyContentVisibilityPreset("PRAKTIJKONDERSTEUNER"), {
+    visibleToAll: false,
+    visibleToRoles: [],
+    visibleToAudienceProfiles: ["PRAKTIJKONDERSTEUNER"],
+    visibleToUserIds: [],
+  });
+  assert.deepEqual(applyContentVisibilityPreset("FITCOACH"), {
+    visibleToAll: false,
+    visibleToRoles: [],
+    visibleToAudienceProfiles: ["FITCOACH"],
+    visibleToUserIds: [],
+  });
+});
+
+test("zichtbaarheidspresets zijn gelabeld en valideerbaar", () => {
+  assert.deepEqual(
+    CONTENT_VISIBILITY_PRESET_OPTIONS.map((option) => option.value),
+    ["MANUAL", "ALL", "FYSIOTHERAPEUT", "PRAKTIJKONDERSTEUNER", "FITCOACH"],
+  );
+  assert.equal(getContentVisibilityPresetLabel("PRAKTIJKONDERSTEUNER"), "Alleen praktijkondersteuners");
+  assert.equal(isContentVisibilityPreset("FITCOACH"), true);
+  assert.equal(isContentVisibilityPreset("EPD"), false);
 });
