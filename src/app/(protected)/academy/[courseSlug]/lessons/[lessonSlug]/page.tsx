@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { AcademyCompleteLessonButton } from "@/components/academy/academy-complete-lesson-button";
 import { AcademyLessonSidebar } from "@/components/academy/academy-lesson-sidebar";
@@ -11,11 +11,16 @@ import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
 import { getAcademyLessonBySlugsForUser } from "@/lib/academy/queries";
 import { extractLessonMedia } from "@/lib/lms/lesson-media";
+import { canUsePersonalLms } from "@/lib/roles";
 
 export default async function AcademyLessonDetailPage({
   params,
 }: PageProps<"/academy/[courseSlug]/lessons/[lessonSlug]">) {
   const user = await requireUser();
+  if (!canUsePersonalLms(user.role)) {
+    redirect("/");
+  }
+
   const { courseSlug, lessonSlug } = await params;
   const lesson = await getAcademyLessonBySlugsForUser(
     user.id,

@@ -6,6 +6,7 @@ import { ModulePublicationStatus, type Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { buildCertificateEvidenceAudit } from "@/lib/lms/certificate-backfill";
+import { canMonitorPractice } from "@/lib/roles";
 import type {
   AcademyModule,
   Category,
@@ -412,6 +413,10 @@ export const getVisibleDevelopmentDocuments = cache(async (viewerId: string, tar
         return true;
       }
 
+      if (canMonitorPractice(viewer.role)) {
+        return target.isActive && target.role !== "BEHEERDER" && target.role !== "REVIEWER" && document.visibility === "TEAM";
+      }
+
       return document.visibility === "TEAM" && target.teamleaderId === viewer.id;
     })
     .map(mapDevelopmentDocument);
@@ -426,9 +431,14 @@ export const getVisibleGoals = cache(async (viewerId: string, targetUserId: stri
 
   if (
     viewer.role !== "BEHEERDER" &&
+    !canMonitorPractice(viewer.role) &&
     viewer.id !== targetUserId &&
     target.teamleaderId !== viewer.id
   ) {
+    return [];
+  }
+
+  if (canMonitorPractice(viewer.role) && (!target.isActive || target.role === "BEHEERDER" || target.role === "REVIEWER")) {
     return [];
   }
 

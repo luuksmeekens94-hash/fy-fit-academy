@@ -2,6 +2,8 @@ import { PageHeader } from "@/components/page-header";
 import { AcademyCourseCard } from "@/components/academy/academy-course-card";
 import { requireUser } from "@/lib/auth";
 import { getMyAcademyCourses } from "@/lib/academy/queries";
+import { canUsePersonalLms } from "@/lib/roles";
+import { redirect } from "next/navigation";
 
 type AcademyPageProps = {
   searchParams: Promise<{ q?: string }>;
@@ -9,6 +11,10 @@ type AcademyPageProps = {
 
 export default async function AcademyPage({ searchParams }: AcademyPageProps) {
   const user = await requireUser();
+  if (!canUsePersonalLms(user.role)) {
+    redirect("/");
+  }
+
   const params = await searchParams;
   const courses = await getMyAcademyCourses(user.id);
   const query = params.q?.toLowerCase().trim() ?? "";

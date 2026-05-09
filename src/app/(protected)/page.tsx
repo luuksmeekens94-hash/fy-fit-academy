@@ -6,6 +6,16 @@ import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
 import { getMyAcademyCourses } from "@/lib/academy/queries";
 import {
+  canManageAcademy,
+  canMonitorOwnTeam,
+  canMonitorPractice,
+  canOpenTeamRoutes,
+  canReviewAccreditation,
+  canUsePersonalDevelopment,
+  canUsePersonalLms,
+  getDashboardLabel,
+} from "@/lib/roles";
+import {
   getActiveOnboardingPath,
   getModuleProgressForUser,
   getTeamMembers,
@@ -17,9 +27,66 @@ import {
   getOnboardingProgressForUser,
 } from "@/lib/data";
 import { formatDate, getOnboardingCompletion, getStatusTone } from "@/lib/utils";
+import type { Role } from "@/lib/types";
+
+function getDashboardCopy(role: Role, firstName: string) {
+  if (role === "PRAKTIJKMANAGER") {
+    return {
+      eyebrow: "Praktijkmonitor",
+      title: "Praktijkoverzicht",
+      description: "Een rustig overzicht van onboarding, voortgang en ontwikkelsignalen binnen de praktijk, zonder persoonlijke LMS-flow.",
+    };
+  }
+
+  if (role === "PRAKTIJKHOUDER") {
+    return {
+      eyebrow: "Praktijkdashboard",
+      title: `Goed om je te zien, ${firstName}`,
+      description: "Combineer je eigen Academy-leerpad met een praktijkbreed monitorbeeld voor teams, onboarding en borging.",
+    };
+  }
+
+  if (role === "BEHEERDER") {
+    return {
+      eyebrow: "Cockpit",
+      title: "Academy- en praktijkcockpit",
+      description: "Beheer de leeromgeving en houd praktijkbreed zicht op voortgang, onboarding en ontwikkelondersteuning.",
+    };
+  }
+
+  if (role === "REVIEWER") {
+    return {
+      eyebrow: "Accreditatie-preview",
+      title: "Revieweromgeving",
+      description: "Bekijk LMS-inhoud en accreditatiecontext veilig, zonder voortgang, toetspogingen of certificaten te muteren.",
+    };
+  }
+
+  if (role === "TEAMLEIDER") {
+    return {
+      eyebrow: "Dashboard",
+      title: `Goed om je te zien, ${firstName}`,
+      description: "Hier staat jouw persoonlijke leeromgeving met daarnaast een compact teamblok voor begeleiding.",
+    };
+  }
+
+  return {
+    eyebrow: "Dashboard",
+    title: `Goed om je te zien, ${firstName}`,
+    description: "Hieronder staat jouw persoonlijke dashboard met je openstaande modules, leerdoelen, onboardingvoortgang en snelle vervolgstappen.",
+  };
+}
 
 export default async function DashboardPage() {
   const user = await requireUser();
+  const hasPersonalLms = canUsePersonalLms(user.role);
+  const hasPersonalDevelopment = canUsePersonalDevelopment(user.role);
+  const hasOwnTeamMonitor = canMonitorOwnTeam(user.role);
+  const hasPracticeMonitor = canMonitorPractice(user.role);
+  const hasTeamAccess = canOpenTeamRoutes(user.role);
+  const hasAcademyManagement = canManageAcademy(user.role);
+  const hasAccreditationReview = canReviewAccreditation(user.role);
+  const dashboardCopy = getDashboardCopy(user.role, user.name.split(" ")[0]);
   const [
     modules,
     onboardingPath,
@@ -33,16 +100,17 @@ export default async function DashboardPage() {
     getOnboardingProgressForUser(user.id),
     getVisibleDevelopmentDocuments(user.id, user.id),
     getVisibleGoals(user.id, user.id),
-    getMyAcademyCourses(user.id),
+    hasPersonalLms ? getMyAcademyCourses(user.id) : Promise.resolve([]),
   ]);
   const openAcademyCourses = academyCourses.filter((course) => course.status !== "COMPLETED");
   const onboardingCompletion = getOnboardingCompletion(onboardingPath?.steps ?? [], onboardingProgress);
-  const teamMembers =
-    user.role === "MEDEWERKER"
-      ? []
-      : user.role === "BEHEERDER"
-        ? (await listUsers()).filter((entry) => entry.role !== "BEHEERDER")
-        : await getTeamMembers(user.id);
+  const teamMembers = hasPracticeMonitor
+    ? (await listUsers()).filter(
+        (entry) => entry.isActive && entry.id !== user.id && entry.role !== "BEHEERDER" && entry.role !== "REVIEWER",
+      )
+    : hasOwnTeamMonitor
+      ? await getTeamMembers(user.id)
+      : [];
   const teamSnapshots = await Promise.all(
     teamMembers.map(async (member) => ({
       member,
@@ -59,29 +127,31 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Dashboard"
-        title={`Goed om je te zien, ${user.name.split(" ")[0]}`}
-        description="Hieronder staat jouw persoonlijke dashboard. Krijg direct inzicht in je openstaande modules, actieve leerdoelen, onboardingvoortgang en de onderdelen waarmee je vandaag verder kunt."
+        eyebrow={dashboardCopy.eyebrow}
+        title={dashboardCopy.title}
+        description={dashboardCopy.description}
       />
 
       <section className="grid gap-4 md:grid-cols-3">
         <StatCard
-          label="Openstaande e-learnings"
-          value={String(openAcademyCourses.length)}
-          detail="Nog te starten of af te ronden binnen jouw Academy-leerpad."
+          label={hasPersonalLms ? "Openstaande e-learnings" : hasAccreditationReview ? "Previewmodus" : "Praktijkleden in beeld"}
+          value={hasPersonalLms ? String(openAcademyCourses.length) : hasAccreditationReview ? "Veilig" : String(teamMembers.length)}
+          detail={hasPersonalLms ? "Nog te starten of af te ronden binnen jouw Academy-leerpad." : hasAccreditationReview ? "Reviewerweergave muteert geen voortgang of certificaten." : "Actieve collega’s zichtbaar in de praktijkmonitor."}
         />
         <StatCard
-          label="Actieve leerdoelen"
-          value={String(goals.filter((goal) => goal.status !== "AFGEROND").length)}
-          detail="Focusdoelen die je nu in je POP of kwartaalontwikkeling hebt staan."
+          label={hasPersonalDevelopment ? "Actieve leerdoelen" : hasAcademyManagement ? "Academybeheer" : "Monitorrol"}
+          value={hasPersonalDevelopment ? String(goals.filter((goal) => goal.status !== "AFGEROND").length) : hasAcademyManagement ? "Actief" : getDashboardLabel(user.role)}
+          detail={hasPersonalDevelopment ? "Focusdoelen die je nu in je POP of kwartaalontwikkeling hebt staan." : hasAcademyManagement ? "Beheer loopt via Admin en LMS cockpit." : "Deze rol richt zich op overzicht in plaats van persoonlijke ontwikkelmap."}
         />
         <StatCard
-          label={user.isOnboarding ? "Onboarding voortgang" : "Ontwikkeldocumenten"}
-          value={user.isOnboarding ? `${onboardingCompletion}%` : String(developmentDocuments.length)}
+          label={hasPersonalDevelopment && user.isOnboarding ? "Onboarding voortgang" : hasPersonalDevelopment ? "Ontwikkeldocumenten" : "Onboarding in praktijk"}
+          value={hasPersonalDevelopment && user.isOnboarding ? `${onboardingCompletion}%` : hasPersonalDevelopment ? String(developmentDocuments.length) : String(teamSnapshots.filter((entry) => entry.member.isOnboarding).length)}
           detail={
-            user.isOnboarding
+            hasPersonalDevelopment && user.isOnboarding
               ? "Percentage afgeronde stappen in je huidige inwerkpad."
-              : "Documenten, notities en POP-items in je ontwikkelomgeving."
+              : hasPersonalDevelopment
+                ? "Documenten, notities en POP-items in je ontwikkelomgeving."
+                : "Aantal collega’s met een actief inwerkpad in dit basisbeeld."
           }
         />
       </section>
@@ -111,7 +181,8 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      {hasPersonalDevelopment ? (
+        <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="card-surface rounded-[32px] p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -173,9 +244,12 @@ export default async function DashboardPage() {
               ))}
           </div>
         </div>
-      </section>
+        </section>
+      ) : null}
 
-      <section className="grid gap-6 lg:grid-cols-2">
+      {hasPersonalLms || hasPersonalDevelopment ? (
+        <section className="grid gap-6 lg:grid-cols-2">
+        {hasPersonalLms ? (
         <div className="card-surface rounded-[32px] p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -219,58 +293,62 @@ export default async function DashboardPage() {
             })}
           </div>
         </div>
+        ) : null}
 
-        <div className="card-surface rounded-[32px] p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--teal)]">
-                Ontwikkelmap
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-                Recente documenten
-              </h2>
-            </div>
-            <Link
-              href="/ontwikkeling"
-              className="rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-slate-900"
-            >
-              Open map
-            </Link>
-          </div>
-          <div className="mt-6 space-y-4">
-            {developmentDocuments.slice(0, 3).map((document) => (
-              <div
-                key={document.id}
-                className="rounded-[24px] border border-[var(--border)] bg-white/85 p-5"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="text-lg font-semibold text-slate-950">{document.title}</h3>
-                  <StatusBadge
-                    label={document.visibility === "TEAM" ? "Gedeeld met begeleider" : "Privé"}
-                    tone={document.visibility === "TEAM" ? "warning" : "neutral"}
-                  />
-                </div>
-                <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-                  {document.description}
+        {hasPersonalDevelopment ? (
+          <div className="card-surface rounded-[32px] p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--teal)]">
+                  Ontwikkelmap
                 </p>
-                <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
-                  {document.category} · Bijgewerkt {formatDate(document.updatedAt)}
-                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+                  Recente documenten
+                </h2>
               </div>
-            ))}
+              <Link
+                href="/ontwikkeling"
+                className="rounded-full border border-[var(--border)] px-4 py-2 text-sm font-semibold text-slate-900"
+              >
+                Open map
+              </Link>
+            </div>
+            <div className="mt-6 space-y-4">
+              {developmentDocuments.slice(0, 3).map((document) => (
+                <div
+                  key={document.id}
+                  className="rounded-[24px] border border-[var(--border)] bg-white/85 p-5"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="text-lg font-semibold text-slate-950">{document.title}</h3>
+                    <StatusBadge
+                      label={document.visibility === "TEAM" ? "Gedeeld met begeleider" : "Privé"}
+                      tone={document.visibility === "TEAM" ? "warning" : "neutral"}
+                    />
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+                    {document.description}
+                  </p>
+                  <p className="mt-4 text-xs font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
+                    {document.category} · Bijgewerkt {formatDate(document.updatedAt)}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        ) : null}
+        </section>
+      ) : null}
 
-      {user.role !== "MEDEWERKER" ? (
+      {hasTeamAccess ? (
         <section className="card-surface rounded-[32px] p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
-                Teambeeld
+                {hasPracticeMonitor ? "Praktijkmonitor" : "Teambeeld"}
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-                Basis monitoring voor begeleiders
+                {hasPracticeMonitor ? "Praktijkbrede basis monitoring" : "Basis monitoring voor begeleiders"}
               </h2>
             </div>
             <Link

@@ -1,4 +1,10 @@
-export type Role = "MEDEWERKER" | "TEAMLEIDER" | "BEHEERDER" | "REVIEWER";
+export type Role =
+  | "MEDEWERKER"
+  | "TEAMLEIDER"
+  | "PRAKTIJKMANAGER"
+  | "PRAKTIJKHOUDER"
+  | "BEHEERDER"
+  | "REVIEWER";
 export type ModulePublicationStatus = "CONCEPT" | "GEPUBLICEERD" | "GEARCHIVEERD";
 
 export type OnboardingContentType =

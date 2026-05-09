@@ -23,6 +23,7 @@ import { issueCertificate } from "@/lib/lms/certificates";
 import { getCourseDetail } from "@/lib/lms/queries";
 import { canMutateLearnerProgress } from "@/lib/lms/reviewer-preview";
 import { isCourseCompleted } from "@/lib/lms/rules";
+import type { Role } from "@/lib/types";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -197,7 +198,7 @@ async function ensureEnrollmentForUser(userId: string, courseId: string) {
 
 async function assertCourseAccessibleForUser(params: {
   userId: string;
-  role: "MEDEWERKER" | "TEAMLEIDER" | "BEHEERDER" | "REVIEWER";
+  role: Role;
   courseId: string;
 }) {
   const course = await prisma.course.findUnique({

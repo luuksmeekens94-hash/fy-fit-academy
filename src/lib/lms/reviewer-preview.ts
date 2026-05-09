@@ -1,4 +1,5 @@
 import type { Role } from "@/lib/types";
+import { canUsePersonalLms } from "@/lib/roles";
 
 export type ReviewerPreviewMode = "learner" | "teamleider" | "beheer" | "reviewer";
 
@@ -34,7 +35,7 @@ export type ReviewerCoursePreviewSummary = {
 };
 
 export function canMutateLearnerProgress(role: Role, hasEnrollment: boolean) {
-  return hasEnrollment && role !== "REVIEWER" && role !== "BEHEERDER";
+  return hasEnrollment && canUsePersonalLms(role);
 }
 
 export function getReviewerPreviewMode(role: Role, hasEnrollment: boolean): ReviewerPreviewState {

@@ -8,6 +8,7 @@ import { AcademyStatusPanel } from "@/components/academy/academy-status-panel";
 import { PageHeader } from "@/components/page-header";
 import { requireUser } from "@/lib/auth";
 import { getAcademyCourseBySlugForUser } from "@/lib/academy/queries";
+import { canUsePersonalLms } from "@/lib/roles";
 
 function looksLikeLegacyAcademyId(value: string) {
   return /^c[a-z0-9]{20,}$/i.test(value);
@@ -17,6 +18,10 @@ export default async function AcademyCourseDetailPage({
   params,
 }: PageProps<"/academy/[courseSlug]">) {
   const user = await requireUser();
+  if (!canUsePersonalLms(user.role)) {
+    redirect("/");
+  }
+
   const { courseSlug } = await params;
   const course = await getAcademyCourseBySlugForUser(
     user.id,

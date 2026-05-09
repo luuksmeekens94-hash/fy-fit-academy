@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth";
+import { canMonitorPractice } from "@/lib/roles";
 import {
   getActiveOnboardingPath,
   getModuleProgressForUser,
@@ -15,10 +16,14 @@ import {
 import { getOnboardingCompletion, getTeamMetricLabel } from "@/lib/utils";
 
 export default async function TeamPage() {
-  const user = await requireRole(["TEAMLEIDER", "BEHEERDER"]);
+  const user = await requireRole(["TEAMLEIDER", "PRAKTIJKMANAGER", "PRAKTIJKHOUDER", "BEHEERDER"]);
   const [members, onboardingPath, modules] = await Promise.all([
-    user.role === "BEHEERDER"
-      ? listUsers().then((entries) => entries.filter((entry) => entry.role !== "BEHEERDER"))
+    canMonitorPractice(user.role)
+      ? listUsers().then((entries) =>
+          entries.filter(
+            (entry) => entry.isActive && entry.id !== user.id && entry.role !== "BEHEERDER" && entry.role !== "REVIEWER",
+          ),
+        )
       : getTeamMembers(user.id),
     getActiveOnboardingPath(),
     listModules({ publishedOnly: true }),
@@ -38,8 +43,8 @@ export default async function TeamPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Team"
-        title="Begeleiden zonder overcontrole"
+        eyebrow={canMonitorPractice(user.role) ? "Praktijkmonitor" : "Team"}
+        title={canMonitorPractice(user.role) ? "Praktijkbreed begeleiden zonder overcontrole" : "Begeleiden zonder overcontrole"}
         description="Dit overzicht laat basisvoortgang zien op onboarding, modules en persoonlijke ontwikkeling, zonder zware analytics of HR-achtige toon."
       />
 

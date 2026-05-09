@@ -540,7 +540,7 @@ export async function saveUserAction(formData: FormData) {
   const email = getString(formData, "email").toLowerCase();
   const role = ensureEnumValue(
     getString(formData, "role"),
-    ["MEDEWERKER", "TEAMLEIDER", "BEHEERDER", "REVIEWER"] as const,
+    ["MEDEWERKER", "TEAMLEIDER", "PRAKTIJKMANAGER", "PRAKTIJKHOUDER", "BEHEERDER", "REVIEWER"] as const,
     "MEDEWERKER",
   );
   const team = getOptionalString(formData, "team");

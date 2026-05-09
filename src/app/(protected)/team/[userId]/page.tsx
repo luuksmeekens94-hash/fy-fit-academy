@@ -5,6 +5,7 @@ import { addDevelopmentDocumentAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth";
+import { canMonitorPractice } from "@/lib/roles";
 import {
   getActiveOnboardingPath,
   getModuleProgressForUser,
@@ -21,7 +22,7 @@ type TeamDetailPageProps = {
 };
 
 export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
-  const viewer = await requireRole(["TEAMLEIDER", "BEHEERDER"]);
+  const viewer = await requireRole(["TEAMLEIDER", "PRAKTIJKMANAGER", "PRAKTIJKHOUDER", "BEHEERDER"]);
   const { userId } = await params;
   const member = await getUserById(userId);
 
@@ -32,6 +33,13 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
   if (
     viewer.role === "TEAMLEIDER" &&
     !(await getTeamMembers(viewer.id)).some((entry) => entry.id === member.id)
+  ) {
+    redirect("/team");
+  }
+
+  if (
+    canMonitorPractice(viewer.role) &&
+    (!member.isActive || member.id === viewer.id || member.role === "BEHEERDER" || member.role === "REVIEWER")
   ) {
     redirect("/team");
   }

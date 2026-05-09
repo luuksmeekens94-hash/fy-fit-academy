@@ -356,6 +356,8 @@ export default async function AdminPage() {
               <select name="role" defaultValue="MEDEWERKER" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]">
                 <option value="MEDEWERKER">Medewerker</option>
                 <option value="TEAMLEIDER">Teamleider</option>
+                <option value="PRAKTIJKMANAGER">Praktijkmanager</option>
+                <option value="PRAKTIJKHOUDER">Praktijkhouder</option>
                 <option value="BEHEERDER">Beheerder</option>
                 <option value="REVIEWER">Reviewer</option>
               </select>
@@ -404,6 +406,8 @@ export default async function AdminPage() {
                     <select name="role" defaultValue={user.role} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--teal)]">
                       <option value="MEDEWERKER">Medewerker</option>
                       <option value="TEAMLEIDER">Teamleider</option>
+                      <option value="PRAKTIJKMANAGER">Praktijkmanager</option>
+                      <option value="PRAKTIJKHOUDER">Praktijkhouder</option>
                       <option value="BEHEERDER">Beheerder</option>
                       <option value="REVIEWER">Reviewer</option>
                     </select>

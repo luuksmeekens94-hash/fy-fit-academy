@@ -1,4 +1,5 @@
 import { addDevelopmentDocumentAction, addLearningGoalAction } from "@/app/actions";
+import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
@@ -10,9 +11,14 @@ import {
   listUsers,
 } from "@/lib/data";
 import { formatDate, getStatusTone } from "@/lib/utils";
+import { canUsePersonalDevelopment } from "@/lib/roles";
 
 export default async function DevelopmentPage() {
   const user = await requireUser();
+  if (!canUsePersonalDevelopment(user.role)) {
+    redirect("/");
+  }
+
   const [goals, documents, moduleProgress, teamMembers] = await Promise.all([
     getVisibleGoals(user.id, user.id),
     getVisibleDevelopmentDocuments(user.id, user.id),

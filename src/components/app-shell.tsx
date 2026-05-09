@@ -3,6 +3,7 @@ import Image from "next/image";
 
 import { logoutAction } from "@/app/actions";
 import { NavLink } from "@/components/nav-link";
+import { getNavigationItems, getRoleLabel } from "@/lib/roles";
 import { initials } from "@/lib/utils";
 import type { User } from "@/lib/types";
 
@@ -12,6 +13,8 @@ type AppShellProps = {
 };
 
 export function AppShell({ user, children }: AppShellProps) {
+  const navigationItems = getNavigationItems(user.role, user.isOnboarding);
+
   return (
     <div className="min-h-screen bg-transparent">
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col px-4 py-4 lg:px-6">
@@ -50,30 +53,22 @@ export function AppShell({ user, children }: AppShellProps) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-base font-semibold text-[var(--foreground)]">{user.name}</p>
-                    <p className="text-sm text-[var(--ink-soft)]">Profielmenu</p>
+                    <p className="text-sm text-[var(--ink-soft)]">{getRoleLabel(user.role)} · Profielmenu</p>
                   </div>
                 </div>
 
                 <div className="pointer-events-none invisible absolute right-0 top-full z-50 w-72 translate-y-2 pt-3 opacity-0 transition duration-200 group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
                   <div className="card-surface rounded-[22px] p-3">
                     <nav className="space-y-1">
-                      <Link href="/" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
-                        Dashboard
-                      </Link>
-                      <Link href="/academy" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
-                        Fy-fit Academy
-                      </Link>
-                      <Link href="/ontwikkeling" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
-                        Mijn ontwikkeling
-                      </Link>
-                      {user.isOnboarding || user.role !== "MEDEWERKER" ? (
-                        <Link href="/onboarding" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
-                          Onboarding
+                      {navigationItems.map((item) => (
+                        <Link
+                          key={`${item.href}-${item.label}`}
+                          href={item.href}
+                          className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]"
+                        >
+                          {item.label}
                         </Link>
-                      ) : null}
-                      <Link href="/bibliotheek" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
-                        Praktijkbibliotheek
-                      </Link>
+                      ))}
                       <Link href="/mijn-gegevens" className="block rounded-2xl px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--brand-soft)]">
                         Mijn gegevens
                       </Link>
@@ -94,15 +89,9 @@ export function AppShell({ user, children }: AppShellProps) {
               </div>
             </div>
             <div className="relative flex flex-wrap gap-3">
-              <NavLink href="/" label="Dashboard" />
-              <NavLink href="/academy" label="Fy-fit Academy" />
-              <NavLink href="/ontwikkeling" label="Mijn ontwikkeling" />
-              {user.isOnboarding || user.role !== "MEDEWERKER" ? (
-                <NavLink href="/onboarding" label="Onboarding" />
-              ) : null}
-              <NavLink href="/bibliotheek" label="Praktijkbibliotheek" />
-              {user.role !== "MEDEWERKER" ? <NavLink href="/team" label="Team" /> : null}
-              {user.role === "BEHEERDER" ? <NavLink href="/admin" label="Admin" /> : null}
+              {navigationItems.map((item) => (
+                <NavLink key={`${item.href}-${item.label}`} href={item.href} label={item.label} />
+              ))}
             </div>
           </div>
         </div>

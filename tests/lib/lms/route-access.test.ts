@@ -14,9 +14,9 @@ test("getLearnerLmsRedirectPath maps medewerker course routes to the matching Ac
   );
 });
 
-test("getLearnerLmsRedirectPath maps medewerker lesson routes to the matching Academy lesson route", () => {
+test("getLearnerLmsRedirectPath maps personal LMS lesson routes to the matching Academy lesson route", () => {
   assert.equal(
-    getLearnerLmsRedirectPath("MEDEWERKER", {
+    getLearnerLmsRedirectPath("PRAKTIJKHOUDER", {
       courseSlug: "fy-fit-consultvoering-basis",
       lessonSlug: "eerste-consult-opbouw",
     }),
@@ -24,8 +24,17 @@ test("getLearnerLmsRedirectPath maps medewerker lesson routes to the matching Ac
   );
 });
 
-test("getLearnerLmsRedirectPath keeps LMS routes available for teamleiders, beheerders and reviewers", () => {
-  assert.equal(getLearnerLmsRedirectPath("TEAMLEIDER"), null);
+test("getLearnerLmsRedirectPath sends teamleiders and praktijkhouders through Academy", () => {
+  assert.equal(getLearnerLmsRedirectPath("TEAMLEIDER"), "/academy");
+  assert.equal(getLearnerLmsRedirectPath("PRAKTIJKHOUDER", { courseSlug: "fy-fit-consultvoering-basis" }), "/academy/fy-fit-consultvoering-basis");
+});
+
+test("getLearnerLmsRedirectPath blocks praktijkmanagers from personal LMS routes", () => {
+  assert.equal(getLearnerLmsRedirectPath("PRAKTIJKMANAGER"), "/");
+  assert.equal(getLearnerLmsRedirectPath("PRAKTIJKMANAGER", { courseSlug: "fy-fit-consultvoering-basis" }), "/");
+});
+
+test("getLearnerLmsRedirectPath keeps LMS routes available for beheerders and reviewers", () => {
   assert.equal(getLearnerLmsRedirectPath("BEHEERDER", { courseSlug: "fy-fit-consultvoering-basis" }), null);
   assert.equal(getLearnerLmsRedirectPath("REVIEWER", { courseSlug: "fy-fit-consultvoering-basis" }), null);
 });

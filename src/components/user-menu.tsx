@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { logoutAction } from "@/app/actions";
+import { getNavigationItems } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import { initials } from "@/lib/utils";
 import type { User } from "@/lib/types";
@@ -17,23 +18,11 @@ export function UserMenu({ user }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
-  const primaryLinks = [
-    { href: "/", label: "Dashboard", visible: true },
-    { href: "/academy", label: "Fy-fit Academy", visible: true },
-    { href: "/ontwikkeling", label: "Mijn ontwikkeling", visible: true },
-    {
-      href: "/onboarding",
-      label: "Onboarding",
-      visible: user.isOnboarding || user.role !== "MEDEWERKER",
-    },
-    { href: "/bibliotheek", label: "Praktijkbibliotheek", visible: true },
-  ].filter((item) => item.visible);
+  const primaryLinks = getNavigationItems(user.role, user.isOnboarding);
 
   const secondaryLinks = [
     { href: "/mijn-gegevens", label: "Mijn gegevens", visible: true },
-    { href: "/team", label: "Team", visible: user.role !== "MEDEWERKER" },
-    { href: "/admin", label: "Beheer", visible: user.role === "BEHEERDER" },
-  ].filter((item) => item.visible);
+  ];
 
   return (
     <div className="relative">
