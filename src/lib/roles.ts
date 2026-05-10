@@ -102,6 +102,7 @@ export function getNavigationItems(role: Role, isOnboarding = false): Navigation
   }
 
   if (canManageAcademy(role)) {
+    items.push({ href: "/academybeheer", label: "Academybeheer" });
     items.push({ href: "/admin", label: "Admin" });
   }
 

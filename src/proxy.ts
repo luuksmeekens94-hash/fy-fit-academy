@@ -6,6 +6,7 @@ import { decodeSession, SESSION_COOKIE } from "@/lib/session";
 const PROTECTED_PREFIXES = [
   "/",
   "/academy",
+  "/academybeheer",
   "/bibliotheek",
   "/onboarding",
   "/ontwikkeling",

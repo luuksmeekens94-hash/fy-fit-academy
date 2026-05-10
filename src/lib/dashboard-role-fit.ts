@@ -171,6 +171,7 @@ export function getDashboardRoleFit(
         { label: "Onboarding in praktijk", detail: "Aantal collega’s met een actief inwerkpad." },
       ],
       primaryLinks: [
+        { href: "/academybeheer", title: "Academybeheer", text: "Beheer toetsvragen, evaluaties, accreditatie en cursusversies." },
         { href: "/admin", title: "Admin", text: "Beheer content, gebruikers, onboarding en bewijs." },
         { href: "/lms", title: "LMS cockpit", text: "Bekijk cursussen, reviewer-preview en accreditatiecontext." },
         { href: "/team", title: "Praktijkmonitor", text: "Bekijk praktijkbrede voortgang." },

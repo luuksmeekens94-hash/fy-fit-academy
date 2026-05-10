@@ -69,6 +69,14 @@ test("praktijkhouder behoudt Academy, certificaten en krijgt praktijkmonitor", (
   assert.equal(items[2].label, "Certificaten");
 });
 
+test("beheerder ziet LMS, Academybeheer en Admin als aparte beheerlagen", () => {
+  const items = getNavigationItems("BEHEERDER");
+
+  assert.ok(items.some((item) => item.href === "/lms" && item.label === "LMS cockpit"));
+  assert.ok(items.some((item) => item.href === "/academybeheer" && item.label === "Academybeheer"));
+  assert.ok(items.some((item) => item.href === "/admin" && item.label === "Admin"));
+});
+
 test("medewerker ziet certificaten als Academy-route in plaats van LMS-route", () => {
   const items = getNavigationItems("MEDEWERKER");
 
