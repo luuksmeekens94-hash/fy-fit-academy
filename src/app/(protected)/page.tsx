@@ -6,7 +6,8 @@ import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
 import { getMyAcademyCourses } from "@/lib/academy/queries";
 import { getAudienceProfileLabel } from "@/lib/audience";
-import { getAudienceContextItems, getAudienceDashboardCopy } from "@/lib/dashboard-copy";
+import { getAudienceContextItems } from "@/lib/dashboard-copy";
+import { getDashboardRoleFit } from "@/lib/dashboard-role-fit";
 import {
   canManageAcademy,
   canMonitorOwnTeam,
@@ -15,7 +16,6 @@ import {
   canReviewAccreditation,
   canUsePersonalDevelopment,
   canUsePersonalLms,
-  getDashboardLabel,
 } from "@/lib/roles";
 import {
   getActiveOnboardingPath,
@@ -29,43 +29,6 @@ import {
   getOnboardingProgressForUser,
 } from "@/lib/data";
 import { formatDate, getOnboardingCompletion, getStatusTone } from "@/lib/utils";
-import type { AudienceProfile, Role } from "@/lib/types";
-
-function getDashboardCopy(role: Role, firstName: string, audienceProfile: AudienceProfile) {
-  if (role === "PRAKTIJKMANAGER") {
-    return {
-      eyebrow: "Praktijkmonitor",
-      title: "Praktijkoverzicht",
-      description: "Een rustig overzicht van onboarding, voortgang en ontwikkelsignalen binnen de praktijk, zonder persoonlijke LMS-flow.",
-    };
-  }
-
-  if (role === "PRAKTIJKHOUDER") {
-    return getAudienceDashboardCopy(audienceProfile, firstName);
-  }
-
-  if (role === "BEHEERDER") {
-    return {
-      eyebrow: "Cockpit",
-      title: "Academy- en praktijkcockpit",
-      description: "Beheer de leeromgeving en houd praktijkbreed zicht op voortgang, onboarding en ontwikkelondersteuning.",
-    };
-  }
-
-  if (role === "REVIEWER") {
-    return {
-      eyebrow: "Accreditatie-preview",
-      title: "Revieweromgeving",
-      description: "Bekijk LMS-inhoud en accreditatiecontext veilig, zonder voortgang, toetspogingen of certificaten te muteren.",
-    };
-  }
-
-  if (role === "TEAMLEIDER") {
-    return getAudienceDashboardCopy(audienceProfile, firstName);
-  }
-
-  return getAudienceDashboardCopy(audienceProfile, firstName);
-}
 
 export default async function DashboardPage() {
   const user = await requireUser();
@@ -76,10 +39,14 @@ export default async function DashboardPage() {
   const hasTeamAccess = canOpenTeamRoutes(user.role);
   const hasAcademyManagement = canManageAcademy(user.role);
   const hasAccreditationReview = canReviewAccreditation(user.role);
-  const dashboardCopy = getDashboardCopy(user.role, user.name.split(" ")[0], user.audienceProfile);
+  const firstName = user.name.split(" ")[0];
+  const dashboardRoleFit = getDashboardRoleFit(user.role, firstName, user.audienceProfile);
+  const dashboardCopy = dashboardRoleFit.copy;
   const audienceLabel = getAudienceProfileLabel(user.audienceProfile);
   const audienceContextItems = getAudienceContextItems(user.audienceProfile);
-  const personalQuickLinks = getAudienceDashboardCopy(user.audienceProfile, user.name.split(" ")[0]).quickLinks;
+  const personalQuickLinks = dashboardRoleFit.primaryLinks.filter((item) =>
+    ["/academy", "/ontwikkeling", "/bibliotheek", "/onboarding"].includes(item.href),
+  );
   const [
     modules,
     onboardingPath,
@@ -127,25 +94,25 @@ export default async function DashboardPage() {
 
       <section className="grid gap-4 md:grid-cols-3">
         <StatCard
-          label={hasPersonalLms ? "Openstaande e-learnings" : hasAccreditationReview ? "Previewmodus" : "Praktijkleden in beeld"}
-          value={hasPersonalLms ? String(openAcademyCourses.length) : hasAccreditationReview ? "Veilig" : String(teamMembers.length)}
-          detail={hasPersonalLms ? `Nog te starten of af te ronden in jouw ${audienceLabel.toLowerCase()}-leerpad.` : hasAccreditationReview ? "Reviewerweergave muteert geen voortgang of certificaten." : "Actieve collega’s zichtbaar in de praktijkmonitor."}
+          label={dashboardRoleFit.primaryStats[0].label}
+          value={dashboardRoleFit.primaryMode === "PERSONAL" || (dashboardRoleFit.primaryMode === "TEAM" && hasPersonalLms) ? String(openAcademyCourses.length) : hasAccreditationReview ? "Veilig" : String(teamMembers.length)}
+          detail={dashboardRoleFit.primaryStats[0].detail}
         />
         <StatCard
-          label={hasPersonalDevelopment ? "Actieve ontwikkeldoelen" : hasAcademyManagement ? "Academybeheer" : "Monitorrol"}
-          value={hasPersonalDevelopment ? String(goals.filter((goal) => goal.status !== "AFGEROND").length) : hasAcademyManagement ? "Actief" : getDashboardLabel(user.role)}
-          detail={hasPersonalDevelopment ? "Eigen doelen, acties en reflecties die nu aandacht vragen." : hasAcademyManagement ? "Beheer loopt via Admin en LMS cockpit." : "Deze rol richt zich op overzicht in plaats van persoonlijke ontwikkelmap."}
+          label={dashboardRoleFit.primaryStats[1].label}
+          value={hasPersonalDevelopment ? String(goals.filter((goal) => goal.status !== "AFGEROND").length) : hasAcademyManagement ? "Actief" : dashboardRoleFit.primaryMode === "PRACTICE" ? String(teamSnapshots.filter((entry) => entry.goals.some((goal) => goal.status !== "AFGEROND")).length) : dashboardRoleFit.primaryMode}
+          detail={dashboardRoleFit.primaryStats[1].detail}
         />
         <StatCard
-          label={hasPersonalDevelopment && user.isOnboarding ? "Onboarding voortgang" : hasPersonalDevelopment ? "Ontwikkeldocumenten" : "Onboarding in praktijk"}
-          value={hasPersonalDevelopment && user.isOnboarding ? `${onboardingCompletion}%` : hasPersonalDevelopment ? String(developmentDocuments.length) : String(teamSnapshots.filter((entry) => entry.member.isOnboarding).length)}
-          detail={
+          label={dashboardRoleFit.primaryStats[2].label}
+          value={
             hasPersonalDevelopment && user.isOnboarding
-              ? "Percentage afgeronde stappen in je huidige inwerkpad."
+              ? `${onboardingCompletion}%`
               : hasPersonalDevelopment
-                ? "Documenten, notities en vrije POP-items in je persoonlijke ontwikkelomgeving."
-                : "Aantal collega’s met een actief inwerkpad in dit basisbeeld."
+                ? String(developmentDocuments.length)
+                : String(teamSnapshots.filter((entry) => entry.member.isOnboarding).length)
           }
+          detail={dashboardRoleFit.primaryStats[2].detail}
         />
       </section>
 
@@ -173,6 +140,43 @@ export default async function DashboardPage() {
           ))}
         </div>
       </section>
+
+      {dashboardRoleFit.primaryMode === "PRACTICE" ? (
+        <section className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
+          <div className="card-surface rounded-[28px] p-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">Praktijk eerst</p>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {dashboardRoleFit.primaryLinks.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-[22px] border border-[var(--border)] bg-white/85 p-4 transition hover:-translate-y-0.5 hover:border-[var(--brand)]"
+                >
+                  <h3 className="font-semibold text-slate-950">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{item.text}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+          {dashboardRoleFit.secondaryLinks.length ? (
+            <div className="card-surface rounded-[28px] p-5">
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--teal)]">Eigen Academy</p>
+              <div className="mt-4 space-y-3">
+                {dashboardRoleFit.secondaryLinks.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="block rounded-[22px] border border-[var(--border)] bg-white/85 p-4 transition hover:border-[var(--teal)]"
+                  >
+                    <h3 className="font-semibold text-slate-950">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{item.text}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       {hasPersonalDevelopment ? (
         <section className="card-surface rounded-[28px] border border-[var(--teal)]/20 p-5">
