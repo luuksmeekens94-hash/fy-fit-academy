@@ -91,6 +91,10 @@ export function getNavigationItems(role: Role, isOnboarding = false): Navigation
     items.push({ href: "/onboarding", label: "Onboarding" });
   }
 
+  if (role === "PRAKTIJKMANAGER") {
+    items.push({ href: "/praktijkbeheer", label: "Praktijkbeheer" });
+  }
+
   items.push({ href: "/bibliotheek", label: "Praktijkbibliotheek" });
 
   if (canOpenTeamRoutes(role)) {

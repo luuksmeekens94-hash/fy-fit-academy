@@ -55,10 +55,11 @@ test("beheer en accreditatiereview hebben aparte rechten", () => {
   assert.equal(canReviewAccreditation("PRAKTIJKMANAGER"), false);
 });
 
-test("navigatie verbergt persoonlijke flows voor praktijkmanager", () => {
+test("navigatie verbergt persoonlijke flows voor praktijkmanager en toont praktijkbeheer", () => {
   const items = getNavigationItems("PRAKTIJKMANAGER", true);
-  assert.deepEqual(items.map((item) => item.href), ["/", "/bibliotheek", "/team"]);
+  assert.deepEqual(items.map((item) => item.href), ["/", "/praktijkbeheer", "/bibliotheek", "/team"]);
   assert.equal(items[0].label, "Praktijkmonitor");
+  assert.equal(items[1].label, "Praktijkbeheer");
 });
 
 test("praktijkhouder behoudt Academy, certificaten en krijgt praktijkmonitor", () => {

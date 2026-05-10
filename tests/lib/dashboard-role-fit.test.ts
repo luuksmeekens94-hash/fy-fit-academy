@@ -39,6 +39,8 @@ test("praktijkmanager is practice-first zonder persoonlijke LMS-links", () => {
 
   assert.equal(fit.primaryMode, "PRACTICE");
   assert.equal(fit.copy.eyebrow, "Praktijkmonitor");
+  assert.equal(fit.primaryLinks[0].href, "/praktijkbeheer");
+  assert.equal(fit.primaryLinks[0].title, "Praktijkbeheer");
   assert.ok(fit.primaryLinks.some((link) => link.href === "/team"));
   assert.ok(![...fit.primaryLinks, ...fit.secondaryLinks].some((link) => link.href === "/academy"));
   assert.ok(![...fit.primaryLinks, ...fit.secondaryLinks].some((link) => link.href === "/academy/certificates"));

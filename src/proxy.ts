@@ -10,6 +10,7 @@ const PROTECTED_PREFIXES = [
   "/onboarding",
   "/ontwikkeling",
   "/team",
+  "/praktijkbeheer",
   "/admin",
 ];
 

@@ -132,6 +132,7 @@ function practiceManagerFit(): DashboardRoleFit {
       },
     ],
     primaryLinks: [
+      { href: "/praktijkbeheer", title: "Praktijkbeheer", text: "Beheer mededelingen, deadlines, gesprekken, rapportage en bibliotheekborging." },
       { href: "/team", title: "Praktijkmonitor", text: "Bekijk voortgang, onboarding en ontwikkelsignalen." },
       { href: "/bibliotheek", title: "Praktijkbibliotheek", text: "Raadpleeg protocollen, documenten en cursusmateriaal." },
     ],
