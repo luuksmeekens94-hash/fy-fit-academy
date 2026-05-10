@@ -54,3 +54,12 @@ test("buildCertificateArchiveSummary exposes download path per certificate", () 
   assert.equal(summary.items[0].displayRegistrationNumber, "KRF-12345");
   assert.equal(summary.items[1].displayRegistrationNumber, "Niet vastgelegd");
 });
+
+test("buildCertificateArchiveSummary kan Academy-downloadpaden bouwen voor de medewerkerflow", () => {
+  const summary = buildCertificateArchiveSummary(certificates, {
+    downloadBasePath: "/academy/certificates",
+  });
+
+  assert.equal(summary.items[0].downloadPath, "/academy/certificates/cert-1/download");
+  assert.equal(summary.items[1].downloadPath, "/academy/certificates/cert-2/download");
+});

@@ -61,8 +61,16 @@ test("navigatie verbergt persoonlijke flows voor praktijkmanager", () => {
   assert.equal(items[0].label, "Praktijkmonitor");
 });
 
-test("praktijkhouder behoudt Academy en krijgt praktijkmonitor", () => {
+test("praktijkhouder behoudt Academy, certificaten en krijgt praktijkmonitor", () => {
   const items = getNavigationItems("PRAKTIJKHOUDER");
-  assert.deepEqual(items.map((item) => item.href), ["/", "/academy", "/bibliotheek", "/team"]);
+  assert.deepEqual(items.map((item) => item.href), ["/", "/academy", "/academy/certificates", "/bibliotheek", "/team"]);
   assert.equal(items[0].label, "Praktijkdashboard");
+  assert.equal(items[2].label, "Certificaten");
+});
+
+test("medewerker ziet certificaten als Academy-route in plaats van LMS-route", () => {
+  const items = getNavigationItems("MEDEWERKER");
+
+  assert.deepEqual(items.map((item) => item.href), ["/", "/academy", "/academy/certificates", "/ontwikkeling", "/bibliotheek"]);
+  assert.equal(items[2].label, "Certificaten");
 });

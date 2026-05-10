@@ -78,6 +78,7 @@ export function getNavigationItems(role: Role, isOnboarding = false): Navigation
 
   if (canUsePersonalLms(role)) {
     items.push({ href: "/academy", label: "Fy-fit Academy" });
+    items.push({ href: "/academy/certificates", label: "Certificaten" });
   } else if (canManageAcademy(role) || canReviewAccreditation(role)) {
     items.push({ href: "/lms", label: canReviewAccreditation(role) && !canManageAcademy(role) ? "Accreditatie-preview" : "LMS cockpit" });
   }

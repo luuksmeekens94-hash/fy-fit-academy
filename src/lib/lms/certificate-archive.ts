@@ -13,12 +13,18 @@ export type CertificateArchiveSummary = {
   items: CertificateArchiveItem[];
 };
 
+export type CertificateArchiveSummaryOptions = {
+  downloadBasePath?: "/lms/certificates" | "/academy/certificates";
+};
+
 export function buildCertificateArchiveSummary(
-  certificates: CertificateSummary[]
+  certificates: CertificateSummary[],
+  options: CertificateArchiveSummaryOptions = {},
 ): CertificateArchiveSummary {
+  const downloadBasePath = options.downloadBasePath ?? "/lms/certificates";
   const items = certificates.map((certificate) => ({
     ...certificate,
-    downloadPath: `/lms/certificates/${certificate.id}/download`,
+    downloadPath: `${downloadBasePath}/${certificate.id}/download`,
     displayRegistrationNumber: certificate.registrationNumber ?? "Niet vastgelegd",
   }));
 
