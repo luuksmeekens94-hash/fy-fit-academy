@@ -30,6 +30,6 @@ test("praktijkbeheer kan een mededeling publiceren en terugzien", async ({ page 
   );
   await page.getByRole("button", { name: /publiceren \+ melden/i }).click();
 
-  await expect(page.getByText(title)).toBeVisible();
+  await expect(page.getByRole("article").getByText(title)).toBeVisible();
   await expect(page.getByText(/live/i).first()).toBeVisible();
 });
