@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { markAllNotificationsReadAction, markNotificationReadAction } from "@/app/(protected)/notifications/actions";
 import { StatusBadge } from "@/components/status-badge";
 import type { NotificationCenter } from "@/lib/notifications";
 
@@ -36,29 +37,56 @@ export function NotificationFeed({ center }: NotificationFeedProps) {
             Meldingen over mededelingen, nieuwe e-learnings, wijzigingen en deadlines verschijnen hier rolgericht.
           </p>
         </div>
-        <StatusBadge label={`${center?.unreadCount ?? 0} ongelezen`} tone={center?.hasCritical ? "warning" : "brand"} />
+        <div className="flex flex-col items-start gap-3 lg:items-end">
+          <StatusBadge label={`${center?.unreadCount ?? 0} ongelezen`} tone={center?.hasCritical ? "warning" : "brand"} />
+          {(center?.markableUnreadCount ?? 0) > 0 ? (
+            <form action={markAllNotificationsReadAction}>
+              <button
+                type="submit"
+                className="rounded-full border border-[var(--brand)] bg-white/90 px-4 py-2 text-sm font-semibold text-[var(--brand-deep)] transition hover:-translate-y-0.5 hover:bg-[var(--brand-soft)]"
+              >
+                Alles als gelezen
+              </button>
+            </form>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         {items.length ? items.map((item) => {
-          const content = (
-            <>
+          const markReadAction = markNotificationReadAction.bind(null, item.id);
+
+          return (
+            <article key={item.id} className="flex min-h-full flex-col rounded-[22px] border border-[var(--border)] bg-white/85 p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge label={item.label} tone={getTone(item.severity)} />
+                {item.canMarkRead ? <StatusBadge label="nieuw" tone="brand" /> : null}
               </div>
               <h3 className="mt-3 font-semibold text-slate-950">{item.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{item.body}</p>
-            </>
-          );
-
-          return item.href ? (
-            <Link key={item.id} href={item.href} className="rounded-[22px] border border-[var(--border)] bg-white/85 p-4 transition hover:-translate-y-0.5 hover:border-[var(--brand)]">
-              {content}
-            </Link>
-          ) : (
-            <div key={item.id} className="rounded-[22px] border border-[var(--border)] bg-white/85 p-4">
-              {content}
-            </div>
+              <p className="mt-2 flex-1 text-sm leading-6 text-[var(--ink-soft)]">{item.body}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    className="rounded-full border border-[var(--border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
+                  >
+                    Openen
+                  </Link>
+                ) : null}
+                {item.canMarkRead ? (
+                  <form action={markReadAction}>
+                    <button
+                      type="submit"
+                      className="rounded-full bg-[var(--brand)] px-3 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[var(--brand-deep)]"
+                    >
+                      Gelezen
+                    </button>
+                  </form>
+                ) : (
+                  <span className="text-xs font-medium text-[var(--muted)]">Live signaal</span>
+                )}
+              </div>
+            </article>
           );
         }) : (
           <div className="md:col-span-3 rounded-[22px] border border-dashed border-[var(--border)] bg-white/75 p-4">

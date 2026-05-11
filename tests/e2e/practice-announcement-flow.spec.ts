@@ -30,6 +30,12 @@ test("praktijkbeheer kan een mededeling publiceren en terugzien", async ({ page 
   );
   await page.getByRole("button", { name: /publiceren \+ melden/i }).click();
 
-  await expect(page.getByRole("article").getByText(title)).toBeVisible();
-  await expect(page.getByText(/live/i).first()).toBeVisible();
+  const notificationFeed = page.locator("#nieuws-signalen");
+  await expect(notificationFeed.getByRole("article").getByText(title)).toBeVisible();
+  await notificationFeed.getByRole("button", { name: /gelezen/i }).click();
+  await expect(notificationFeed.getByRole("article").getByText(title)).toHaveCount(0);
+
+  const recentAnnouncements = page.locator("section").filter({ has: page.getByRole("heading", { name: "Recente praktijkmededelingen" }) });
+  await expect(recentAnnouncements.getByRole("article").getByText(title)).toBeVisible();
+  await expect(recentAnnouncements.getByText(/live/i).first()).toBeVisible();
 });

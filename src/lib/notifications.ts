@@ -44,10 +44,12 @@ export type NotificationLike = {
 
 export type NotificationCenterItem = NotificationLike & {
   label: string;
+  canMarkRead: boolean;
 };
 
 export type NotificationCenter = {
   unreadCount: number;
+  markableUnreadCount: number;
   items: NotificationCenterItem[];
   hasCritical: boolean;
 };
@@ -146,6 +148,10 @@ export function getNotificationLabel(type: NotificationType) {
   }
 }
 
+export function canMarkNotificationRead(notification: Pick<NotificationLike, "id" | "readAt">) {
+  return !notification.readAt && !notification.id.startsWith("signal-");
+}
+
 export function buildNotificationCenter({
   user,
   notifications,
@@ -173,10 +179,15 @@ export function buildNotificationCenter({
       return toDate(b.createdAt)!.getTime() - toDate(a.createdAt)!.getTime();
     })
     .slice(0, limit)
-    .map((notification) => ({ ...notification, label: getNotificationLabel(notification.type) }));
+    .map((notification) => ({
+      ...notification,
+      label: getNotificationLabel(notification.type),
+      canMarkRead: canMarkNotificationRead(notification),
+    }));
 
   return {
     unreadCount: unread.length,
+    markableUnreadCount: unread.filter(canMarkNotificationRead).length,
     items,
     hasCritical: unread.some((notification) => notification.severity === "CRITICAL"),
   };

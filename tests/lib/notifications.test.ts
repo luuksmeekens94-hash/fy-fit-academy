@@ -120,6 +120,87 @@ test("buildNotificationCenter sorteert relevante ongelezen meldingen en badge-co
   assert.equal(center.items[0].label, "Over tijd");
 });
 
+test("buildNotificationCenter markeert alleen persistente meldingen als afhandelbaar", () => {
+  const user = makeUser({ id: "u-med" });
+  const now = new Date("2026-05-03T09:00:00Z");
+  const center = buildNotificationCenter({
+    user,
+    now,
+    notifications: [
+      {
+        id: "persisted-notification",
+        userId: "u-med",
+        type: "ANNOUNCEMENT",
+        severity: "INFO",
+        title: "Praktijknieuws",
+        body: "Kan worden afgevinkt.",
+        href: "/#nieuws-signalen",
+        readAt: null,
+        createdAt: now,
+        expiresAt: null,
+      },
+      {
+        id: "signal-LearningGoal-goal-1-u-med",
+        userId: "u-med",
+        type: "DEADLINE_APPROACHING",
+        severity: "WARNING",
+        title: "Deadline nadert",
+        body: "Blijft zichtbaar zolang de bron openstaat.",
+        href: "/ontwikkeling",
+        readAt: null,
+        createdAt: now,
+        expiresAt: null,
+      },
+    ],
+  });
+
+  assert.deepEqual(
+    center.items.map((item) => ({ id: item.id, canMarkRead: item.canMarkRead })),
+    [
+      { id: "signal-LearningGoal-goal-1-u-med", canMarkRead: false },
+      { id: "persisted-notification", canMarkRead: true },
+    ],
+  );
+});
+
+test("buildNotificationCenter telt afhandelbare ongelezen meldingen apart van live signalen", () => {
+  const user = makeUser({ id: "u-med" });
+  const now = new Date("2026-05-03T09:00:00Z");
+  const center = buildNotificationCenter({
+    user,
+    now,
+    notifications: [
+      {
+        id: "persisted-notification",
+        userId: "u-med",
+        type: "ANNOUNCEMENT",
+        severity: "INFO",
+        title: "Praktijknieuws",
+        body: "Kan worden afgevinkt.",
+        href: "/#nieuws-signalen",
+        readAt: null,
+        createdAt: now,
+        expiresAt: null,
+      },
+      {
+        id: "signal-LearningGoal-goal-1-u-med",
+        userId: "u-med",
+        type: "DEADLINE_APPROACHING",
+        severity: "WARNING",
+        title: "Deadline nadert",
+        body: "Bronmelding.",
+        href: "/ontwikkeling",
+        readAt: null,
+        createdAt: now,
+        expiresAt: null,
+      },
+    ],
+  });
+
+  assert.equal(center.unreadCount, 2);
+  assert.equal(center.markableUnreadCount, 1);
+});
+
 test("buildDeadlineNotifications maakt waarschuwingen voor naderende en verlopen deadlines", () => {
   const now = new Date("2026-05-10T08:00:00Z");
   const notifications = buildDeadlineNotifications({
