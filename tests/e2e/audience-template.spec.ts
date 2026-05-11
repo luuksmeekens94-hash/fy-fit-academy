@@ -22,7 +22,15 @@ async function loginAs(page: Page, account: AudienceAccount) {
 async function expectRouteAllowed(page: Page, route: string) {
   await page.goto(route);
   await expect(page).not.toHaveURL(/\/login$/);
-  await expect(page.getByText(/nieuws & signalen/i)).toBeVisible();
+  await expectNotificationFeed(page);
+}
+
+async function expectAnyDashboardText(page: Page, matcher: RegExp) {
+  await expect(page.locator("main").getByText(matcher).first()).toBeVisible();
+}
+
+async function expectNotificationFeed(page: Page) {
+  await expect(page.getByText("Nieuws & signalen", { exact: true })).toBeVisible();
 }
 
 async function expectRouteForbiddenOrRedirected(page: Page, route: string) {
@@ -46,8 +54,8 @@ test.describe("ingelogde doelgroepkliktests", () => {
     test(`${expectation.label}: Academy en ontwikkeling passen bij doelgroep`, async ({ page }) => {
       await loginAs(page, account);
 
-      await expect(page.getByText(/nieuws & signalen/i)).toBeVisible();
-      await expect(page.getByText(expectation.requiredText[0])).toBeVisible();
+      await expectNotificationFeed(page);
+      await expectAnyDashboardText(page, expectation.requiredText[0]);
 
       for (const route of expectation.allowedRoutes) {
         await expectRouteAllowed(page, route);
