@@ -1,3 +1,5 @@
+import { isContentVisibleForUser, type ContentVisibilityTarget } from "@/lib/content-visibility";
+import { canUsePersonalLms } from "@/lib/roles";
 import type { AudienceProfile, LearningGoal, Role, User } from "@/lib/types";
 
 export type AnnouncementStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
@@ -40,6 +42,23 @@ export type NotificationLike = {
   readAt: Date | string | null;
   createdAt: Date | string;
   expiresAt: Date | string | null;
+};
+
+export type CourseNotificationCourse = ContentVisibilityTarget & {
+  id: string;
+  title: string;
+  slug: string;
+};
+
+export type CourseNotificationPayload = {
+  userId: string;
+  type: Extract<NotificationType, "COURSE_PUBLISHED" | "COURSE_UPDATED">;
+  severity: NotificationSeverity;
+  title: string;
+  body: string;
+  href: string;
+  sourceId: string;
+  sourceType: "Course";
 };
 
 export type NotificationCenterItem = NotificationLike & {
@@ -127,6 +146,35 @@ export function canSeeAnnouncement(user: User, announcement: AnnouncementLike, n
     announcement.targetRoles.includes(user.role) ||
     announcement.targetAudienceProfiles.includes(user.audienceProfile)
   );
+}
+
+export function buildCourseNotificationPayloads({
+  eventType,
+  course,
+  users,
+}: {
+  eventType: "published" | "updated";
+  course: CourseNotificationCourse;
+  users: User[];
+}): CourseNotificationPayload[] {
+  const isPublished = eventType === "published";
+
+  return users
+    .filter((user) => user.isActive)
+    .filter((user) => canUsePersonalLms(user.role))
+    .filter((user) => isContentVisibleForUser(course, user))
+    .map((user) => ({
+      userId: user.id,
+      type: isPublished ? "COURSE_PUBLISHED" : "COURSE_UPDATED",
+      severity: isPublished ? "SUCCESS" : "INFO",
+      title: isPublished ? "Nieuwe e-learning beschikbaar" : "E-learning bijgewerkt",
+      body: isPublished
+        ? `${course.title} staat klaar in je Academy.`
+        : `${course.title} is bijgewerkt. Bekijk de actuele versie in je Academy.`,
+      href: `/academy/${course.slug}`,
+      sourceId: course.id,
+      sourceType: "Course",
+    }));
 }
 
 export function getNotificationLabel(type: NotificationType) {

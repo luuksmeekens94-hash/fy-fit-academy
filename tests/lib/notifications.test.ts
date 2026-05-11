@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildCourseNotificationPayloads,
   buildDeadlineNotifications,
   buildNotificationCenter,
   canSeeAnnouncement,
@@ -199,6 +200,62 @@ test("buildNotificationCenter telt afhandelbare ongelezen meldingen apart van li
 
   assert.equal(center.unreadCount, 2);
   assert.equal(center.markableUnreadCount, 1);
+});
+
+test("buildCourseNotificationPayloads maakt publicatiemeldingen voor zichtbare learnerrollen", () => {
+  const users = [
+    makeUser({ id: "med", role: "MEDEWERKER", audienceProfile: "FYSIOTHERAPEUT" }),
+    makeUser({ id: "team", role: "TEAMLEIDER", audienceProfile: "FYSIOTHERAPEUT" }),
+    makeUser({ id: "owner", role: "PRAKTIJKHOUDER", audienceProfile: "FYSIOTHERAPEUT" }),
+    makeUser({ id: "manager", role: "PRAKTIJKMANAGER", audienceProfile: "FYSIOTHERAPEUT" }),
+    makeUser({ id: "fit", role: "MEDEWERKER", audienceProfile: "FITCOACH" }),
+    makeUser({ id: "inactive", role: "MEDEWERKER", audienceProfile: "FYSIOTHERAPEUT", isActive: false }),
+  ];
+
+  const payloads = buildCourseNotificationPayloads({
+    eventType: "published",
+    course: {
+      id: "course-1",
+      title: "Schouderklachten basis",
+      slug: "schouderklachten-basis",
+      visibleToAll: true,
+      visibleToRoles: [],
+      visibleToAudienceProfiles: [],
+      visibleToUserIds: [],
+    },
+    users,
+  });
+
+  assert.deepEqual(payloads.map((item) => item.userId).sort(), ["fit", "med", "owner", "team"]);
+  assert.equal(payloads[0].type, "COURSE_PUBLISHED");
+  assert.equal(payloads[0].severity, "SUCCESS");
+  assert.equal(payloads[0].href, "/academy/schouderklachten-basis");
+});
+
+test("buildCourseNotificationPayloads respecteert doelgroepzichtbaarheid bij cursusupdates", () => {
+  const payloads = buildCourseNotificationPayloads({
+    eventType: "updated",
+    course: {
+      id: "course-fit",
+      title: "Fitcoach krachttraining",
+      slug: "fitcoach-krachttraining",
+      visibleToAll: false,
+      visibleToRoles: [],
+      visibleToAudienceProfiles: ["FITCOACH"],
+      visibleToUserIds: ["specific-med"],
+    },
+    users: [
+      makeUser({ id: "fit", role: "MEDEWERKER", audienceProfile: "FITCOACH" }),
+      makeUser({ id: "specific-med", role: "MEDEWERKER", audienceProfile: "FYSIOTHERAPEUT" }),
+      makeUser({ id: "po", role: "MEDEWERKER", audienceProfile: "PRAKTIJKONDERSTEUNER" }),
+      makeUser({ id: "manager-fit", role: "PRAKTIJKMANAGER", audienceProfile: "FITCOACH" }),
+    ],
+  });
+
+  assert.deepEqual(payloads.map((item) => item.userId).sort(), ["fit", "specific-med"]);
+  assert.equal(payloads[0].type, "COURSE_UPDATED");
+  assert.equal(payloads[0].severity, "INFO");
+  assert.match(payloads[0].body, /bijgewerkt/i);
 });
 
 test("buildDeadlineNotifications maakt waarschuwingen voor naderende en verlopen deadlines", () => {

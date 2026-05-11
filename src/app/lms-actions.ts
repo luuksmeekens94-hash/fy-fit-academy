@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 import { requireUser } from "@/lib/auth";
+import { listActiveUsers } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
 import { buildAssessmentAnswerRecords } from "@/lib/lms/action-helpers";
 import {
@@ -29,6 +30,7 @@ import {
   isContentVisibilityPreset,
   isContentVisibleForUser,
 } from "@/lib/content-visibility";
+import { buildCourseNotificationPayloads } from "@/lib/notifications";
 import type { Role } from "@/lib/types";
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -130,6 +132,7 @@ async function revalidateLearningPaths(params: {
   courseId: string;
   lessonId?: string;
 }) {
+  revalidatePath("/");
   revalidatePath("/lms");
   revalidatePath(`/lms/courses/${params.courseId}`);
   revalidatePath("/lms/certificates");
@@ -165,6 +168,46 @@ async function revalidateLearningPaths(params: {
   if (lesson) {
     revalidatePath(`/academy/${course.slug}/lessons/${lesson.slug}`);
   }
+}
+
+async function createCourseNotifications(courseId: string, eventType: "published" | "updated") {
+  const [course, users] = await Promise.all([
+    prisma.course.findUnique({
+      where: { id: courseId },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        visibleToAll: true,
+        visibleToRoles: true,
+        visibleToAudienceProfiles: true,
+        visibleToUserIds: true,
+      },
+    }),
+    listActiveUsers(),
+  ]);
+
+  if (!course) {
+    return;
+  }
+
+  const payloads = buildCourseNotificationPayloads({ eventType, course, users });
+  if (!payloads.length) {
+    return;
+  }
+
+  await prisma.notification.createMany({
+    data: payloads.map((payload) => ({
+      userId: payload.userId,
+      type: payload.type,
+      severity: payload.severity,
+      title: payload.title,
+      body: payload.body,
+      href: payload.href,
+      sourceId: payload.sourceId,
+      sourceType: payload.sourceType,
+    })),
+  });
 }
 
 async function getEnrollmentForUser(userId: string, courseId: string) {
@@ -721,7 +764,8 @@ export async function saveCourseAccreditationMetadataAction(formData: FormData) 
     "Ongeldige accreditatiesoort."
   );
 
-  const { activeVersion } = await getActiveVersionForManagement(courseId);
+  const { course, activeVersion } = await getActiveVersionForManagement(courseId);
+  const shouldNotifyCourseUpdate = course.status === "PUBLISHED";
 
   await prisma.$transaction(async (tx) => {
     await tx.course.update({
@@ -760,6 +804,9 @@ export async function saveCourseAccreditationMetadataAction(formData: FormData) 
     });
   });
 
+  if (shouldNotifyCourseUpdate) {
+    await createCourseNotifications(courseId, "updated");
+  }
   await revalidateLearningPaths({ courseId });
 }
 
@@ -776,7 +823,8 @@ export async function saveCourseAccreditationStructureAction(formData: FormData)
 
   assert(objectives.length >= 3 && objectives.length <= 6, "Vul 3 tot 6 leerdoelen in.");
 
-  const { activeVersion } = await getActiveVersionForManagement(courseId);
+  const { course, activeVersion } = await getActiveVersionForManagement(courseId);
+  const shouldNotifyCourseUpdate = course.status === "PUBLISHED";
 
   await prisma.$transaction(async (tx) => {
     const modulesByOrder = new Map<number, { id: string }>();
@@ -867,6 +915,9 @@ export async function saveCourseAccreditationStructureAction(formData: FormData)
     });
   });
 
+  if (shouldNotifyCourseUpdate) {
+    await createCourseNotifications(courseId, "updated");
+  }
   await revalidateLearningPaths({ courseId });
 }
 
@@ -882,7 +933,8 @@ export async function saveAssessmentAccreditationRulesAction(formData: FormData)
   assert(passPercentage !== null && passPercentage > 0, "Slagingsnorm is verplicht.");
   assert(maxAttempts !== null && maxAttempts > 0, "Maximum pogingen is verplicht.");
 
-  const { activeVersion } = await getActiveVersionForManagement(courseId);
+  const { course, activeVersion } = await getActiveVersionForManagement(courseId);
+  const shouldNotifyCourseUpdate = course.status === "PUBLISHED";
   const assessment = await prisma.assessment.findUnique({ where: { id: assessmentId } });
   assert(assessment?.courseVersionId === activeVersion.id, "Toets hoort niet bij de actieve cursusversie.");
 
@@ -909,6 +961,9 @@ export async function saveAssessmentAccreditationRulesAction(formData: FormData)
     });
   });
 
+  if (shouldNotifyCourseUpdate) {
+    await createCourseNotifications(courseId, "updated");
+  }
   await revalidateLearningPaths({ courseId });
 }
 
@@ -917,7 +972,8 @@ export async function applyStandardEvaluationTemplateAction(formData: FormData) 
   const courseId = getString(formData, "courseId");
   assert(courseId, "Cursus ontbreekt.");
 
-  const { activeVersion } = await getActiveVersionForManagement(courseId);
+  const { course, activeVersion } = await getActiveVersionForManagement(courseId);
+  const shouldNotifyCourseUpdate = course.status === "PUBLISHED";
   const questions = buildStandardEvaluationQuestionTemplate();
 
   await prisma.$transaction(async (tx) => {
@@ -963,6 +1019,9 @@ export async function applyStandardEvaluationTemplateAction(formData: FormData) 
     });
   });
 
+  if (shouldNotifyCourseUpdate) {
+    await createCourseNotifications(courseId, "updated");
+  }
   await revalidateLearningPaths({ courseId });
 }
 
@@ -1016,5 +1075,6 @@ export async function publishCourseAccreditationReadyAction(formData: FormData) 
     });
   });
 
+  await createCourseNotifications(courseId, course.status === "PUBLISHED" ? "updated" : "published");
   await revalidateLearningPaths({ courseId });
 }
