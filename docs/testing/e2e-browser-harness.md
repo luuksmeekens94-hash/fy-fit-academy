@@ -22,26 +22,44 @@ Met zichtbare browser:
 npm run test:e2e:headed
 ```
 
-## Testaccounts per rol
+## Testaccounts per rol én doelgroep
 
-Secrets worden nooit gecommit. Zet ze lokaal, in de shell of in CI-secret variables:
+Fy-Fit gebruikt twee assen:
+
+- **Rol** = permissies/beheerrechten.
+- **Doelgroep/audienceProfile** = leerroute/contentzichtbaarheid: fysiotherapeut, praktijkondersteuner, fitcoach.
+
+Secrets worden nooit gecommit. Zet ze lokaal, in de shell of in CI-secret variables.
+
+Rolaccounts:
 
 ```bash
 export E2E_MEDEWERKER_EMAIL="..."
-export E2E_MEDEWERKER_PASSWORD="..."
+export E2E_MEDEWERKER_PASSWORD="***"
 export E2E_TEAMLEIDER_EMAIL="..."
-export E2E_TEAMLEIDER_PASSWORD="..."
+export E2E_TEAMLEIDER_PASSWORD="***"
 export E2E_PRAKTIJKMANAGER_EMAIL="..."
-export E2E_PRAKTIJKMANAGER_PASSWORD="..."
+export E2E_PRAKTIJKMANAGER_PASSWORD="***"
 export E2E_PRAKTIJKHOUDER_EMAIL="..."
-export E2E_PRAKTIJKHOUDER_PASSWORD="..."
+export E2E_PRAKTIJKHOUDER_PASSWORD="***"
 export E2E_BEHEERDER_EMAIL="..."
-export E2E_BEHEERDER_PASSWORD="..."
+export E2E_BEHEERDER_PASSWORD="***"
 export E2E_REVIEWER_EMAIL="..."
-export E2E_REVIEWER_PASSWORD="..."
+export E2E_REVIEWER_PASSWORD="***"
 ```
 
-Als een rol geen beide waarden heeft, wordt die roltest niet aangemaakt.
+Doelgroepaccounts, meestal medewerker-accounts met verschillend `audienceProfile`:
+
+```bash
+export E2E_FYSIOTHERAPEUT_EMAIL="..."
+export E2E_FYSIOTHERAPEUT_PASSWORD="***"
+export E2E_PRAKTIJKONDERSTEUNER_EMAIL="..."
+export E2E_PRAKTIJKONDERSTEUNER_PASSWORD="***"
+export E2E_FITCOACH_EMAIL="..."
+export E2E_FITCOACH_PASSWORD="***"
+```
+
+Als een account geen beide waarden heeft, wordt die test niet aangemaakt.
 
 ## Muterende flows
 
@@ -66,6 +84,10 @@ Gebruik dit alleen met testaccounts/testdata. De praktijkmededelingen-flow publi
   - praktijkhouder;
   - beheerder;
   - reviewer.
+- Ingelogde doelgroepmatrix zodra credentials aanwezig zijn:
+  - fysiotherapeut;
+  - praktijkondersteuner;
+  - fitcoach.
 - Notificatiefeed zichtbaar in protected shell.
 - Muterende praktijkmededeling-publicatieflow achter `E2E_RUN_MUTATING=1`.
 
