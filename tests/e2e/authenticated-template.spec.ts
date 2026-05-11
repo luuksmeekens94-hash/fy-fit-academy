@@ -1,30 +1,64 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
-const email = process.env.E2E_EMAIL;
-const password = process.env.E2E_PASSWORD;
-const roleStartRoutes = [
-  process.env.E2E_MEDEWERKER_ROUTE ?? "/academy",
-  process.env.E2E_TEAMLEIDER_ROUTE ?? "/team",
-  process.env.E2E_PRAKTIJKMANAGER_ROUTE ?? "/praktijkbeheer",
-  process.env.E2E_PRAKTIJKHOUDER_ROUTE ?? "/praktijkbeheer",
-  process.env.E2E_BEHEERDER_ROUTE ?? "/academybeheer",
-  process.env.E2E_REVIEWER_ROUTE ?? "/academybeheer",
-];
+import {
+  getConfiguredRoleAccounts,
+  missingRoleAccountMessage,
+  roleAccessMatrix,
+  type RoleAccount,
+} from "./support/role-accounts";
 
-test.skip(!email || !password, "Zet E2E_EMAIL en E2E_PASSWORD lokaal/CI om ingelogd te klikken zonder secrets te committen.");
+const accounts = getConfiguredRoleAccounts();
 
-test.describe("authenticated browser harness", () => {
-  test("kan met testaccount inloggen en basisroutes aanklikken", async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel(/e-?mail/i).fill(email!);
-    await page.getByLabel(/wachtwoord/i).fill(password!);
-    await page.getByRole("button", { name: /inloggen/i }).click();
+test.skip(accounts.length === 0, missingRoleAccountMessage());
 
-    await expect(page).not.toHaveURL(/\/login$/);
+async function loginAs(page: Page, account: RoleAccount) {
+  await page.goto("/login");
+  await page.getByLabel(/e-?mail/i).fill(account.email);
+  await page.getByLabel(/wachtwoord/i).fill(account.password);
+  await page.getByRole("button", { name: /inloggen/i }).click();
+  await expect(page).not.toHaveURL(/\/login$/);
+}
 
-    for (const route of [...new Set(roleStartRoutes)]) {
-      await page.goto(route);
-      await expect(page).not.toHaveURL(/\/login$/);
+async function expectRouteAllowed(page: Page, route: string) {
+  await page.goto(route);
+  await expect(page).not.toHaveURL(/\/login$/);
+  await expect(page.getByText(/nieuws & signalen/i)).toBeVisible();
+}
+
+async function expectRouteForbiddenOrRedirected(page: Page, route: string) {
+  await page.goto(route);
+
+  const currentUrl = new URL(page.url());
+  const stayedOnForbiddenRoute = currentUrl.pathname === route;
+
+  if (!stayedOnForbiddenRoute) {
+    await expect(page).not.toHaveURL(new RegExp(`${route.replaceAll("/", "\\/")}$`));
+    return;
+  }
+
+  await expect(page.getByText(/geen toegang|niet bevoegd|unauthorized|forbidden/i)).toBeVisible();
+}
+
+test.describe("ingelogde rolkliktests", () => {
+  for (const account of accounts) {
+    const expectation = roleAccessMatrix[account.role];
+
+    test(`${expectation.label}: dashboard, toegestane routes en notificatielaag`, async ({ page }) => {
+      await loginAs(page, account);
+
+      await expect(page.getByText(/nieuws & signalen/i)).toBeVisible();
+      await expect(page.getByText(expectation.requiredText[0])).toBeVisible();
+
+      for (const route of expectation.allowedRoutes) {
+        await expectRouteAllowed(page, route);
+      }
+    });
+
+    for (const route of expectation.forbiddenRoutes) {
+      test(`${expectation.label}: ${route} is niet rechtstreeks bruikbaar`, async ({ page }) => {
+        await loginAs(page, account);
+        await expectRouteForbiddenOrRedirected(page, route);
+      });
     }
-  });
+  }
 });
