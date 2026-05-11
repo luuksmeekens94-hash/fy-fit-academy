@@ -67,6 +67,35 @@ enum Visibility {
   TEAM
 }
 
+enum AnnouncementStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AnnouncementPriority {
+  INFO
+  IMPORTANT
+  URGENT
+}
+
+enum NotificationType {
+  ANNOUNCEMENT
+  COURSE_PUBLISHED
+  COURSE_UPDATED
+  DEADLINE_APPROACHING
+  DEADLINE_OVERDUE
+  ACCREDITATION_REVIEW
+  SYSTEM
+}
+
+enum NotificationSeverity {
+  INFO
+  SUCCESS
+  WARNING
+  CRITICAL
+}
+
 // ─── LMS Enums ───────────────────────────────────────────────────────────────
 
 enum CourseStatus {
@@ -133,43 +162,46 @@ enum QuestionType {
 }
 
 model User {
-  id                    String                 @id @default(cuid())
-  email                 String                 @unique
-  passwordHash          String
-  name                  String
-  role                  Role
-  audienceProfile       AudienceProfile        @default(FYSIOTHERAPEUT)
-  team                  String?
+  id                             String                 @id @default(cuid())
+  email                          String                 @unique
+  passwordHash                   String
+  name                           String
+  role                           Role
+  audienceProfile                AudienceProfile        @default(FYSIOTHERAPEUT)
+  team                           String?
   professionalRegistrationNumber String?
-  title                 String
-  location              String
-  bio                   String
-  avatarColor           String
-  isActive              Boolean                @default(true)
-  isOnboarding          Boolean                @default(false)
-  buddyId               String?
-  teamleaderId          String?
-  buddy                 User?                  @relation("BuddyRelation", fields: [buddyId], references: [id])
-  buddyFor              User[]                 @relation("BuddyRelation")
-  teamleader            User?                  @relation("TeamleaderRelation", fields: [teamleaderId], references: [id])
-  teamMembers           User[]                 @relation("TeamleaderRelation")
-  authoredModules       Module[]
-  ownedDocuments        Document[]
-  moduleProgress        ModuleProgress[]
-  onboardingProgress    OnboardingProgress[]
-  learningGoals         LearningGoal[]
-  developmentDocs       DevelopmentDocument[]
+  title                          String
+  location                       String
+  bio                            String
+  avatarColor                    String
+  isActive                       Boolean                @default(true)
+  isOnboarding                   Boolean                @default(false)
+  buddyId                        String?
+  teamleaderId                   String?
+  buddy                          User?                  @relation("BuddyRelation", fields: [buddyId], references: [id])
+  buddyFor                       User[]                 @relation("BuddyRelation")
+  teamleader                     User?                  @relation("TeamleaderRelation", fields: [teamleaderId], references: [id])
+  teamMembers                    User[]                 @relation("TeamleaderRelation")
+  authoredModules                Module[]
+  ownedDocuments                 Document[]
+  moduleProgress                 ModuleProgress[]
+  onboardingProgress             OnboardingProgress[]
+  learningGoals                  LearningGoal[]
+  developmentDocs                DevelopmentDocument[]
   // LMS relations
-  authoredCourses       Course[]               @relation("CourseAuthor")
-  reviewingCourses      Course[]               @relation("CourseReviewer")
-  courseVersionsCreated CourseVersion[]        @relation("CourseVersionCreator")
-  enrollments           Enrollment[]           @relation("EnrollmentUser")
-  assignedEnrollments   Enrollment[]           @relation("EnrollmentAssigner")
-  lessonProgress        LessonProgress[]
-  assessmentAttempts    AssessmentAttempt[]    @relation("AttemptUser")
-  certificates          Certificate[]          @relation("CertificateUser")
-  evaluationSubmissions EvaluationSubmission[]
-  courseChangeLogs      CourseChangeLog[]
+  authoredCourses                Course[]               @relation("CourseAuthor")
+  reviewingCourses               Course[]               @relation("CourseReviewer")
+  courseVersionsCreated          CourseVersion[]        @relation("CourseVersionCreator")
+  enrollments                    Enrollment[]           @relation("EnrollmentUser")
+  assignedEnrollments            Enrollment[]           @relation("EnrollmentAssigner")
+  lessonProgress                 LessonProgress[]
+  assessmentAttempts             AssessmentAttempt[]    @relation("AttemptUser")
+  certificates                   Certificate[]          @relation("CertificateUser")
+  evaluationSubmissions          EvaluationSubmission[]
+  courseChangeLogs               CourseChangeLog[]
+  announcementsCreated           Announcement[]         @relation("AnnouncementCreatedBy")
+  announcementsPublished         Announcement[]         @relation("AnnouncementPublishedBy")
+  notifications                  Notification[]
 }
 
 model Category {
@@ -295,42 +327,81 @@ model DevelopmentDocument {
   user        User       @relation(fields: [userId], references: [id])
 }
 
+model Announcement {
+  id                     String               @id @default(cuid())
+  title                  String
+  body                   String
+  status                 AnnouncementStatus   @default(DRAFT)
+  priority               AnnouncementPriority @default(INFO)
+  targetRoles            Role[]               @default([])
+  targetAudienceProfiles AudienceProfile[]    @default([])
+  targetUserIds          String[]             @default([])
+  visibleToAll           Boolean              @default(true)
+  publishAt              DateTime?
+  expiresAt              DateTime?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  createdById            String
+  publishedById          String?
+  createdBy              User                 @relation("AnnouncementCreatedBy", fields: [createdById], references: [id])
+  publishedBy            User?                @relation("AnnouncementPublishedBy", fields: [publishedById], references: [id])
+}
+
+model Notification {
+  id         String               @id @default(cuid())
+  userId     String
+  type       NotificationType
+  severity   NotificationSeverity @default(INFO)
+  title      String
+  body       String
+  href       String?
+  sourceId   String?
+  sourceType String?
+  readAt     DateTime?
+  createdAt  DateTime             @default(now())
+  expiresAt  DateTime?
+  user       User                 @relation(fields: [userId], references: [id])
+
+  @@index([userId, readAt, createdAt])
+  @@index([type, createdAt])
+}
+
 // ─── LMS Models ──────────────────────────────────────────────────────────────
 
 model Course {
-  id                    String            @id @default(cuid())
-  title                 String
-  slug                  String            @unique
-  description           String
-  audience              String?
-  visibleToAll          Boolean           @default(true)
-  visibleToRoles        Role[]            @default([])
+  id                        String            @id @default(cuid())
+  title                     String
+  slug                      String            @unique
+  description               String
+  audience                  String?
+  visibleToAll              Boolean           @default(true)
+  visibleToRoles            Role[]            @default([])
   visibleToAudienceProfiles AudienceProfile[] @default([])
-  visibleToUserIds      String[]          @default([])
-  learningObjectives    String?
-  goal                  String?
-  focus                 String?
-  learnerOutcomes       Json?
-  accreditationRegister String?
-  accreditationKind     AccreditationKind @default(VAKINHOUDELIJK)
-  versionDate           DateTime?
-  authorExperts         Json?
-  requiredQuestionCount Int?
-  studyLoadMinutes      Int               @default(0)
-  status                CourseStatus      @default(CONCEPT)
-  isMandatory           Boolean           @default(false)
-  authorId              String
-  reviewerId            String?
-  publishedAt           DateTime?
-  revisionDueAt         DateTime?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-  author                User              @relation("CourseAuthor", fields: [authorId], references: [id])
-  reviewer              User?             @relation("CourseReviewer", fields: [reviewerId], references: [id])
-  versions              CourseVersion[]
-  enrollments           Enrollment[]
-  certificates          Certificate[]
-  changeLogs            CourseChangeLog[]
+  visibleToUserIds          String[]          @default([])
+  learningObjectives        String?
+  goal                      String?
+  focus                     String?
+  learnerOutcomes           Json?
+  accreditationRegister     String?
+  accreditationKind         AccreditationKind @default(VAKINHOUDELIJK)
+  versionDate               DateTime?
+  authorExperts             Json?
+  requiredQuestionCount     Int?
+  studyLoadMinutes          Int               @default(0)
+  status                    CourseStatus      @default(CONCEPT)
+  isMandatory               Boolean           @default(false)
+  authorId                  String
+  reviewerId                String?
+  publishedAt               DateTime?
+  revisionDueAt             DateTime?
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+  author                    User              @relation("CourseAuthor", fields: [authorId], references: [id])
+  reviewer                  User?             @relation("CourseReviewer", fields: [reviewerId], references: [id])
+  versions                  CourseVersion[]
+  enrollments               Enrollment[]
+  certificates              Certificate[]
+  changeLogs                CourseChangeLog[]
 }
 
 model CourseVersion {
