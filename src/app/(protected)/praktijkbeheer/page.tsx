@@ -1,10 +1,16 @@
 import Link from "next/link";
 
+import {
+  archivePracticeAnnouncementAction,
+  publishPracticeAnnouncementAction,
+  savePracticeAnnouncementAction,
+} from "@/app/praktijkbeheer/actions";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth";
 import { getVisibleGoals, listDocuments, listUsers } from "@/lib/data";
 import { buildPracticeManagementOverview } from "@/lib/practice-management";
+import { prisma } from "@/lib/prisma";
 
 const planningSteps = [
   "Aanleiding scherp",
@@ -16,7 +22,18 @@ const planningSteps = [
 
 export default async function PracticeManagementPage() {
   const user = await requireRole(["PRAKTIJKMANAGER", "PRAKTIJKHOUDER", "BEHEERDER"]);
-  const [users, documents] = await Promise.all([listUsers(), listDocuments()]);
+  const [users, documents, announcements] = await Promise.all([
+    listUsers(),
+    listDocuments(),
+    prisma.announcement.findMany({
+      orderBy: [{ createdAt: "desc" }],
+      take: 6,
+      include: {
+        createdBy: { select: { name: true } },
+        publishedBy: { select: { name: true } },
+      },
+    }),
+  ]);
   const managedUsers = users.filter(
     (entry) => entry.isActive && entry.id !== user.id && entry.role !== "BEHEERDER" && entry.role !== "REVIEWER",
   );
@@ -112,22 +129,135 @@ export default async function PracticeManagementPage() {
             <div className="mt-6 rounded-[24px] border border-white/70 bg-white/70 p-4">
               <p className="text-sm font-semibold text-slate-950">Publicatiecheck</p>
               <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-                Conceptflow: nog geen automatische verzending. Deze laag maakt de boodschap scherp voordat je hem deelt.
+                Concepten blijven veilig intern. Publiceren maakt direct role/doelgroep-notificaties aan en toont de update in Nieuws & signalen.
               </p>
             </div>
           </div>
-          <div className="grid gap-3 p-6 md:grid-cols-2 lg:p-7">
-            <input placeholder="Titel mededeling" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]" />
-            <select defaultValue="Iedereen" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]">
-              <option>Iedereen</option>
-              <option>Fysiotherapeuten</option>
-              <option>Praktijkondersteuning</option>
-              <option>Fitcoaches</option>
+          <form action={savePracticeAnnouncementAction} className="grid gap-3 p-6 md:grid-cols-2 lg:p-7">
+            <input
+              name="title"
+              placeholder="Titel mededeling"
+              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+              required
+            />
+            <select
+              name="priority"
+              defaultValue="INFO"
+              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+            >
+              <option value="INFO">Normale update</option>
+              <option value="IMPORTANT">Belangrijk</option>
+              <option value="URGENT">Urgent / actie nodig</option>
             </select>
-            <input type="date" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]" />
-            <input placeholder="Eigenaar / opvolger" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]" />
-            <textarea rows={5} placeholder="Kernboodschap, actie en waar het team meer informatie vindt" className="md:col-span-2 rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]" />
+            <select
+              name="targetAudienceProfiles"
+              defaultValue=""
+              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+            >
+              <option value="">Iedereen</option>
+              <option value="FYSIOTHERAPEUT">Fysiotherapeuten</option>
+              <option value="PRAKTIJKONDERSTEUNER">Praktijkondersteuning</option>
+              <option value="FITCOACH">Fitcoaches</option>
+            </select>
+            <select
+              name="targetRoles"
+              defaultValue=""
+              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+            >
+              <option value="">Alle rollen</option>
+              <option value="MEDEWERKER">Medewerkers</option>
+              <option value="TEAMLEIDER">Teamleiders</option>
+              <option value="PRAKTIJKMANAGER">Praktijkmanagers</option>
+              <option value="PRAKTIJKHOUDER">Praktijkhouders</option>
+            </select>
+            <input type="date" name="expiresAt" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]" />
+            <input type="hidden" name="visibleToAll" value="true" />
+            <textarea
+              rows={5}
+              name="body"
+              placeholder="Kernboodschap, actie en waar het team meer informatie vindt"
+              className="md:col-span-2 rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+              required
+            />
+            <div className="md:col-span-2 flex flex-wrap items-center justify-end gap-3">
+              <button
+                type="submit"
+                name="intent"
+                value="draft"
+                className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-[var(--brand)]"
+              >
+                Concept opslaan
+              </button>
+              <button
+                type="submit"
+                name="intent"
+                value="publish"
+                className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white shadow-[var(--shadow-soft)] transition hover:bg-[var(--brand-deep)]"
+              >
+                Publiceren + melden
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section className="card-surface rounded-[32px] p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <StatusBadge label="Publicatieflow" tone="brand" />
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em] text-slate-950">Recente praktijkmededelingen</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+              Concepten, live updates en archief staan nu echt in de database. Publiceren maakt meldingen aan voor de gekozen doelgroep.
+            </p>
           </div>
+          <a href="#mededelingen" className="rounded-full border border-[var(--border)] bg-white/75 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:border-[var(--brand)]">
+            Nieuwe mededeling
+          </a>
+        </div>
+        <div className="mt-5 grid gap-3 lg:grid-cols-2">
+          {announcements.length ? announcements.map((announcement) => (
+            <article key={announcement.id} className="rounded-[24px] border border-[var(--border)] bg-white/85 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-slate-950">{announcement.title}</p>
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+                    {announcement.createdBy.name} · {announcement.createdAt.toLocaleDateString("nl-NL")}
+                  </p>
+                </div>
+                <StatusBadge
+                  label={announcement.status === "PUBLISHED" ? "Live" : announcement.status === "ARCHIVED" ? "Archief" : "Concept"}
+                  tone={announcement.status === "PUBLISHED" ? "success" : announcement.status === "ARCHIVED" ? "neutral" : "warning"}
+                />
+              </div>
+              <p className="mt-3 line-clamp-2 text-sm leading-6 text-[var(--ink-soft)]">{announcement.body}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                <span>{announcement.priority}</span>
+                <span>·</span>
+                <span>{announcement.visibleToAll ? "Iedereen" : "Gericht"}</span>
+                {announcement.publishedBy ? <span>· gepubliceerd door {announcement.publishedBy.name}</span> : null}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {announcement.status !== "PUBLISHED" ? (
+                  <form action={publishPracticeAnnouncementAction.bind(null, announcement.id)}>
+                    <button className="rounded-full bg-[var(--brand)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
+                      Publiceren
+                    </button>
+                  </form>
+                ) : null}
+                {announcement.status !== "ARCHIVED" ? (
+                  <form action={archivePracticeAnnouncementAction.bind(null, announcement.id)}>
+                    <button className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:border-[var(--brand)]">
+                      Archiveren
+                    </button>
+                  </form>
+                ) : null}
+              </div>
+            </article>
+          )) : (
+            <p className="rounded-[24px] bg-white/80 p-5 text-sm text-[var(--ink-soft)]">
+              Nog geen mededelingen opgeslagen. Maak hierboven het eerste concept of publiceer direct naar Nieuws & signalen.
+            </p>
+          )}
         </div>
       </section>
 
