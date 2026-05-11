@@ -1,5 +1,9 @@
 import Link from "next/link";
 
+import {
+  applyStandardEvaluationTemplateAction,
+  publishCourseAccreditationReadyAction,
+} from "@/app/lms-actions";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth";
@@ -125,7 +129,7 @@ export default async function AcademyAdminPage() {
               <input type="number" defaultValue={3} className="mt-1 w-full bg-transparent text-base font-semibold text-slate-950 outline-none" />
             </label>
             <p className="md:col-span-2 text-xs leading-5 text-[var(--ink-soft)]">
-              Beheerflow nu expliciet; opslag sluit later aan op bestaande cursus-/assessmentmodel en server actions.
+              Beheerflow is gekoppeld aan het bestaande assessmentmodel via de cursusdetailpagina; normen en leerdoelkoppeling blijven server-side gevalideerd.
             </p>
           </div>
         </div>
@@ -136,14 +140,29 @@ export default async function AcademyAdminPage() {
           <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
             Borg feedback als vaste accreditatielaag, niet als vergeten formulier na afloop.
           </p>
-          <div className="mt-5 space-y-3">
-            {evaluationItems.map((item, index) => (
-              <div key={item} className="flex items-center gap-3 rounded-[22px] border border-[var(--border)] bg-white/85 p-4 text-sm font-medium text-slate-900">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--success-soft)] text-xs font-bold text-[var(--success)]">{index + 1}</span>
-                {item}
-              </div>
-            ))}
-          </div>
+          <form action={applyStandardEvaluationTemplateAction} className="mt-5 grid gap-3 rounded-[28px] bg-[var(--success-soft)] p-4">
+            <select
+              name="courseId"
+              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--success)]"
+              required
+            >
+              <option value="">Kies cursus voor standaard evaluatie</option>
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>{course.title}</option>
+              ))}
+            </select>
+            <div className="space-y-2">
+              {evaluationItems.map((item, index) => (
+                <div key={item} className="flex items-center gap-3 rounded-[18px] border border-white/80 bg-white/85 p-3 text-sm font-medium text-slate-900">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--success-soft)] text-xs font-bold text-[var(--success)]">{index + 1}</span>
+                  {item}
+                </div>
+              ))}
+            </div>
+            <button className="rounded-full bg-[var(--success)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-95">
+              Kwaliteitshuis-template opslaan
+            </button>
+          </form>
         </div>
       </section>
 
@@ -180,7 +199,22 @@ export default async function AcademyAdminPage() {
               </div>
             ))}
           </div>
-          <Link href="/lms" className="mt-5 inline-flex rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
+          <form action={publishCourseAccreditationReadyAction} className="mt-5 grid gap-3 rounded-[24px] border border-[var(--border)] bg-white/85 p-4">
+            <select
+              name="courseId"
+              className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--brand)]"
+              required
+            >
+              <option value="">Kies cursus om accreditatie-ready te publiceren</option>
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>{course.title}</option>
+              ))}
+            </select>
+            <button className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
+              Server-side check + publiceren
+            </button>
+          </form>
+          <Link href="/lms" className="mt-3 inline-flex rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
             Open LMS cockpit
           </Link>
         </div>
