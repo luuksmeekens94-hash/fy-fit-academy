@@ -3,16 +3,20 @@ import Image from "next/image";
 
 import { logoutAction } from "@/app/actions";
 import { NavLink } from "@/components/nav-link";
+import { NotificationBell } from "@/components/notification-bell";
+import { NotificationFeed } from "@/components/notification-feed";
 import { getNavigationItems, getRoleLabel } from "@/lib/roles";
 import { initials } from "@/lib/utils";
+import type { NotificationCenter } from "@/lib/notifications";
 import type { User } from "@/lib/types";
 
 type AppShellProps = {
   user: User;
+  notificationCenter?: NotificationCenter;
   children: React.ReactNode;
 };
 
-export function AppShell({ user, children }: AppShellProps) {
+export function AppShell({ user, notificationCenter, children }: AppShellProps) {
   const navigationItems = getNavigationItems(user.role, user.isOnboarding);
 
   return (
@@ -45,6 +49,7 @@ export function AppShell({ user, children }: AppShellProps) {
               </div>
               <div className="group relative z-20 self-start">
                 <div className="frost-panel flex items-center gap-3 rounded-[22px] px-4 py-3 lg:min-w-[320px]">
+                  <NotificationBell center={notificationCenter} />
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--sage-soft)] font-semibold text-[var(--teal)]">
                     {initials(user.name)}
                   </div>
@@ -97,7 +102,10 @@ export function AppShell({ user, children }: AppShellProps) {
         </div>
 
         <div className="flex-1 py-6 lg:py-8">
-          <main className="space-y-6">{children}</main>
+          <main className="space-y-6">
+            <NotificationFeed center={notificationCenter} />
+            {children}
+          </main>
         </div>
       </div>
     </div>
