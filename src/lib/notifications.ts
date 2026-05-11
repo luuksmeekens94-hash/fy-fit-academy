@@ -187,12 +187,14 @@ export function buildDeadlineNotifications({
   learningGoals = [],
   enrollments = [],
   courses = [],
+  courseAudienceUserIds = ["academy-admin"],
   windowDays = 14,
 }: {
   now?: Date;
   learningGoals?: LearningGoal[];
   enrollments?: EnrollmentDeadlineLike[];
   courses?: CourseRevisionLike[];
+  courseAudienceUserIds?: string[];
   windowDays?: number;
 }): BuiltDeadlineNotification[] {
   const items: BuiltDeadlineNotification[] = [];
@@ -248,19 +250,21 @@ export function buildDeadlineNotifications({
 
     const days = daysUntil(course.revisionDueAt, now) ?? 0;
     const overdue = days < 0;
-    items.push({
-      userId: "academy-admin",
-      type: "ACCREDITATION_REVIEW",
-      severity: overdue ? "CRITICAL" : "WARNING",
-      title: overdue ? "Cursusreview verlopen" : "Cursusreview nadert",
-      body: `${course.title} ${overdue ? "moet opnieuw beoordeeld worden" : `heeft binnen ${days} dag(en) review nodig`}.`,
-      href: "/academybeheer#accreditatie",
-      sourceId: course.id,
-      sourceType: "Course",
-      createdAt: now,
-      readAt: null,
-      expiresAt: null,
-    });
+    for (const userId of courseAudienceUserIds) {
+      items.push({
+        userId,
+        type: "ACCREDITATION_REVIEW",
+        severity: overdue ? "CRITICAL" : "WARNING",
+        title: overdue ? "Cursusreview verlopen" : "Cursusreview nadert",
+        body: `${course.title} ${overdue ? "moet opnieuw beoordeeld worden" : `heeft binnen ${days} dag(en) review nodig`}.`,
+        href: "/academybeheer#accreditatie",
+        sourceId: course.id,
+        sourceType: "Course",
+        createdAt: now,
+        readAt: null,
+        expiresAt: null,
+      });
+    }
   }
 
   return items;

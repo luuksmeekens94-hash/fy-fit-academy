@@ -146,3 +146,17 @@ test("buildDeadlineNotifications maakt waarschuwingen voor naderende en verlopen
   assert.equal(notifications.find((item) => item.sourceId === "goal-overdue")?.severity, "CRITICAL");
   assert.equal(notifications.find((item) => item.sourceId === "course-review")?.href, "/academybeheer#accreditatie");
 });
+
+test("buildDeadlineNotifications richt cursusreviews op opgegeven beheerders/reviewers", () => {
+  const now = new Date("2026-05-11T09:00:00Z");
+
+  const signals = buildDeadlineNotifications({
+    now,
+    courses: [{ id: "course-1", title: "Accreditatie-ready cursus", revisionDueAt: "2026-05-12", status: "PUBLISHED" }],
+    courseAudienceUserIds: ["beheerder-1", "reviewer-1"],
+  });
+
+  assert.deepEqual(signals.map((signal) => signal.userId).sort(), ["beheerder-1", "reviewer-1"]);
+  assert.equal(signals[0].type, "ACCREDITATION_REVIEW");
+  assert.equal(signals[0].href, "/academybeheer#accreditatie");
+});
