@@ -178,7 +178,7 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
               href={`/lms/certificates/${certificate.id}/download`}
               className="rounded-full bg-[var(--brand)] px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
             >
-              Download certificaat
+              Open certificaat
             </Link>
           </div>
         </section>

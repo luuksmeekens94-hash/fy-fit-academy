@@ -225,3 +225,11 @@ export function buildCertificateDownload(input: CertificateEvidenceInput) {
     body: renderCertificateHtml(input),
   };
 }
+
+export function buildCertificateDownloadHeaders(download: ReturnType<typeof buildCertificateDownload>) {
+  return {
+    "Content-Type": download.contentType,
+    "Content-Disposition": `inline; filename="${download.filename}"`,
+    "Cache-Control": "no-store",
+  };
+}

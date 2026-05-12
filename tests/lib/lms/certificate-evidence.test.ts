@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   buildCertificateEvidence,
   buildCertificateDownload,
+  buildCertificateDownloadHeaders,
 } from "../../../src/lib/lms/certificate-evidence.ts";
 
 const input = {
@@ -72,4 +73,16 @@ test("buildCertificateDownload renders a print-ready HTML certificate download",
   assert.match(download.body, /KRF-12345/);
   assert.match(download.body, /window\.print\(\)/);
   assert.match(download.body, /@media print/);
+});
+
+test("buildCertificateDownloadHeaders opent printwaardige HTML inline in de browser", () => {
+  const download = buildCertificateDownload(input);
+  const headers = buildCertificateDownloadHeaders(download);
+
+  assert.equal(headers["Content-Type"], "text/html; charset=utf-8");
+  assert.equal(
+    headers["Content-Disposition"],
+    'inline; filename="certificaat-fy-fit-consultvoering-basis-cert-2026-001.html"',
+  );
+  assert.equal(headers["Cache-Control"], "no-store");
 });

@@ -118,7 +118,7 @@ export default async function MyCertificatesPage() {
                     Code {certificate.certificateCode}
                   </span>
                   <Link className="btn-primary" href={certificate.downloadPath}>
-                    Download bewijs
+                    Open / print bewijs
                   </Link>
                   <Link className="btn-secondary" href={`/lms/courses/${certificate.courseId}`}>
                     Bekijk cursus

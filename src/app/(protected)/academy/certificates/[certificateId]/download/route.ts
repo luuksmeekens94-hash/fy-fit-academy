@@ -1,7 +1,7 @@
 import { Role } from "@prisma/client";
 
 import { requireUser } from "@/lib/auth";
-import { buildCertificateDownload } from "@/lib/lms/certificate-evidence";
+import { buildCertificateDownload, buildCertificateDownloadHeaders } from "@/lib/lms/certificate-evidence";
 import { getCertificateEvidence } from "@/lib/lms/queries";
 
 type AcademyCertificateDownloadRouteProps = {
@@ -29,10 +29,6 @@ export async function GET(_request: Request, { params }: AcademyCertificateDownl
   const download = buildCertificateDownload(evidence);
 
   return new Response(download.body, {
-    headers: {
-      "Content-Type": download.contentType,
-      "Content-Disposition": `attachment; filename="${download.filename}"`,
-      "Cache-Control": "no-store",
-    },
+    headers: buildCertificateDownloadHeaders(download),
   });
 }

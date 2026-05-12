@@ -133,7 +133,7 @@ export default async function AcademyCertificatesPage() {
                   </div>
                   <div className="flex flex-col gap-2">
                     <Link className="btn-primary justify-center" href={certificate.downloadPath}>
-                      Download bewijs
+                      Open / print bewijs
                     </Link>
                     <Link className="btn-secondary justify-center" href={`/academy`}>
                       Terug naar Academy
