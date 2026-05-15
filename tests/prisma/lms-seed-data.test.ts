@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { buildLmsSeedSpec } from "../../prisma/lms-seed-data.ts";
+import { getMinimumQuestionCountForAsyncElearning } from "../../src/lib/lms/accreditation-checklist.ts";
 
 test("buildLmsSeedSpec returns a published MVP LMS course with lessons, assessment and reporting fixtures", () => {
   const spec = buildLmsSeedSpec();
@@ -102,4 +103,17 @@ test("buildLmsSeedSpec includes a required standard evaluation form", () => {
     "Geschatte versus werkelijke studielast",
     "Verbeterpunten",
   ]);
+});
+
+test("buildLmsSeedSpec keeps the demo assessment accreditation-green for Kwaliteitshuis", () => {
+  const spec = buildLmsSeedSpec();
+  const minimumQuestionCount = getMinimumQuestionCountForAsyncElearning(spec.course.studyLoadMinutes);
+
+  assert.equal(spec.assessment.passPercentage >= 70, true);
+  assert.equal(spec.assessment.maxAttempts, 3);
+  assert.equal(spec.assessment.shuffleQuestions, true);
+  assert.equal(spec.assessment.shuffleOptions, true);
+  assert.equal(spec.assessment.questions.length >= minimumQuestionCount, true);
+  assert.equal(spec.modules.length <= 6, true);
+  assert.equal(spec.modules.every((module) => module.estimatedMinutes <= 180), true);
 });

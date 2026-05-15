@@ -16,6 +16,7 @@ import {
 } from "@/lib/lms/accreditation-admin";
 import { buildAccreditationChecklist } from "@/lib/lms/accreditation-checklist";
 import { assertAccreditationPublishable } from "@/lib/lms/accreditation-evidence";
+import { canStartAssessmentResitAfterFailedAttempt } from "@/lib/lms/assessment-redo-policy";
 import {
   buildStandardEvaluationQuestionTemplate,
   STANDARD_EVALUATION_FORM_TITLE,
@@ -541,7 +542,17 @@ export async function startAssessmentAttemptAction(formData: FormData) {
         tx.assessment.findUnique({
           where: { id: assessmentId },
           include: {
-            courseVersion: true,
+            courseVersion: {
+              include: {
+                lessons: {
+                  select: {
+                    id: true,
+                    isRequired: true,
+                    type: true,
+                  },
+                },
+              },
+            },
           },
         }),
         tx.assessmentAttempt.findMany({
@@ -562,6 +573,32 @@ export async function startAssessmentAttemptAction(formData: FormData) {
         existingAttempts.every((attempt) => attempt.submittedAt !== null),
         "Er staat al een actieve toetspoging open. Lever die eerst in."
       );
+
+      const latestFailedAttempt = existingAttempts.find(
+        (attempt) => attempt.submittedAt !== null && attempt.passed === false
+      );
+
+      if (latestFailedAttempt?.submittedAt) {
+        const progressEntries = await tx.lessonProgress.findMany({
+          where: {
+            userId: user.id,
+            lessonId: { in: assessment.courseVersion.lessons.map((lesson) => lesson.id) },
+          },
+          select: {
+            lessonId: true,
+            completedAt: true,
+          },
+        });
+
+        assert(
+          canStartAssessmentResitAfterFailedAttempt({
+            latestFailedAttemptSubmittedAt: latestFailedAttempt.submittedAt,
+            requiredLessons: assessment.courseVersion.lessons,
+            progressEntries,
+          }),
+          "Doorloop eerst alle verplichte lesinhoud opnieuw voordat je de toets herkansing start."
+        );
+      }
 
       if (enrollment.status === "NOT_STARTED") {
         await tx.enrollment.update({

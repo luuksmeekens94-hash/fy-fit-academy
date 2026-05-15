@@ -117,6 +117,9 @@ function mapCourseDetail(course: {
   learnerOutcomes: unknown;
   accreditationRegister: string | null;
   accreditationKind: CourseDetail["accreditationKind"];
+  accreditationActivityId: string | null;
+  providerName: string | null;
+  providerSignatureName: string | null;
   versionDate: Date | null;
   authorExperts: unknown;
   requiredQuestionCount: number | null;
@@ -200,6 +203,7 @@ function mapCourseDetail(course: {
       order: number;
       isRequired: boolean;
       estimatedMinutes: number;
+      content: string | null;
     }[];
     assessments: {
       id: string;
@@ -232,6 +236,9 @@ function mapCourseDetail(course: {
     learnerOutcomes: mapLearnerOutcomes(course.learnerOutcomes),
     accreditationRegister: course.accreditationRegister,
     accreditationKind: course.accreditationKind,
+    accreditationActivityId: course.accreditationActivityId,
+    providerName: course.providerName,
+    providerSignatureName: course.providerSignatureName,
     versionDate: course.versionDate,
     authorExperts: mapAuthorExperts(course.authorExperts),
     requiredQuestionCount: course.requiredQuestionCount,
@@ -319,6 +326,7 @@ function mapCourseDetail(course: {
             order: lesson.order,
             isRequired: lesson.isRequired,
             estimatedMinutes: lesson.estimatedMinutes,
+            content: lesson.content,
           })),
           assessments: activeVersion.assessments.map((assessment) => ({
             id: assessment.id,
@@ -331,6 +339,9 @@ function mapCourseDetail(course: {
             questionCount: assessment.questions.length,
             allQuestionsLinkedToObjectives: assessment.questions.every(
               (question) => question.objectives.length > 0
+            ),
+            coveredObjectiveIds: Array.from(
+              new Set(assessment.questions.flatMap((question) => question.objectives.map((objective) => objective.learningObjectiveId)))
             ),
             isRequiredForCompletion: assessment.isRequiredForCompletion,
           })),
@@ -425,6 +436,9 @@ export const getAllCourses = cache(async (): Promise<CourseSummary[]> => {
     studyLoadMinutes: course.studyLoadMinutes,
     accreditationRegister: course.accreditationRegister,
     accreditationKind: course.accreditationKind,
+    accreditationActivityId: course.accreditationActivityId,
+    providerName: course.providerName,
+    providerSignatureName: course.providerSignatureName,
     visibleToAll: course.visibleToAll,
     visibleToRoles: course.visibleToRoles,
     visibleToAudienceProfiles: course.visibleToAudienceProfiles,

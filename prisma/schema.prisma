@@ -384,6 +384,9 @@ model Course {
   learnerOutcomes           Json?
   accreditationRegister     String?
   accreditationKind         AccreditationKind @default(VAKINHOUDELIJK)
+  accreditationActivityId   String?
+  providerName              String?
+  providerSignatureName     String?
   versionDate               DateTime?
   authorExperts             Json?
   requiredQuestionCount     Int?
@@ -697,6 +700,9 @@ model Certificate {
   courseVersionNumber           String?
   accreditationRegisterSnapshot String?
   accreditationKindSnapshot     AccreditationKind?
+  accreditationActivityIdSnapshot String?
+  providerNameSnapshot          String?
+  providerSignatureNameSnapshot String?
   user                          User               @relation("CertificateUser", fields: [userId], references: [id])
   course                        Course             @relation(fields: [courseId], references: [id])
   courseVersion                 CourseVersion      @relation(fields: [courseVersionId], references: [id])

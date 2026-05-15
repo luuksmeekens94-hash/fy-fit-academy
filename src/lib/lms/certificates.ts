@@ -16,7 +16,14 @@ export async function buildCertificateSnapshotForUser(params: {
     }),
     prisma.course.findUnique({
       where: { id: params.courseId },
-      select: { title: true, accreditationRegister: true, accreditationKind: true },
+      select: {
+        title: true,
+        accreditationRegister: true,
+        accreditationKind: true,
+        accreditationActivityId: true,
+        providerName: true,
+        providerSignatureName: true,
+      },
     }),
     prisma.courseVersion.findUnique({
       where: { id: params.courseVersionId },
@@ -65,6 +72,9 @@ export async function buildCertificateSnapshotForUser(params: {
     versionNumber: courseVersion.versionNumber,
     accreditationRegister: course.accreditationRegister,
     accreditationKind: course.accreditationKind,
+    accreditationActivityId: course.accreditationActivityId,
+    providerName: course.providerName,
+    providerSignatureName: course.providerSignatureName,
   });
 }
 

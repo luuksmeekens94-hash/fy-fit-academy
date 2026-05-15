@@ -30,6 +30,9 @@ export type CourseSummary = {
   studyLoadMinutes: number;
   accreditationRegister: string | null;
   accreditationKind: AccreditationKind;
+  accreditationActivityId: string | null;
+  providerName: string | null;
+  providerSignatureName: string | null;
   visibleToAll: boolean;
   visibleToRoles: Role[];
   visibleToAudienceProfiles: AudienceProfile[];
@@ -54,6 +57,9 @@ export type CourseDetail = {
   learnerOutcomes: string[];
   accreditationRegister: string | null;
   accreditationKind: AccreditationKind;
+  accreditationActivityId: string | null;
+  providerName: string | null;
+  providerSignatureName: string | null;
   visibleToAll: boolean;
   visibleToRoles: Role[];
   visibleToAudienceProfiles: AudienceProfile[];
@@ -167,6 +173,7 @@ export type LessonSummary = {
   order: number;
   isRequired: boolean;
   estimatedMinutes: number;
+  content?: string | null;
 };
 
 export type LessonDetail = {
@@ -228,6 +235,7 @@ export type AssessmentSummary = {
   shuffleOptions: boolean;
   questionCount: number;
   allQuestionsLinkedToObjectives: boolean;
+  coveredObjectiveIds: string[];
   isRequiredForCompletion: boolean;
 };
 

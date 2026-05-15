@@ -14,6 +14,9 @@ test("buildCertificateSnapshot persists immutable accreditation proof fields", (
     versionNumber: "1.0",
     accreditationRegister: "KRF NL",
     accreditationKind: "VAKINHOUDELIJK",
+    accreditationActivityId: "KH-2026-001",
+    providerName: "Fy Fit Fysiotherapie Nijmegen",
+    providerSignatureName: "Sjoerd van Fy Fit",
   });
 
   assert.equal(snapshot.participantName, "Lotte Jansen");
@@ -25,6 +28,9 @@ test("buildCertificateSnapshot persists immutable accreditation proof fields", (
   assert.equal(snapshot.courseVersionNumber, "1.0");
   assert.equal(snapshot.accreditationRegisterSnapshot, "KRF NL");
   assert.equal(snapshot.accreditationKindSnapshot, "VAKINHOUDELIJK");
+  assert.equal(snapshot.accreditationActivityIdSnapshot, "KH-2026-001");
+  assert.equal(snapshot.providerNameSnapshot, "Fy Fit Fysiotherapie Nijmegen");
+  assert.equal(snapshot.providerSignatureNameSnapshot, "Sjoerd van Fy Fit");
 });
 
 test("buildCertificateSnapshot keeps missing optional proof fields explicit", () => {
@@ -38,6 +44,9 @@ test("buildCertificateSnapshot keeps missing optional proof fields explicit", ()
     versionNumber: "2.1",
     accreditationRegister: null,
     accreditationKind: "BEROEPSGERELATEERD",
+    accreditationActivityId: null,
+    providerName: null,
+    providerSignatureName: null,
   });
 
   assert.equal(snapshot.registrationNumber, null);

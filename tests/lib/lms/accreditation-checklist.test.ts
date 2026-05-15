@@ -1,17 +1,23 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buildAccreditationChecklist } from "../../../src/lib/lms/accreditation-checklist.ts";
+import {
+  buildAccreditationChecklist,
+  getMinimumQuestionCountForAsyncElearning,
+} from "../../../src/lib/lms/accreditation-checklist.ts";
 
 const completeCourse = {
   title: "Fy-Fit consultvoering basis",
   audience: "Fysiotherapeuten / collega's Fy-Fit",
   accreditationRegister: "Kwaliteitshuis Fysiotherapie",
   accreditationKind: "VAKINHOUDELIJK" as const,
+  accreditationActivityId: "KH-2026-DEMO",
+  providerName: "Fy Fit Fysiotherapie Nijmegen",
+  providerSignatureName: "Sjoerd Hendriks",
   studyLoadMinutes: 120,
   versionDate: new Date("2026-04-30"),
   authorExperts: [{ name: "Sjoerd", role: "Inhoudsdeskundige" }],
-  requiredQuestionCount: 5,
+  requiredQuestionCount: 10,
   reviewerName: "Accreditatiecommissie Reviewer",
   activeVersion: {
     versionNumber: "1.0",
@@ -43,12 +49,14 @@ const completeCourse = {
         title: "Eindtoets",
         passPercentage: 70,
         maxAttempts: 3,
+        shuffleQuestions: true,
         shuffleOptions: true,
-        questionCount: 5,
+        questionCount: 10,
         allQuestionsLinkedToObjectives: true,
+        coveredObjectiveIds: ["lo-1", "lo-2", "lo-3"],
       },
     ],
-    lessons: [{ id: "lesson-1", moduleId: "module-1", title: "Intro", estimatedMinutes: 20, isRequired: true }],
+    lessons: [{ id: "lesson-1", moduleId: "module-1", title: "Intro", estimatedMinutes: 20, isRequired: true, content: "Geen commerciële links." }],
   },
   changeLogCount: 1,
 };
@@ -84,8 +92,144 @@ test("buildAccreditationChecklist warns when module minutes differ from total st
   const result = buildAccreditationChecklist({
     ...completeCourse,
     studyLoadMinutes: 240,
+    activeVersion: {
+      ...completeCourse.activeVersion,
+      assessments: completeCourse.activeVersion.assessments.map((assessment) => ({
+        ...assessment,
+        questionCount: 15,
+      })),
+    },
   });
 
   assert.equal(result.isPublishable, true);
   assert.ok(result.items.some((item) => item.id === "study-load-balance" && item.status === "warning"));
+});
+
+test("getMinimumQuestionCountForAsyncElearning derives Kwaliteitshuis question counts from duration", () => {
+  assert.equal(getMinimumQuestionCountForAsyncElearning(29), 1);
+  assert.equal(getMinimumQuestionCountForAsyncElearning(30), 5);
+  assert.equal(getMinimumQuestionCountForAsyncElearning(60), 5);
+  assert.equal(getMinimumQuestionCountForAsyncElearning(61), 10);
+  assert.equal(getMinimumQuestionCountForAsyncElearning(120), 10);
+  assert.equal(getMinimumQuestionCountForAsyncElearning(121), 15);
+  assert.equal(getMinimumQuestionCountForAsyncElearning(180), 15);
+});
+
+test("buildAccreditationChecklist accepts stricter pass norms of at least 70 percent", () => {
+  const result = buildAccreditationChecklist({
+    ...completeCourse,
+    activeVersion: {
+      ...completeCourse.activeVersion,
+      assessments: completeCourse.activeVersion.assessments.map((assessment) => ({
+        ...assessment,
+        passPercentage: 80,
+      })),
+    },
+  });
+
+  assert.equal(result.isPublishable, true);
+  assert.equal(result.items.find((item) => item.id === "assessment-rules")?.status, "complete");
+});
+
+test("buildAccreditationChecklist blocks duration-based question count gaps", () => {
+  const result = buildAccreditationChecklist({
+    ...completeCourse,
+    studyLoadMinutes: 110,
+    activeVersion: {
+      ...completeCourse.activeVersion,
+      modules: completeCourse.activeVersion.modules.map((module) => ({ ...module, estimatedMinutes: 110 })),
+      assessments: completeCourse.activeVersion.assessments.map((assessment) => ({
+        ...assessment,
+        questionCount: 5,
+      })),
+    },
+  });
+
+  assert.equal(result.isPublishable, false);
+  assert.equal(result.items.find((item) => item.id === "assessment-question-count")?.status, "missing");
+});
+
+test("buildAccreditationChecklist blocks more than 6 modules and modules longer than 180 minutes", () => {
+  const modules = Array.from({ length: 7 }, (_, index) => ({
+    ...completeCourse.activeVersion.modules[0],
+    id: `module-${index + 1}`,
+    title: `Module ${index + 1}`,
+    estimatedMinutes: index === 0 ? 181 : 10,
+  }));
+  const objectives = modules.map((module, index) => ({
+    id: `lo-${index + 1}`,
+    moduleId: module.id,
+    code: `LO${index + 1}`,
+    text: `Na afloop kan de deelnemer onderdeel ${index + 1} toepassen.`,
+  }));
+
+  const result = buildAccreditationChecklist({
+    ...completeCourse,
+    activeVersion: {
+      ...completeCourse.activeVersion,
+      modules,
+      objectives,
+      lessons: modules.map((module, index) => ({
+        id: `lesson-${index + 1}`,
+        moduleId: module.id,
+        title: `Les ${index + 1}`,
+        estimatedMinutes: 10,
+        isRequired: true,
+        content: "Geen commerciële links.",
+      })),
+    },
+  });
+
+  assert.equal(result.isPublishable, false);
+  assert.equal(result.items.find((item) => item.id === "module-count")?.status, "missing");
+  assert.equal(result.items.find((item) => item.id === "module-duration")?.status, "missing");
+});
+
+test("buildAccreditationChecklist blocks assessments without question and answer randomization", () => {
+  const result = buildAccreditationChecklist({
+    ...completeCourse,
+    activeVersion: {
+      ...completeCourse.activeVersion,
+      assessments: completeCourse.activeVersion.assessments.map((assessment) => ({
+        ...assessment,
+        shuffleQuestions: false,
+        shuffleOptions: false,
+      })),
+    },
+  });
+
+  assert.equal(result.isPublishable, false);
+  assert.equal(result.items.find((item) => item.id === "assessment-randomization")?.status, "missing");
+});
+
+test("buildAccreditationChecklist blocks lessons with commercial hyperlinks", () => {
+  const result = buildAccreditationChecklist({
+    ...completeCourse,
+    activeVersion: {
+      ...completeCourse.activeVersion,
+      lessons: completeCourse.activeVersion.lessons.map((lesson) => ({
+        ...lesson,
+        content: "Bekijk onze aanbieding op https://shop.example.com/fysio-product en koop vandaag nog.",
+      })),
+    },
+  });
+
+  assert.equal(result.isPublishable, false);
+  assert.equal(result.items.find((item) => item.id === "commercial-links")?.status, "missing");
+});
+
+test("buildAccreditationChecklist blocks uncovered learning objectives in the assessment blueprint", () => {
+  const result = buildAccreditationChecklist({
+    ...completeCourse,
+    activeVersion: {
+      ...completeCourse.activeVersion,
+      assessments: completeCourse.activeVersion.assessments.map((assessment) => ({
+        ...assessment,
+        coveredObjectiveIds: ["lo-1", "lo-2"],
+      })),
+    },
+  });
+
+  assert.equal(result.isPublishable, false);
+  assert.equal(result.items.find((item) => item.id === "assessment-objective-coverage")?.status, "missing");
 });

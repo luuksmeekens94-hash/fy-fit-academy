@@ -80,12 +80,12 @@ export default async function LmsOverviewPage() {
                 <p className="text-2xl font-semibold text-slate-950">{reviewerPreviewSummary.publishedCourses}</p>
               </div>
               <div className="rounded-[20px] border border-[var(--border)] bg-white/85 p-4">
-                <p className="text-[var(--ink-soft)]">Concept</p>
-                <p className="text-2xl font-semibold text-slate-950">{reviewerPreviewSummary.draftCourses}</p>
+                <p className="text-[var(--ink-soft)]">Bewijs compleet</p>
+                <p className="text-2xl font-semibold text-slate-950">{reviewerPreviewSummary.evidenceCompleteCourses}</p>
               </div>
               <div className="rounded-[20px] border border-[var(--border)] bg-white/85 p-4">
-                <p className="text-[var(--ink-soft)]">Studielast</p>
-                <p className="text-2xl font-semibold text-slate-950">{reviewerPreviewSummary.totalStudyLoadMinutes}m</p>
+                <p className="text-[var(--ink-soft)]">Nog checken</p>
+                <p className="text-2xl font-semibold text-slate-950">{reviewerPreviewSummary.evidenceIncompleteCourses}</p>
               </div>
             </div>
           </div>
@@ -104,11 +104,19 @@ export default async function LmsOverviewPage() {
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                     {course.studyLoadMinutes} minuten
                   </span>
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${course.evidenceComplete ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                    {course.evidenceComplete ? "bewijs compleet" : `mist: ${course.evidenceMissingLabels.join(", ")}`}
+                  </span>
                 </div>
                 <h3 className="mt-3 text-lg font-semibold text-slate-950">{course.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-                  Register: {course.displayAccreditationRegister} · versies: {course.versionCount} · inschrijvingen: {course.enrollmentCount}
+                  Register: {course.displayAccreditationRegister} · activiteit-ID: {course.accreditationActivityId ?? "niet ingevuld"} · inschrijvingen: {course.enrollmentCount}
                 </p>
+                <ul className="mt-3 grid gap-1 text-xs leading-5 text-[var(--ink-soft)]">
+                  {course.reviewerChecklist.slice(0, 2).map((item) => (
+                    <li key={item}>✓ {item}</li>
+                  ))}
+                </ul>
                 <p className="mt-3 text-sm font-semibold text-[var(--brand-deep)]">Open veilige preview →</p>
               </Link>
             ))}

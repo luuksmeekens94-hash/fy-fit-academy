@@ -10,6 +10,9 @@ export type CertificateSnapshotInput = {
   versionNumber: string;
   accreditationRegister: string | null;
   accreditationKind: AccreditationKind;
+  accreditationActivityId: string | null;
+  providerName: string | null;
+  providerSignatureName: string | null;
 };
 
 export type CertificateSnapshot = {
@@ -22,6 +25,9 @@ export type CertificateSnapshot = {
   courseVersionNumber: string;
   accreditationRegisterSnapshot: string | null;
   accreditationKindSnapshot: AccreditationKind;
+  accreditationActivityIdSnapshot: string | null;
+  providerNameSnapshot: string | null;
+  providerSignatureNameSnapshot: string | null;
 };
 
 export function normalizeCertificateRegistrationNumber(value: string | null | undefined) {
@@ -49,5 +55,8 @@ export function buildCertificateSnapshot(input: CertificateSnapshotInput): Certi
     courseVersionNumber: input.versionNumber.trim() || "Onbekend",
     accreditationRegisterSnapshot: input.accreditationRegister?.trim() || null,
     accreditationKindSnapshot: input.accreditationKind,
+    accreditationActivityIdSnapshot: input.accreditationActivityId?.trim() || null,
+    providerNameSnapshot: input.providerName?.trim() || null,
+    providerSignatureNameSnapshot: input.providerSignatureName?.trim() || null,
   };
 }

@@ -99,6 +99,9 @@ export type LmsSeedSpec = {
     }[];
     accreditationRegister: string;
     accreditationKind: "VAKINHOUDELIJK" | "BEROEPSGERELATEERD";
+    accreditationActivityId: string;
+    providerName: string;
+    providerSignatureName: string;
     versionDate: string;
     requiredQuestionCount: number;
     studyLoadMinutes: number;
@@ -173,6 +176,9 @@ export function buildLmsSeedSpec(): LmsSeedSpec {
       ],
       accreditationRegister: "KRF NL / SKF Fysiotherapie",
       accreditationKind: "VAKINHOUDELIJK",
+      accreditationActivityId: "KH-2026-DEMO",
+      providerName: "Fy Fit Fysiotherapie Nijmegen",
+      providerSignatureName: "Sjoerd Hendriks",
       versionDate: "2026-04-01T08:00:00.000Z",
       requiredQuestionCount: 5,
       studyLoadMinutes: 55,
@@ -329,8 +335,8 @@ export function buildLmsSeedSpec(): LmsSeedSpec {
       passPercentage: 80,
       maxAttempts: 3,
       timeLimitMinutes: 20,
-      shuffleQuestions: false,
-      shuffleOptions: false,
+      shuffleQuestions: true,
+      shuffleOptions: true,
       showFeedbackImmediately: true,
       isRequiredForCompletion: true,
       lessonSlug: "toets-consultvoering-basis",

@@ -83,6 +83,9 @@ export type DemoElearningSeedSpec = {
     }[];
     accreditationRegister: string;
     accreditationKind: "VAKINHOUDELIJK" | "BEROEPSGERELATEERD";
+    accreditationActivityId: string;
+    providerName: string;
+    providerSignatureName: string;
     versionDate: string;
     requiredQuestionCount: number;
     studyLoadMinutes: number;
@@ -147,6 +150,9 @@ export function buildDemoElearningSeedSpec(): DemoElearningSeedSpec {
       ],
       accreditationRegister: "KRF NL / SKF Fysiotherapie",
       accreditationKind: "VAKINHOUDELIJK",
+      accreditationActivityId: "KH-DEMO-12C",
+      providerName: "Fy Fit Fysiotherapie Nijmegen",
+      providerSignatureName: "Sjoerd Hendriks",
       versionDate: "2026-05-01T08:00:00.000Z",
       requiredQuestionCount: 10,
       studyLoadMinutes: 210,

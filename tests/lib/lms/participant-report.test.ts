@@ -6,6 +6,8 @@ import {
   buildParticipantReportDownload,
   exportParticipantCompletionReportCsv,
   exportParticipantCompletionReportMarkdown,
+  exportPeOnlinePresenceCsv,
+  isValidBigNumberForPeOnline,
   normalizeProfessionalRegistrationNumber,
 } from "../../../src/lib/lms/participant-report.ts";
 
@@ -104,4 +106,27 @@ test("buildParticipantReportDownload returns safe filenames and mime types", () 
   assert.equal(markdownDownload.filename, "deelnemerrapportage-consultvoering-basis.md");
   assert.equal(markdownDownload.contentType, "text/markdown; charset=utf-8");
   assert.match(markdownDownload.body, /# Deelnemerrapportage LMS/);
+});
+
+test("isValidBigNumberForPeOnline accepts exactly 11 digits including leading zero", () => {
+  assert.equal(isValidBigNumberForPeOnline("01234567890"), true);
+  assert.equal(isValidBigNumberForPeOnline("BIG 01234567890"), true);
+  assert.equal(isValidBigNumberForPeOnline("1234567890"), false);
+  assert.equal(isValidBigNumberForPeOnline("KRF-12345"), false);
+});
+
+test("exportPeOnlinePresenceCsv exports accreditation-ready completion rows", () => {
+  const csv = exportPeOnlinePresenceCsv({
+    accreditationActivityId: "KH-2026-001",
+    rows: [
+      buildParticipantCompletionReport({
+        ...input,
+        participantName: "Lotte Jansen-de Boer",
+        professionalRegistrationNumber: "BIG 01234567890",
+      }),
+    ],
+  });
+
+  assert.match(csv, /accreditationActivityId,firstName,lastName,bigNumber,completionDate,validForSubmission,submissionDeadline/);
+  assert.match(csv, /KH-2026-001,Lotte,Jansen-de Boer,01234567890,2026-04-30,ja,2026-05-28/);
 });

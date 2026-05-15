@@ -77,6 +77,37 @@ export function normalizeProfessionalRegistrationNumber(value: string | null | u
     .replace(/^-+|-+$/g, "");
 }
 
+function digitsOnly(value: string | null | undefined) {
+  return value?.replace(/\D/g, "") ?? "";
+}
+
+export function isValidBigNumberForPeOnline(value: string | null | undefined) {
+  return /^\d{11}$/.test(digitsOnly(value));
+}
+
+function extractBigNumberForPeOnline(value: string) {
+  const digits = digitsOnly(value);
+  return /^\d{11}$/.test(digits) ? digits : "";
+}
+
+function addDays(date: Date, days: number) {
+  const copy = new Date(date);
+  copy.setUTCDate(copy.getUTCDate() + days);
+  return copy;
+}
+
+function splitParticipantName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) {
+    return { firstName: parts[0] ?? "", lastName: "" };
+  }
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
+  };
+}
+
 export function buildParticipantCompletionReport(input: ParticipantReportInput): ParticipantCompletionReport {
   const submittedAttempts = input.assessmentAttempts.filter((attempt) => attempt.submittedAt !== null);
   const scoredAttempts = submittedAttempts.filter((attempt) => attempt.scorePercentage !== null);
@@ -182,4 +213,42 @@ export function buildParticipantReportDownload({
     contentType: "text/markdown; charset=utf-8",
     body: exportParticipantCompletionReportMarkdown(rows),
   };
+}
+
+export function exportPeOnlinePresenceCsv({
+  accreditationActivityId,
+  rows,
+}: {
+  accreditationActivityId: string;
+  rows: ParticipantCompletionReport[];
+}) {
+  const headers = [
+    "accreditationActivityId",
+    "firstName",
+    "lastName",
+    "bigNumber",
+    "completionDate",
+    "validForSubmission",
+    "submissionDeadline",
+  ];
+
+  const body = rows.map((row) => {
+    const { firstName, lastName } = splitParticipantName(row.participantName);
+    const bigNumber = extractBigNumberForPeOnline(row.professionalRegistrationNumber);
+    const completedAt = row.completedAt === "Niet afgerond" ? null : new Date(`${row.completedAt}T00:00:00.000Z`);
+    const submissionDeadline = completedAt ? formatDate(addDays(completedAt, 28)) : "";
+    const validForSubmission = Boolean(accreditationActivityId.trim() && bigNumber && completedAt && row.passed);
+
+    return [
+      accreditationActivityId.trim(),
+      firstName,
+      lastName,
+      bigNumber,
+      row.completedAt === "Niet afgerond" ? "" : row.completedAt,
+      yesNo(validForSubmission),
+      submissionDeadline,
+    ].map(csvEscape).join(",");
+  });
+
+  return [headers.join(","), ...body].join("\n");
 }
