@@ -22,6 +22,7 @@ import {
 import {
   exportParticipantCompletionReportCsv,
   exportParticipantCompletionReportMarkdown,
+  exportPeOnlinePresenceCsv,
   type ParticipantCompletionReport,
 } from "@/lib/lms/participant-report";
 import type { CourseDetail } from "@/lib/lms/types";
@@ -111,6 +112,41 @@ function formatWorkForm(value: string) {
   return value.toLowerCase().replaceAll("_", " ");
 }
 
+function buildDataDownloadHref(content: string, mimeType: string) {
+  return `data:${mimeType};charset=utf-8,${encodeURIComponent(content)}`;
+}
+
+function formatObjectiveCoverage(course: CourseDetail, assessment: CourseDetail["activeVersion"] extends null ? never : NonNullable<CourseDetail["activeVersion"]>["assessments"][number]) {
+  const objectives = course.activeVersion?.objectives ?? [];
+  const covered = objectives.filter((objective) => assessment.coveredObjectiveIds.includes(objective.id));
+  const missing = objectives.filter((objective) => !assessment.coveredObjectiveIds.includes(objective.id));
+
+  return {
+    coveredCodes: covered.map((objective) => objective.code),
+    missingCodes: missing.map((objective) => objective.code),
+  };
+}
+
+function formatModuleAssessmentCoverage(course: CourseDetail) {
+  const modules = course.activeVersion?.modules ?? [];
+  const lessons = course.activeVersion?.lessons ?? [];
+  const assessments = course.activeVersion?.assessments ?? [];
+
+  return modules.map((module) => {
+    const moduleLessonIds = lessons
+      .filter((lesson) => lesson.moduleId === module.id)
+      .map((lesson) => lesson.id);
+    const linkedAssessments = assessments.filter(
+      (assessment) => assessment.lessonId && moduleLessonIds.includes(assessment.lessonId),
+    );
+
+    return {
+      module,
+      linkedAssessments,
+    };
+  });
+}
+
 function getChecklistTone(status: "complete" | "missing" | "warning") {
   if (status === "complete") {
     return "success" as const;
@@ -177,6 +213,13 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
   const evidenceExport = buildAccreditationEvidenceExport(course, checklist);
   const participantReportMarkdown = exportParticipantCompletionReportMarkdown(completionReport);
   const participantReportCsv = exportParticipantCompletionReportCsv(completionReport);
+  const peOnlineCsv = exportPeOnlinePresenceCsv({
+    accreditationActivityId: course.accreditationActivityId ?? "",
+    rows: completionReport,
+  });
+  const dossierDownloadHref = buildDataDownloadHref(evidenceExport, "text/markdown");
+  const peOnlinePreviewHref = buildDataDownloadHref(peOnlineCsv, "text/csv");
+  const moduleAssessmentCoverage = formatModuleAssessmentCoverage(course);
   const visibilitySummary = summarizeContentVisibility(course);
 
   return (
@@ -408,7 +451,16 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
               evaluatie, reviewer-info, bewijsvelden en wijzigingslog.
             </p>
           </div>
-          <StatusBadge label="Copy/paste dossier" tone="neutral" />
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={dossierDownloadHref}
+              download={`accreditatiedossier-${course.slug}.md`}
+              className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950"
+            >
+              Download accreditatiedossier
+            </a>
+            <StatusBadge label="Copy/paste dossier" tone="neutral" />
+          </div>
         </div>
         <textarea
           readOnly
@@ -442,6 +494,25 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
           >
             Download Markdown
           </a>
+          <a
+            href={`/lms/courses/${course.id}/participant-report/pe-online-csv`}
+            className="rounded-full bg-[var(--teal)] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Download PE-online CSV
+          </a>
+          <a
+            href={peOnlinePreviewHref}
+            download={`pe-online-preview-${course.slug}.csv`}
+            className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-slate-950"
+          >
+            Preview PE-online CSV
+          </a>
+        </div>
+        <div className="mt-4 rounded-2xl border border-[var(--teal)]/20 bg-[var(--teal-soft)] p-4">
+          <p className="text-sm font-semibold text-slate-950">PE-online aanleverstatus</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+            Lever afgeronde deelnemers na certificaatverstrekking bij voorkeur direct aan en uiterlijk <span className="font-semibold text-slate-950">binnen 4 weken</span> via de PE-online CSV-export. De export markeert per deelnemer of BIG/KRF/SKF-nummer, afrondingsdatum, activiteit-id en slagingsstatus compleet zijn.
+          </p>
         </div>
         {completionReport.some((row) => row.certificateId) ? (
           <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--brand-soft)] p-4">
@@ -489,6 +560,31 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
 
         <div className="rounded-[28px] bg-[var(--teal-soft)] p-5">
           <h3 className="text-lg font-semibold text-slate-950">Toetsing en evaluatie</h3>
+          <div className="mt-4 rounded-2xl border border-[var(--teal)]/20 bg-white/80 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-slate-950">Toetsblueprint: leerdoelen × modules</p>
+              <StatusBadge label={`${assessments.length} toets(en)`} tone="brand" />
+            </div>
+            <div className="mt-3 grid gap-3">
+              {assessments.map((assessment) => {
+                const coverage = formatObjectiveCoverage(course, assessment);
+
+                return (
+                  <div key={`blueprint-${assessment.id}`} className="rounded-2xl border border-[var(--border)] bg-white p-3 text-xs leading-5 text-[var(--ink-soft)]">
+                    <p className="font-semibold text-slate-950">{assessment.title}</p>
+                    <p>Gedekte leerdoelen: {coverage.coveredCodes.join(", ") || "geen"}</p>
+                    <p>Ongetoetst: {coverage.missingCodes.join(", ") || "geen"}</p>
+                    <p>{assessment.questionCount} vragen • {assessment.passPercentage}% norm • max. {assessment.maxAttempts} pogingen</p>
+                  </div>
+                );
+              })}
+              {moduleAssessmentCoverage.map(({ module, linkedAssessments }) => (
+                <div key={`module-blueprint-${module.id}`} className="rounded-2xl bg-white/70 p-3 text-xs leading-5 text-[var(--ink-soft)]">
+                  <span className="font-semibold text-slate-950">Module {module.order}: {module.title}</span> · toetsdekking: {linkedAssessments.map((assessment) => assessment.title).join(", ") || "geen directe toets gekoppeld"}
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="mt-4 space-y-3">
             {assessments.map((assessment) => (
               <div key={assessment.id} className="rounded-2xl bg-white/85 p-4 text-sm leading-6 text-[var(--ink-soft)]">

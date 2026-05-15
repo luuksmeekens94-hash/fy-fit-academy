@@ -1,7 +1,10 @@
 import { Role } from "@prisma/client";
 
 import { requireRole } from "@/lib/auth";
-import { buildParticipantReportDownload } from "@/lib/lms/participant-report";
+import {
+  buildParticipantReportDownload,
+  type ParticipantReportDownloadFormat,
+} from "@/lib/lms/participant-report";
 import { getCourseDetail, getCourseParticipantCompletionReport } from "@/lib/lms/queries";
 
 type ParticipantReportRouteProps = {
@@ -15,7 +18,8 @@ export async function GET(_request: Request, { params }: ParticipantReportRouteP
   await requireRole([Role.BEHEERDER, Role.REVIEWER]);
 
   const { courseId, format } = await params;
-  if (format !== "csv" && format !== "markdown") {
+  const allowedFormats = ["csv", "markdown", "pe-online-csv"] as const satisfies readonly ParticipantReportDownloadFormat[];
+  if (!allowedFormats.includes(format as ParticipantReportDownloadFormat)) {
     return new Response("Ongeldig exportformaat", { status: 400 });
   }
 
@@ -31,7 +35,8 @@ export async function GET(_request: Request, { params }: ParticipantReportRouteP
   const download = buildParticipantReportDownload({
     rows,
     courseSlug: course.slug,
-    format,
+    format: format as ParticipantReportDownloadFormat,
+    accreditationActivityId: course.accreditationActivityId,
   });
 
   return new Response(download.body, {

@@ -189,14 +189,18 @@ export function exportParticipantCompletionReportCsv(rows: ParticipantCompletion
   return [headers.join(","), ...body].join("\n");
 }
 
+export type ParticipantReportDownloadFormat = "csv" | "markdown" | "pe-online-csv";
+
 export function buildParticipantReportDownload({
   rows,
   courseSlug,
   format,
+  accreditationActivityId = "",
 }: {
   rows: ParticipantCompletionReport[];
   courseSlug: string;
-  format: "csv" | "markdown";
+  format: ParticipantReportDownloadFormat;
+  accreditationActivityId?: string | null;
 }) {
   const safeSlug = slugify(courseSlug);
 
@@ -205,6 +209,17 @@ export function buildParticipantReportDownload({
       filename: `deelnemerrapportage-${safeSlug}.csv`,
       contentType: "text/csv; charset=utf-8",
       body: exportParticipantCompletionReportCsv(rows),
+    };
+  }
+
+  if (format === "pe-online-csv") {
+    return {
+      filename: `pe-online-aanlevering-${safeSlug}.csv`,
+      contentType: "text/csv; charset=utf-8",
+      body: exportPeOnlinePresenceCsv({
+        accreditationActivityId: accreditationActivityId ?? "",
+        rows,
+      }),
     };
   }
 
