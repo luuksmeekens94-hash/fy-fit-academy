@@ -12,6 +12,7 @@ import {
   saveCourseBuilderLessonAction,
   saveCourseBuilderModuleAction,
 } from "@/app/lms-actions";
+import { LmsMediaUploadField } from "@/components/lms/lms-media-upload-field";
 import { StatusBadge } from "@/components/status-badge";
 import { AUDIENCE_PROFILE_OPTIONS } from "@/lib/audience";
 import {
@@ -1109,11 +1110,8 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
                             <span className="rounded-full bg-[var(--sand)] px-3 py-1">Media: {formatLessonMediaSummary(lesson.content)}</span>
                           </div>
                           <input name="lessonDescription" defaultValue={lesson.description ?? ""} placeholder="Omschrijving" className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" />
-                          <div className="grid gap-2 lg:grid-cols-[0.8fr_1.2fr]">
-                            <input name="lessonMediaLabel" placeholder="Mediatitel, bv. Video module 1" className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" />
-                            <input name="lessonMediaUrl" placeholder="https://... of /lms/... mp4/pdf/png" className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" />
-                          </div>
-                          <p className="text-[0.68rem] leading-5 text-[var(--ink-soft)]">Nieuwe mediabron wordt netjes aan de lesinhoud toegevoegd en in de les als video, afbeelding of documentkaart getoond.</p>
+                          <LmsMediaUploadField courseId={course.id} lessonId={lesson.id} compact />
+                          <p className="text-[0.68rem] leading-5 text-[var(--ink-soft)]">Nieuwe upload of mediabron wordt netjes aan de lesinhoud toegevoegd en in de les als video, afbeelding of documentkaart getoond.</p>
                           <textarea name="lessonContent" defaultValue={lesson.content ?? ""} rows={3} placeholder="Lesinhoud. Ruwe mediaregels worden straks als nette blokken weergegeven." className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" required />
                           <label className="flex items-center gap-2 text-xs font-medium text-slate-900">
                             <input type="checkbox" name="lessonIsRequired" defaultChecked={lesson.isRequired} className="h-4 w-4" />
@@ -1142,11 +1140,8 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
                       <input name="lessonEstimatedMinutes" type="number" placeholder="Min." className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" required />
                     </div>
                     <input name="lessonDescription" placeholder="Korte omschrijving" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
-                    <div className="grid gap-3 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--sage-soft)]/40 p-3 lg:grid-cols-[0.75fr_1.25fr]">
-                      <input name="lessonMediaLabel" placeholder="Mediatitel, bv. Video module 1" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
-                      <input name="lessonMediaUrl" placeholder="Media/document URL: https://... of /lms/... mp4/pdf/png" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
-                      <p className="lg:col-span-2 text-xs leading-5 text-[var(--ink-soft)]">Voor nu registreer je een bestaande videolink/documentlink. De deelnemer ziet daarna een nette videospeler, afbeelding of documentkaart in plaats van een ruwe URL.</p>
-                    </div>
+                    <LmsMediaUploadField courseId={course.id} />
+                    <p className="text-xs leading-5 text-[var(--ink-soft)]">Uploaden kan ook al vóór de les is aangemaakt. De Blob-link wordt dan automatisch in dit nieuwe lesformulier gezet.</p>
                     <textarea name="lessonContent" rows={4} placeholder="Tekst of instructie. Voeg hierboven eventueel één mediabron toe." className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" required />
                     <label className="flex items-center gap-2 text-sm font-medium text-slate-900">
                       <input type="checkbox" name="lessonIsRequired" defaultChecked className="h-4 w-4" />
