@@ -780,6 +780,7 @@ export async function saveCourseAccreditationMetadataAction(formData: FormData) 
   const studyLoadMinutes = getOptionalNumber(formData, "studyLoadMinutes");
   const requiredQuestionCount = getOptionalNumber(formData, "requiredQuestionCount");
   const accreditationKind = getString(formData, "accreditationKind");
+  const status = getString(formData, "status");
   const changeSummary = getOptionalString(formData, "changeSummary") ?? "Accreditatie-metadata bijgewerkt.";
   const visibilityPresetValue = getString(formData, "visibilityPreset");
   const visibilityPreset = isContentVisibilityPreset(visibilityPresetValue) ? visibilityPresetValue : "MANUAL";
@@ -800,8 +801,13 @@ export async function saveCourseAccreditationMetadataAction(formData: FormData) 
     accreditationKind === "VAKINHOUDELIJK" || accreditationKind === "BEROEPSGERELATEERD",
     "Ongeldige accreditatiesoort."
   );
+  assert(
+    status === "CONCEPT" || status === "REVIEW" || status === "PUBLISHED" || status === "ARCHIVED",
+    "Ongeldige cursusstatus."
+  );
 
   const { course, activeVersion } = await getActiveVersionForManagement(courseId);
+  assert(status !== "PUBLISHED" || course.status === "PUBLISHED", "Gebruik de accreditatie-publiceerknop om een e-learning te publiceren.");
   const shouldNotifyCourseUpdate = course.status === "PUBLISHED";
 
   await prisma.$transaction(async (tx) => {
@@ -817,8 +823,13 @@ export async function saveCourseAccreditationMetadataAction(formData: FormData) 
         visibleToUserIds: visibility.visibleToUserIds,
         accreditationRegister: getOptionalString(formData, "accreditationRegister"),
         accreditationKind,
+        accreditationActivityId: getOptionalString(formData, "accreditationActivityId"),
+        providerName: getOptionalString(formData, "providerName"),
+        providerSignatureName: getOptionalString(formData, "providerSignatureName"),
         studyLoadMinutes,
         requiredQuestionCount,
+        status,
+        isMandatory: formData.get("isMandatory") === "on",
         versionDate: getOptionalDate(formData, "versionDate"),
         revisionDueAt: getOptionalDate(formData, "revisionDueAt"),
         authorExperts: parseAuthorExpertsInput(getString(formData, "authorExperts")),
@@ -1076,6 +1087,9 @@ export async function publishCourseAccreditationReadyAction(formData: FormData) 
     audience: course.audience,
     accreditationRegister: course.accreditationRegister,
     accreditationKind: course.accreditationKind,
+    accreditationActivityId: course.accreditationActivityId,
+    providerName: course.providerName,
+    providerSignatureName: course.providerSignatureName,
     studyLoadMinutes: course.studyLoadMinutes,
     versionDate: course.versionDate,
     authorExperts: course.authorExperts,

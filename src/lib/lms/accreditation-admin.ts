@@ -9,6 +9,10 @@ const WORK_FORM_LABELS: Record<string, WorkForm> = {
   casus: "CASUS",
   reflectie: "REFLECTIE",
   podcast: "PODCAST",
+  toets: "TOETS",
+  quiz: "TOETS",
+  mixed: "MIXED",
+  mix: "MIXED",
 };
 
 function splitRows(value: string) {
@@ -61,7 +65,7 @@ function parseWorkForms(value: string | undefined) {
 
   return entries.map((entry) => {
     const workForm = WORK_FORM_LABELS[entry] ?? (entry.toUpperCase() as WorkForm);
-    if (!["VIDEO", "TEKST", "CASUS", "REFLECTIE", "PODCAST"].includes(workForm)) {
+    if (!["VIDEO", "TEKST", "CASUS", "REFLECTIE", "PODCAST", "TOETS", "MIXED"].includes(workForm)) {
       throw new Error(`Onbekende werkvorm: ${entry}`);
     }
 

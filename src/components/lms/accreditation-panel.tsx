@@ -180,6 +180,9 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
     audience: course.audience,
     accreditationRegister: course.accreditationRegister,
     accreditationKind: course.accreditationKind,
+    accreditationActivityId: course.accreditationActivityId,
+    providerName: course.providerName,
+    providerSignatureName: course.providerSignatureName,
     studyLoadMinutes: course.studyLoadMinutes,
     versionDate: course.versionDate,
     authorExperts: course.authorExperts,
@@ -190,6 +193,7 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
   });
 
   const modules = course.activeVersion?.modules ?? [];
+  const lessons = course.activeVersion?.lessons ?? [];
   const objectives = course.activeVersion?.objectives ?? [];
   const literature = course.activeVersion?.literature ?? [];
   const competencies = course.activeVersion?.competencies ?? [];
@@ -221,6 +225,55 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
   const peOnlinePreviewHref = buildDataDownloadHref(peOnlineCsv, "text/csv");
   const moduleAssessmentCoverage = formatModuleAssessmentCoverage(course);
   const visibilitySummary = summarizeContentVisibility(course);
+  const openCriticalItems = checklist.items.filter((item) => item.severity === "critical" && item.status !== "complete");
+  const warningItems = checklist.items.filter((item) => item.status === "warning");
+  const objectiveBlueprint = objectives.map((objective) => {
+    const objectiveModule = modules.find((entry) => entry.id === objective.moduleId);
+    const linkedAssessments = assessments.filter((assessment) => assessment.coveredObjectiveIds.includes(objective.id));
+
+    return {
+      objective,
+      moduleTitle: objectiveModule ? `Module ${objectiveModule.order}: ${objectiveModule.title}` : "Nog niet aan module gekoppeld",
+      linkedAssessments,
+    };
+  });
+  const builderSteps = [
+    {
+      label: "1. Basis",
+      description: "Titel, doelgroep, zichtbaarheid, prioriteit en status.",
+      complete: Boolean(course.title && course.description && course.audience),
+    },
+    {
+      label: "2. Accreditatiegegevens",
+      description: "Register, aanbieder, activiteit-ID, ondertekenaar, auteurs en versiedata.",
+      complete: Boolean(course.accreditationRegister && course.accreditationActivityId && course.providerName && course.providerSignatureName && course.versionDate && course.authorExperts.length),
+    },
+    {
+      label: "3. Modules & lessen",
+      description: "Modulekaarten met duur, samenvatting, werkvormen en contentblokken.",
+      complete: modules.length > 0 && modules.every((module) => module.estimatedMinutes > 0 && module.summary),
+    },
+    {
+      label: "4. Leerdoelenmatrix",
+      description: "3–6 leerdoelen met module- en toetsdekking.",
+      complete: objectives.length >= 3 && objectives.length <= 6 && objectiveBlueprint.every((entry) => entry.linkedAssessments.length > 0),
+    },
+    {
+      label: "5. Toetsbank",
+      description: "Vraagminimum, 70%-norm, max. 3 pogingen en randomisatie.",
+      complete: assessments.length > 0 && assessments.every((assessment) => assessment.passPercentage >= 70 && assessment.maxAttempts <= 3 && assessment.shuffleQuestions && assessment.shuffleOptions && assessment.allQuestionsLinkedToObjectives),
+    },
+    {
+      label: "6. Evaluatie",
+      description: "Standaard Kwaliteitshuis-evaluatie toegepast.",
+      complete: hasStandardEvaluationTemplate,
+    },
+    {
+      label: "7. Reviewer & indienpakket",
+      description: "Reviewer-preview, dossier, rapportage en PE-online export.",
+      complete: Boolean(course.reviewerName) && dossierPolish.items.every((item) => item.status === "complete"),
+    },
+  ];
 
   return (
     <section className="card-surface rounded-[32px] p-6">
@@ -247,6 +300,60 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
           <StatusBadge label={`${checklist.completedCount}/${checklist.totalCount} checks`} tone="neutral" />
         </div>
       </div>
+
+      {mode === "beheer" ? (
+        <div className="mt-6 grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
+          <div className="rounded-[28px] border border-[var(--border)] bg-white/90 p-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-950">Admin e-learning builder</h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+                  Werk de e-learning straks stap voor stap af: basis, accreditatiegegevens, modules, lessen/media,
+                  leerdoelen, toetsbank, evaluatie, reviewer-preview en één indienpakket.
+                </p>
+              </div>
+              <StatusBadge
+                label={checklist.isPublishable ? "Klaar voor indienpakket" : `${openCriticalItems.length} actiepunt(en)`}
+                tone={checklist.isPublishable ? "success" : "warning"}
+              />
+            </div>
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              {builderSteps.map((step) => (
+                <div key={step.label} className="rounded-2xl border border-[var(--border)] bg-[var(--brand-soft)]/45 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-slate-950">{step.label}</p>
+                    <StatusBadge label={step.complete ? "gereed" : "aanvullen"} tone={step.complete ? "success" : "neutral"} />
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-[var(--ink-soft)]">{step.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-[var(--border)] bg-white/90 p-5">
+            <h3 className="text-lg font-semibold text-slate-950">Live accreditatiebegeleiding</h3>
+            <div className="mt-4 grid gap-2">
+              <StatusBadge label={`${checklist.criticalOpenCount} blokkade(s)`} tone={checklist.criticalOpenCount ? "warning" : "success"} />
+              <StatusBadge label={`${warningItems.length} waarschuwing(en)`} tone={warningItems.length ? "warning" : "neutral"} />
+              <StatusBadge label={`${checklist.completedCount}/${checklist.totalCount} checks groen`} tone="brand" />
+            </div>
+            <div className="mt-4 space-y-3">
+              {openCriticalItems.slice(0, 4).map((item) => (
+                <div key={`open-${item.id}`} className="rounded-2xl bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+                  <p className="font-semibold">{item.label}</p>
+                  <p>{item.message}</p>
+                </div>
+              ))}
+              {!openCriticalItems.length ? (
+                <div className="rounded-2xl bg-emerald-50 p-3 text-xs leading-5 text-emerald-900">
+                  <p className="font-semibold">Geen kritieke blokkades meer.</p>
+                  <p>De e-learning is technisch klaar om als accreditatie-ready gepubliceerd te worden.</p>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {mode === "beheer" ? (
         <div className="mt-6 rounded-[28px] border border-[var(--border)] bg-white/85 p-5">
@@ -312,14 +419,29 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
         <div className="mt-6 grid gap-5 xl:grid-cols-2">
           <form action={saveCourseAccreditationMetadataAction} className="rounded-[28px] bg-[var(--brand-soft)] p-5">
             <input type="hidden" name="courseId" value={course.id} />
-            <h3 className="text-lg font-semibold text-slate-950">Algemene gegevens beheren</h3>
+            <h3 className="text-lg font-semibold text-slate-950">Stap 1 — Basis & Stap 2 — Accreditatiegegevens</h3>
             <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-              Velden voor titel, doelgroep, register, soort, studielast, auteurs en versiebeheer.
+              Vul hier de harde indienvelden in. Deze gegevens sturen de live checklist, het dossier en de publish-gate.
             </p>
             <div className="mt-4 grid gap-3">
               <input name="title" defaultValue={course.title} placeholder="Titel e-learning" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" required />
               <textarea name="description" defaultValue={course.description} rows={3} placeholder="Beschrijving" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" required />
               <input name="audience" defaultValue={course.audience ?? ""} placeholder="Doelgroepomschrijving voor accreditatie" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-slate-900">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-soft)]">Status</span>
+                  <select name="status" defaultValue={course.status} className="w-full bg-transparent text-sm outline-none">
+                    <option value="CONCEPT">Concept</option>
+                    <option value="REVIEW">Klaar voor review</option>
+                    <option value="PUBLISHED" disabled={course.status !== "PUBLISHED"}>Gepubliceerd — via groene checklist</option>
+                    <option value="ARCHIVED">Gearchiveerd</option>
+                  </select>
+                </label>
+                <label className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm font-medium text-slate-900">
+                  <input type="checkbox" name="isMandatory" defaultChecked={course.isMandatory} className="h-4 w-4" />
+                  Need to know / verplicht in leerpad
+                </label>
+              </div>
               <div className="rounded-2xl border border-[var(--border)] bg-white p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-slate-950">Contentzichtbaarheid</p>
@@ -373,11 +495,22 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
                 <input name="visibleToUserIds" defaultValue={course.visibleToUserIds.join(", ")} placeholder="Specifieke account-id's, komma-gescheiden" className="mt-4 w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                <input name="accreditationRegister" defaultValue={course.accreditationRegister ?? ""} placeholder="Register" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
-                <select name="accreditationKind" defaultValue={course.accreditationKind} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm">
-                  <option value="VAKINHOUDELIJK">Vakinhoudelijk</option>
-                  <option value="BEROEPSGERELATEERD">Beroepsgerelateerd</option>
-                </select>
+                <label className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-slate-900">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-soft)]">Register</span>
+                  <input name="accreditationRegister" defaultValue={course.accreditationRegister ?? ""} placeholder="Bijv. Kwaliteitshuis Fysiotherapie" className="w-full bg-transparent text-sm outline-none" />
+                </label>
+                <label className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-slate-900">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-soft)]">Soort scholing</span>
+                  <select name="accreditationKind" defaultValue={course.accreditationKind} className="w-full bg-transparent text-sm outline-none">
+                    <option value="VAKINHOUDELIJK">Vakinhoudelijk</option>
+                    <option value="BEROEPSGERELATEERD">Beroepsgerelateerd</option>
+                  </select>
+                </label>
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <input name="providerName" defaultValue={course.providerName ?? ""} placeholder="Aanbieder" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+                <input name="providerSignatureName" defaultValue={course.providerSignatureName ?? ""} placeholder="Ondertekenaar deelnamebewijs" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+                <input name="accreditationActivityId" defaultValue={course.accreditationActivityId ?? ""} placeholder="Activiteit-ID / PE-online ID" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <input name="studyLoadMinutes" type="number" defaultValue={course.studyLoadMinutes} placeholder="Studielast in minuten" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" required />
@@ -445,10 +578,11 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
       <div className="mt-6 rounded-[28px] bg-slate-950 p-5 text-white">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h3 className="text-lg font-semibold">Accreditatie-export</h3>
+            <h3 className="text-lg font-semibold">Genereer accreditatiedossier</h3>
             <p className="mt-2 text-sm leading-6 text-white/70">
-              Markdown-dossier voor Kwaliteitshuis: algemene gegevens, leerdoelen, modules, toetsing,
-              evaluatie, reviewer-info, bewijsvelden en wijzigingslog.
+              Genereert één indienpakket voor Kwaliteitshuis: programma per module, studielast, leerdoelen,
+              inhoud/werkvormen, toetsplan, leerdoelmatrix, literatuur, competenties, evaluatie, reviewer-instructie,
+              certificaatbewijsvelden en wijzigingslog.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -548,11 +682,24 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
 
       <div className="mt-6 grid gap-5 xl:grid-cols-2">
         <div className="rounded-[28px] bg-[var(--brand-soft)] p-5">
-          <h3 className="text-lg font-semibold text-slate-950">Leerdoelen</h3>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-950">Leerdoelenmatrix</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+                Formuleer als: “Na afloop kan de deelnemer…”. Kwaliteitshuis-proof is 3–6 leerdoelen met module- en toetsdekking.
+              </p>
+            </div>
+            <StatusBadge label={`${objectives.length} van 3–6`} tone={objectives.length >= 3 && objectives.length <= 6 ? "success" : "warning"} />
+          </div>
           <div className="mt-4 space-y-3">
-            {objectives.length ? objectives.map((objective) => (
+            {objectiveBlueprint.length ? objectiveBlueprint.map(({ objective, moduleTitle, linkedAssessments }) => (
               <div key={objective.id} className="rounded-2xl bg-white/85 p-4 text-sm leading-6 text-[var(--ink-soft)]">
-                <span className="font-semibold text-[var(--brand-deep)]">{objective.code}</span> — {objective.text}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p><span className="font-semibold text-[var(--brand-deep)]">{objective.code}</span> — {objective.text}</p>
+                  <StatusBadge label={linkedAssessments.length ? "toetsdekking" : "geen toetsdekking"} tone={linkedAssessments.length ? "success" : "warning"} />
+                </div>
+                <p className="mt-2 text-xs leading-5"><span className="font-semibold text-slate-950">Module:</span> {moduleTitle}</p>
+                <p className="text-xs leading-5"><span className="font-semibold text-slate-950">Toets(en):</span> {linkedAssessments.map((assessment) => assessment.title).join(", ") || "Nog niet gekoppeld"}</p>
               </div>
             )) : <p className="text-sm text-[var(--ink-soft)]">Nog geen leerdoelen vastgelegd.</p>}
           </div>
@@ -655,12 +802,14 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
           const moduleObjectives = objectives.filter((objective) => objective.moduleId === module.id);
           const moduleLiterature = literature.filter((reference) => reference.moduleId === module.id);
           const moduleCompetencies = competencies.filter((reference) => reference.moduleId === module.id);
+          const moduleLessons = lessons.filter((lesson) => lesson.moduleId === module.id);
 
           return (
             <div key={module.id} className="rounded-[28px] border border-[var(--border)] bg-white/85 p-5">
               <div className="flex flex-wrap items-center gap-3">
                 <StatusBadge label={`Module ${module.order}`} tone="brand" />
                 <StatusBadge label={`${module.estimatedMinutes} minuten`} tone="neutral" />
+                <StatusBadge label={`${moduleLessons.length} les/contentblok${moduleLessons.length === 1 ? "" : "ken"}`} tone={moduleLessons.length ? "success" : "warning"} />
                 {module.workForms.map((workForm) => (
                   <StatusBadge key={workForm} label={formatWorkForm(workForm)} tone="neutral" />
                 ))}
@@ -668,10 +817,14 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
               <h4 className="mt-4 text-lg font-semibold text-slate-950">{module.title}</h4>
               {module.introduction ? <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">{module.introduction}</p> : null}
               {module.summary ? <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]"><span className="font-semibold">Samenvatting:</span> {module.summary}</p> : null}
-              <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              <div className="mt-4 grid gap-3 lg:grid-cols-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-soft)]">Leerdoelen</p>
                   <p className="mt-1 text-sm text-[var(--ink-soft)]">{moduleObjectives.map((entry) => entry.code).join(", ") || "Geen"}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-soft)]">Lessen/content</p>
+                  <p className="mt-1 text-sm text-[var(--ink-soft)]">{moduleLessons.map((entry) => entry.title).join(", ") || "Geen"}</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-soft)]">Literatuur</p>
@@ -682,6 +835,14 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
                   <p className="mt-1 text-sm text-[var(--ink-soft)]">{moduleCompetencies.map((entry) => entry.name).join(", ") || "Geen"}</p>
                 </div>
               </div>
+              {mode === "beheer" ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button type="button" disabled className="rounded-full border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold text-slate-400">Module toevoegen</button>
+                  <button type="button" disabled className="rounded-full border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold text-slate-400">Dupliceren</button>
+                  <button type="button" disabled className="rounded-full border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold text-slate-400">Omhoog/omlaag</button>
+                  <a href={`/lms/courses/${course.id}`} className="rounded-full bg-slate-950 px-3 py-2 text-xs font-semibold text-white">Bekijk als deelnemer</a>
+                </div>
+              ) : null}
             </div>
           );
         }) : <p className="text-sm text-[var(--ink-soft)]">Nog geen modules vastgelegd.</p>}
