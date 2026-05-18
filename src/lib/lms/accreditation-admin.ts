@@ -1,4 +1,4 @@
-import type { WorkForm } from "@prisma/client";
+import type { LessonType, WorkForm } from "@prisma/client";
 
 import type { CourseAuthorExpert } from "./types";
 
@@ -71,6 +71,125 @@ function parseWorkForms(value: string | undefined) {
 
     return workForm;
   });
+}
+
+const LESSON_TYPES = ["TEXT", "VIDEO", "DOCUMENT", "CASE", "REFLECTION", "ASSESSMENT"] as const satisfies LessonType[];
+
+export type LessonBuilderInput = {
+  title?: string | null;
+  description?: string | null;
+  type?: string | null;
+  content?: string | null;
+  order?: string | number | null;
+  estimatedMinutes?: string | number | null;
+  isRequired?: string | boolean | null;
+};
+
+export type ParsedLessonBuilderInput = {
+  title: string;
+  description: string | null;
+  type: LessonType;
+  content: string;
+  order: number;
+  estimatedMinutes: number;
+  isRequired: boolean;
+};
+
+function normalizeSlugPart(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
+export function buildLessonSlug(title: string, existingSlugs: readonly string[]) {
+  const base = normalizeSlugPart(title) || "les";
+  const existing = new Set(existingSlugs);
+
+  if (!existing.has(base)) {
+    return base;
+  }
+
+  let suffix = 2;
+  let candidate = `${base}-${suffix}`;
+  while (existing.has(candidate)) {
+    suffix += 1;
+    candidate = `${base}-${suffix}`;
+  }
+
+  return candidate;
+}
+
+export function parseLessonBuilderInput(input: LessonBuilderInput): ParsedLessonBuilderInput {
+  const title = optionalString(String(input.title ?? ""));
+  const description = optionalString(String(input.description ?? ""));
+  const content = String(input.content ?? "").trim();
+  const type = String(input.type ?? "TEXT").trim().toUpperCase() as LessonType;
+  const order = parsePositiveInt(String(input.order ?? ""), "Lesvolgorde moet een positief getal zijn.");
+  const estimatedMinutes = parsePositiveInt(
+    String(input.estimatedMinutes ?? ""),
+    "Lesduur moet een positief getal zijn.",
+  );
+
+  if (!title || title.length < 3) {
+    throw new Error("Lestitel is te kort.");
+  }
+
+  if (!LESSON_TYPES.includes(type)) {
+    throw new Error(`Onbekend lestype: ${input.type}`);
+  }
+
+  if (["VIDEO", "DOCUMENT"].includes(type) && content.length < 5) {
+    throw new Error("Video- of documentlessen hebben een link of beschrijving nodig.");
+  }
+
+  if (!["VIDEO", "DOCUMENT"].includes(type) && content.length < 10) {
+    throw new Error("Lesinhoud is te kort.");
+  }
+
+  return {
+    title,
+    description,
+    type,
+    content,
+    order,
+    estimatedMinutes,
+    isRequired: input.isRequired === true || input.isRequired === "on" || input.isRequired === "true",
+  };
+}
+
+export function getNextModuleOrder(modules: readonly { order: number }[]) {
+  return Math.max(0, ...modules.map((module) => module.order)) + 1;
+}
+
+export function reorderModulesAfterMove<T extends { id: string; order: number }>(
+  modules: readonly T[],
+  moduleId: string,
+  direction: "up" | "down",
+) {
+  const sorted = [...modules].sort((left, right) => left.order - right.order);
+  const currentIndex = sorted.findIndex((module) => module.id === moduleId);
+
+  if (currentIndex === -1) {
+    throw new Error("Module niet gevonden.");
+  }
+
+  const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  if (targetIndex < 0 || targetIndex >= sorted.length) {
+    return sorted.map((module, index) => ({ ...module, order: index + 1 }));
+  }
+
+  const [current] = sorted.splice(currentIndex, 1);
+  sorted.splice(targetIndex, 0, current);
+
+  return sorted.map((module, index) => ({ ...module, order: index + 1 }));
+}
+
+export function parseWorkFormsInput(value: string | undefined) {
+  return parseWorkForms(value);
 }
 
 export function parseAuthorExpertsInput(value: string): CourseAuthorExpert[] {

@@ -1,9 +1,14 @@
 import {
   applyStandardEvaluationTemplateAction,
+  deleteCourseBuilderModuleAction,
+  duplicateCourseBuilderModuleAction,
+  moveCourseBuilderModuleAction,
   publishCourseAccreditationReadyAction,
   saveAssessmentAccreditationRulesAction,
   saveCourseAccreditationMetadataAction,
   saveCourseAccreditationStructureAction,
+  saveCourseBuilderLessonAction,
+  saveCourseBuilderModuleAction,
 } from "@/app/lms-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { AUDIENCE_PROFILE_OPTIONS } from "@/lib/audience";
@@ -797,7 +802,31 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
       </div>
 
       <div className="mt-6 space-y-4">
-        <h3 className="text-lg font-semibold text-slate-950">Modules, literatuur en competenties</h3>
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-950">Modules, lessen en contentblokken</h3>
+            <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+              Beheer hier de echte bouwblokken van de e-learning. Dit vervangt stap voor stap de technische regelinvoer hierboven.
+            </p>
+          </div>
+          <StatusBadge label={`${modules.length} module${modules.length === 1 ? "" : "s"}`} tone="brand" />
+        </div>
+        {mode === "beheer" ? (
+          <form action={saveCourseBuilderModuleAction} className="rounded-[28px] border border-[var(--border)] bg-[var(--brand-soft)] p-5">
+            <input type="hidden" name="courseId" value={course.id} />
+            <h4 className="text-base font-semibold text-slate-950">Nieuwe module toevoegen</h4>
+            <div className="mt-4 grid gap-3 lg:grid-cols-[1.2fr_0.5fr_1fr]">
+              <input name="moduleTitle" placeholder="Moduletitel" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" required />
+              <input name="moduleEstimatedMinutes" type="number" placeholder="Minuten" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" required />
+              <input name="moduleWorkForms" placeholder="video, tekst, casus" className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+            </div>
+            <div className="mt-3 grid gap-3 lg:grid-cols-2">
+              <textarea name="moduleIntroduction" placeholder="Korte introductie" rows={3} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+              <textarea name="moduleSummary" placeholder="Samenvatting / leeropbrengst" rows={3} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+            </div>
+            <button type="submit" className="mt-4 rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white">Module toevoegen</button>
+          </form>
+        ) : null}
         {modules.length ? modules.map((module) => {
           const moduleObjectives = objectives.filter((objective) => objective.moduleId === module.id);
           const moduleLiterature = literature.filter((reference) => reference.moduleId === module.id);
@@ -836,11 +865,105 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
                 </div>
               </div>
               {mode === "beheer" ? (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button type="button" disabled className="rounded-full border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold text-slate-400">Module toevoegen</button>
-                  <button type="button" disabled className="rounded-full border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold text-slate-400">Dupliceren</button>
-                  <button type="button" disabled className="rounded-full border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold text-slate-400">Omhoog/omlaag</button>
-                  <a href={`/lms/courses/${course.id}`} className="rounded-full bg-slate-950 px-3 py-2 text-xs font-semibold text-white">Bekijk als deelnemer</a>
+                <div className="mt-5 space-y-4 rounded-2xl border border-[var(--border)] bg-slate-50 p-4">
+                  <form action={saveCourseBuilderModuleAction} className="grid gap-3">
+                    <input type="hidden" name="courseId" value={course.id} />
+                    <input type="hidden" name="moduleId" value={module.id} />
+                    <div className="grid gap-3 lg:grid-cols-[1.2fr_0.5fr_1fr]">
+                      <input name="moduleTitle" defaultValue={module.title} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" required />
+                      <input name="moduleEstimatedMinutes" type="number" defaultValue={module.estimatedMinutes} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" required />
+                      <input name="moduleWorkForms" defaultValue={module.workForms.join(", ").toLowerCase()} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+                    </div>
+                    <div className="grid gap-3 lg:grid-cols-2">
+                      <textarea name="moduleIntroduction" defaultValue={module.introduction ?? ""} rows={3} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+                      <textarea name="moduleSummary" defaultValue={module.summary ?? ""} rows={3} className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm" />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="submit" className="rounded-full bg-[var(--brand)] px-3 py-2 text-xs font-semibold text-white">Module opslaan</button>
+                      <a href={`/lms/courses/${course.id}`} className="rounded-full bg-slate-950 px-3 py-2 text-xs font-semibold text-white">Bekijk als deelnemer</a>
+                    </div>
+                  </form>
+                  <div className="flex flex-wrap gap-2">
+                    <form action={duplicateCourseBuilderModuleAction}>
+                      <input type="hidden" name="courseId" value={course.id} />
+                      <input type="hidden" name="moduleId" value={module.id} />
+                      <button type="submit" className="rounded-full border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold text-slate-700">Dupliceren</button>
+                    </form>
+                    <form action={moveCourseBuilderModuleAction}>
+                      <input type="hidden" name="courseId" value={course.id} />
+                      <input type="hidden" name="moduleId" value={module.id} />
+                      <input type="hidden" name="direction" value="up" />
+                      <button type="submit" className="rounded-full border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold text-slate-700">Omhoog</button>
+                    </form>
+                    <form action={moveCourseBuilderModuleAction}>
+                      <input type="hidden" name="courseId" value={course.id} />
+                      <input type="hidden" name="moduleId" value={module.id} />
+                      <input type="hidden" name="direction" value="down" />
+                      <button type="submit" className="rounded-full border border-[var(--border)] bg-white px-3 py-2 text-xs font-semibold text-slate-700">Omlaag</button>
+                    </form>
+                    <form action={deleteCourseBuilderModuleAction}>
+                      <input type="hidden" name="courseId" value={course.id} />
+                      <input type="hidden" name="moduleId" value={module.id} />
+                      <button type="submit" className="rounded-full border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700">Verwijderen</button>
+                    </form>
+                  </div>
+                  {moduleLessons.length ? (
+                    <div className="space-y-2 rounded-2xl bg-white p-4">
+                      <h5 className="text-sm font-semibold text-slate-950">Bestaande lessen/contentblokken</h5>
+                      {moduleLessons.map((lesson) => (
+                        <form key={`edit-${lesson.id}`} action={saveCourseBuilderLessonAction} className="grid gap-2 rounded-2xl border border-[var(--border)] p-3">
+                          <input type="hidden" name="courseId" value={course.id} />
+                          <input type="hidden" name="moduleId" value={module.id} />
+                          <input type="hidden" name="lessonId" value={lesson.id} />
+                          <div className="grid gap-2 lg:grid-cols-[1.2fr_0.7fr_0.5fr_0.5fr]">
+                            <input name="lessonTitle" defaultValue={lesson.title} className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" required />
+                            <select name="lessonType" defaultValue={lesson.type} className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs">
+                              <option value="TEXT">Tekst</option>
+                              <option value="VIDEO">Video</option>
+                              <option value="DOCUMENT">Document</option>
+                              <option value="CASE">Casus</option>
+                              <option value="REFLECTION">Reflectie</option>
+                              <option value="ASSESSMENT">Toets</option>
+                            </select>
+                            <input name="lessonOrder" type="number" defaultValue={lesson.order} className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" required />
+                            <input name="lessonEstimatedMinutes" type="number" defaultValue={lesson.estimatedMinutes} className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" required />
+                          </div>
+                          <input name="lessonDescription" defaultValue={lesson.description ?? ""} placeholder="Omschrijving" className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" />
+                          <textarea name="lessonContent" defaultValue={lesson.content ?? ""} rows={3} className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" required />
+                          <label className="flex items-center gap-2 text-xs font-medium text-slate-900">
+                            <input type="checkbox" name="lessonIsRequired" defaultChecked={lesson.isRequired} className="h-4 w-4" />
+                            Telt mee voor afronding/studielast
+                          </label>
+                          <button type="submit" className="w-fit rounded-full bg-slate-950 px-3 py-2 text-xs font-semibold text-white">Les opslaan</button>
+                        </form>
+                      ))}
+                    </div>
+                  ) : null}
+                  <form action={saveCourseBuilderLessonAction} className="grid gap-3 rounded-2xl bg-white p-4">
+                    <input type="hidden" name="courseId" value={course.id} />
+                    <input type="hidden" name="moduleId" value={module.id} />
+                    <h5 className="text-sm font-semibold text-slate-950">Les/contentblok toevoegen aan deze module</h5>
+                    <div className="grid gap-3 lg:grid-cols-[1.2fr_0.7fr_0.5fr_0.5fr]">
+                      <input name="lessonTitle" placeholder="Titel les/contentblok" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" required />
+                      <select name="lessonType" defaultValue="TEXT" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm">
+                        <option value="TEXT">Tekst</option>
+                        <option value="VIDEO">Video</option>
+                        <option value="DOCUMENT">Document</option>
+                        <option value="CASE">Casus</option>
+                        <option value="REFLECTION">Reflectie</option>
+                        <option value="ASSESSMENT">Toets</option>
+                      </select>
+                      <input name="lessonOrder" type="number" defaultValue={lessons.length + 1} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" required />
+                      <input name="lessonEstimatedMinutes" type="number" placeholder="Min." className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" required />
+                    </div>
+                    <input name="lessonDescription" placeholder="Korte omschrijving" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                    <textarea name="lessonContent" rows={4} placeholder="Tekst, instructie of media/document-link" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" required />
+                    <label className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                      <input type="checkbox" name="lessonIsRequired" defaultChecked className="h-4 w-4" />
+                      Telt mee voor afronding/studielast
+                    </label>
+                    <button type="submit" className="rounded-full bg-[var(--teal)] px-4 py-2 text-xs font-semibold text-white">Les toevoegen</button>
+                  </form>
                 </div>
               ) : null}
             </div>

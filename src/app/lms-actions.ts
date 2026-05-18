@@ -10,9 +10,14 @@ import { buildAssessmentAnswerRecords } from "@/lib/lms/action-helpers";
 import {
   parseAuthorExpertsInput,
   parseCompetencyReferencesInput,
+  buildLessonSlug,
+  getNextModuleOrder,
   parseLearningObjectivesInput,
+  parseLessonBuilderInput,
   parseLiteratureReferencesInput,
   parseModulesInput,
+  parseWorkFormsInput,
+  reorderModulesAfterMove,
 } from "@/lib/lms/accreditation-admin";
 import { buildAccreditationChecklist } from "@/lib/lms/accreditation-checklist";
 import { assertAccreditationPublishable } from "@/lib/lms/accreditation-evidence";
@@ -106,7 +111,13 @@ async function getActiveVersionForManagement(courseId: string) {
     include: {
       versions: {
         where: { isActive: true },
-        include: { modules: true },
+        include: {
+          modules: true,
+          lessons: true,
+          objectives: true,
+          literature: true,
+          competencies: true,
+        },
       },
     },
   });
@@ -856,6 +867,272 @@ export async function saveCourseAccreditationMetadataAction(formData: FormData) 
     await createCourseNotifications(courseId, "updated");
   }
   await revalidateLearningPaths({ courseId });
+}
+
+export async function saveCourseBuilderModuleAction(formData: FormData) {
+  const user = await requireAccreditationManager();
+  const courseId = getString(formData, "courseId");
+  const moduleId = getOptionalString(formData, "moduleId");
+  const title = getString(formData, "moduleTitle");
+  const estimatedMinutes = getOptionalNumber(formData, "moduleEstimatedMinutes");
+  const introduction = getOptionalString(formData, "moduleIntroduction");
+  const summary = getOptionalString(formData, "moduleSummary");
+  const workForms = parseWorkFormsInput(getString(formData, "moduleWorkForms"));
+
+  assert(courseId, "Cursus ontbreekt.");
+  assert(title.length >= 3, "Moduletitel is te kort.");
+  assert(estimatedMinutes !== null && estimatedMinutes > 0, "Moduleduur is verplicht.");
+
+  const { course, activeVersion } = await getActiveVersionForManagement(courseId);
+  const existingModule = moduleId ? activeVersion.modules.find((entry) => entry.id === moduleId) : null;
+  const shouldNotifyCourseUpdate = course.status === "PUBLISHED";
+
+  await prisma.$transaction(async (tx) => {
+    const savedModule = existingModule
+      ? await tx.courseModule.update({
+          where: { id: existingModule.id },
+          data: {
+            title,
+            introduction,
+            summary,
+            estimatedMinutes,
+            workForms,
+          },
+          select: { order: true, title: true },
+        })
+      : await tx.courseModule.create({
+          data: {
+            courseVersionId: activeVersion.id,
+            order: getNextModuleOrder(activeVersion.modules),
+            title,
+            introduction,
+            summary,
+            estimatedMinutes,
+            workForms,
+          },
+          select: { order: true, title: true },
+        });
+
+    await tx.courseChangeLog.create({
+      data: {
+        courseId,
+        courseVersionId: activeVersion.id,
+        changedById: user.id,
+        changeType: existingModule ? "LMS_MODULE_UPDATED" : "LMS_MODULE_CREATED",
+        summary: `Module ${savedModule.order}: ${savedModule.title} ${existingModule ? "bijgewerkt" : "aangemaakt"}.`,
+      },
+    });
+  });
+
+  if (shouldNotifyCourseUpdate) {
+    await createCourseNotifications(courseId, "updated");
+  }
+  await revalidateLearningPaths({ courseId });
+}
+
+export async function duplicateCourseBuilderModuleAction(formData: FormData) {
+  const user = await requireAccreditationManager();
+  const courseId = getString(formData, "courseId");
+  const moduleId = getString(formData, "moduleId");
+
+  assert(courseId, "Cursus ontbreekt.");
+  assert(moduleId, "Module ontbreekt.");
+
+  const { course, activeVersion } = await getActiveVersionForManagement(courseId);
+  const source = activeVersion.modules.find((entry) => entry.id === moduleId);
+  assert(source, "Module niet gevonden.");
+  const shouldNotifyCourseUpdate = course.status === "PUBLISHED";
+
+  await prisma.$transaction(async (tx) => {
+    const created = await tx.courseModule.create({
+      data: {
+        courseVersionId: activeVersion.id,
+        order: getNextModuleOrder(activeVersion.modules),
+        title: `${source.title} kopie`,
+        introduction: source.introduction,
+        summary: source.summary,
+        estimatedMinutes: source.estimatedMinutes,
+        workForms: source.workForms,
+      },
+      select: { order: true, title: true },
+    });
+
+    await tx.courseChangeLog.create({
+      data: {
+        courseId,
+        courseVersionId: activeVersion.id,
+        changedById: user.id,
+        changeType: "LMS_MODULE_DUPLICATED",
+        summary: `Module ${source.order} gedupliceerd naar module ${created.order}: ${created.title}.`,
+      },
+    });
+  });
+
+  if (shouldNotifyCourseUpdate) {
+    await createCourseNotifications(courseId, "updated");
+  }
+  await revalidateLearningPaths({ courseId });
+}
+
+export async function moveCourseBuilderModuleAction(formData: FormData) {
+  const user = await requireAccreditationManager();
+  const courseId = getString(formData, "courseId");
+  const moduleId = getString(formData, "moduleId");
+  const direction = getString(formData, "direction");
+
+  assert(courseId, "Cursus ontbreekt.");
+  assert(moduleId, "Module ontbreekt.");
+  assert(direction === "up" || direction === "down", "Richting ontbreekt.");
+
+  const { course, activeVersion } = await getActiveVersionForManagement(courseId);
+  const reordered = reorderModulesAfterMove(activeVersion.modules, moduleId, direction);
+  const moved = activeVersion.modules.find((entry) => entry.id === moduleId);
+  assert(moved, "Module niet gevonden.");
+  const shouldNotifyCourseUpdate = course.status === "PUBLISHED";
+
+  await prisma.$transaction(async (tx) => {
+    for (const courseModule of reordered) {
+      await tx.courseModule.update({ where: { id: courseModule.id }, data: { order: -courseModule.order } });
+    }
+    for (const courseModule of reordered) {
+      await tx.courseModule.update({ where: { id: courseModule.id }, data: { order: courseModule.order } });
+    }
+    await tx.courseChangeLog.create({
+      data: {
+        courseId,
+        courseVersionId: activeVersion.id,
+        changedById: user.id,
+        changeType: "LMS_MODULE_REORDERED",
+        summary: `Modulevolgorde aangepast voor ${moved.title}.`,
+      },
+    });
+  });
+
+  if (shouldNotifyCourseUpdate) {
+    await createCourseNotifications(courseId, "updated");
+  }
+  await revalidateLearningPaths({ courseId });
+}
+
+export async function deleteCourseBuilderModuleAction(formData: FormData) {
+  const user = await requireAccreditationManager();
+  const courseId = getString(formData, "courseId");
+  const moduleId = getString(formData, "moduleId");
+
+  assert(courseId, "Cursus ontbreekt.");
+  assert(moduleId, "Module ontbreekt.");
+
+  const { course, activeVersion } = await getActiveVersionForManagement(courseId);
+  const courseModule = activeVersion.modules.find((entry) => entry.id === moduleId);
+  assert(courseModule, "Module niet gevonden.");
+  const linkedLessons = activeVersion.lessons.filter((lesson) => lesson.moduleId === moduleId);
+  const linkedObjectiveCount = activeVersion.objectives.filter((objective) => objective.moduleId === moduleId).length;
+  const linkedLiteratureCount = activeVersion.literature.filter((reference) => reference.moduleId === moduleId).length;
+  const linkedCompetencyCount = activeVersion.competencies.filter((reference) => reference.moduleId === moduleId).length;
+  assert(linkedLessons.length === 0, "Verplaats of verwijder eerst de lessen in deze module.");
+  assert(
+    linkedObjectiveCount + linkedLiteratureCount + linkedCompetencyCount === 0,
+    "Ontkoppel eerst leerdoelen, literatuur en competenties van deze module.",
+  );
+  const shouldNotifyCourseUpdate = course.status === "PUBLISHED";
+
+  await prisma.$transaction(async (tx) => {
+    await tx.courseModule.delete({ where: { id: moduleId } });
+    const remainingModules = activeVersion.modules.filter((entry) => entry.id !== moduleId);
+    const normalized = remainingModules
+      .sort((left, right) => left.order - right.order)
+      .map((entry, index) => ({ id: entry.id, order: index + 1 }));
+    for (const entry of normalized) {
+      await tx.courseModule.update({ where: { id: entry.id }, data: { order: entry.order } });
+    }
+    await tx.courseChangeLog.create({
+      data: {
+        courseId,
+        courseVersionId: activeVersion.id,
+        changedById: user.id,
+        changeType: "LMS_MODULE_DELETED",
+        summary: `Module ${courseModule.order}: ${courseModule.title} verwijderd.`,
+      },
+    });
+  });
+
+  if (shouldNotifyCourseUpdate) {
+    await createCourseNotifications(courseId, "updated");
+  }
+  await revalidateLearningPaths({ courseId });
+}
+
+export async function saveCourseBuilderLessonAction(formData: FormData) {
+  const user = await requireAccreditationManager();
+  const courseId = getString(formData, "courseId");
+  const moduleId = getOptionalString(formData, "moduleId");
+  const lessonId = getOptionalString(formData, "lessonId");
+
+  assert(courseId, "Cursus ontbreekt.");
+
+  const lessonInput = parseLessonBuilderInput({
+    title: getString(formData, "lessonTitle"),
+    description: getOptionalString(formData, "lessonDescription"),
+    type: getString(formData, "lessonType"),
+    content: getString(formData, "lessonContent"),
+    order: getString(formData, "lessonOrder"),
+    estimatedMinutes: getString(formData, "lessonEstimatedMinutes"),
+    isRequired: formData.get("lessonIsRequired") === "on",
+  });
+
+  const { course, activeVersion } = await getActiveVersionForManagement(courseId);
+  assert(!moduleId || activeVersion.modules.some((entry) => entry.id === moduleId), "Module hoort niet bij deze cursusversie.");
+  const existingLesson = lessonId ? activeVersion.lessons.find((entry) => entry.id === lessonId) : null;
+  assert(!lessonId || existingLesson, "Les niet gevonden.");
+  const shouldNotifyCourseUpdate = course.status === "PUBLISHED";
+
+  await prisma.$transaction(async (tx) => {
+    const savedLesson = existingLesson
+      ? await tx.lesson.update({
+          where: { id: existingLesson.id },
+          data: {
+            moduleId,
+            title: lessonInput.title,
+            description: lessonInput.description,
+            type: lessonInput.type,
+            content: lessonInput.content,
+            order: lessonInput.order,
+            estimatedMinutes: lessonInput.estimatedMinutes,
+            isRequired: lessonInput.isRequired,
+          },
+          select: { id: true, title: true },
+        })
+      : await tx.lesson.create({
+          data: {
+            courseVersionId: activeVersion.id,
+            moduleId,
+            title: lessonInput.title,
+            slug: buildLessonSlug(lessonInput.title, activeVersion.lessons.map((lesson) => lesson.slug)),
+            description: lessonInput.description,
+            type: lessonInput.type,
+            content: lessonInput.content,
+            order: lessonInput.order,
+            estimatedMinutes: lessonInput.estimatedMinutes,
+            isRequired: lessonInput.isRequired,
+          },
+          select: { id: true, title: true },
+        });
+
+    await tx.courseChangeLog.create({
+      data: {
+        courseId,
+        courseVersionId: activeVersion.id,
+        changedById: user.id,
+        changeType: existingLesson ? "LMS_LESSON_UPDATED" : "LMS_LESSON_CREATED",
+        summary: `Les ${savedLesson.title} ${existingLesson ? "bijgewerkt" : "aangemaakt"}.`,
+      },
+    });
+  });
+
+  if (shouldNotifyCourseUpdate) {
+    await createCourseNotifications(courseId, "updated");
+  }
+  await revalidateLearningPaths({ courseId, lessonId: existingLesson?.id });
 }
 
 export async function saveCourseAccreditationStructureAction(formData: FormData) {

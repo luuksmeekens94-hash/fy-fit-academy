@@ -2,11 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildLessonSlug,
+  getNextModuleOrder,
   parseAuthorExpertsInput,
   parseCompetencyReferencesInput,
   parseLearningObjectivesInput,
   parseLiteratureReferencesInput,
   parseModulesInput,
+  parseLessonBuilderInput,
+  reorderModulesAfterMove,
 } from "../../../src/lib/lms/accreditation-admin.ts";
 
 test("parseAuthorExpertsInput converts pipe-separated experts into structured metadata", () => {
@@ -77,4 +81,60 @@ test("parseLiteratureReferencesInput and parseCompetencyReferencesInput parse op
       },
     ],
   );
+});
+
+test("buildLessonSlug creates readable unique lesson slugs", () => {
+  assert.equal(buildLessonSlug("Klinisch redeneren: module 1", []), "klinisch-redeneren-module-1");
+  assert.equal(
+    buildLessonSlug("Klinisch redeneren: module 1", ["introductie", "klinisch-redeneren-module-1"]),
+    "klinisch-redeneren-module-1-2",
+  );
+});
+
+test("parseLessonBuilderInput validates adminproof lesson form values", () => {
+  assert.deepEqual(
+    parseLessonBuilderInput({
+      title: "Video: intake observeren",
+      description: "Bekijk de intake en noteer klinische signalen.",
+      type: "VIDEO",
+      content: "/lms/intake.mp4",
+      order: "2",
+      estimatedMinutes: "18",
+      isRequired: "on",
+    }),
+    {
+      title: "Video: intake observeren",
+      description: "Bekijk de intake en noteer klinische signalen.",
+      type: "VIDEO",
+      content: "/lms/intake.mp4",
+      order: 2,
+      estimatedMinutes: 18,
+      isRequired: true,
+    },
+  );
+
+  assert.throws(
+    () => parseLessonBuilderInput({ title: "Te kort", type: "VIDEO", content: "", order: "1", estimatedMinutes: "5" }),
+    /Video- of documentlessen hebben een link of beschrijving nodig/,
+  );
+});
+
+test("module builder helpers calculate next order and safe move order", () => {
+  const modules = [
+    { id: "m1", order: 1 },
+    { id: "m2", order: 2 },
+    { id: "m3", order: 3 },
+  ];
+
+  assert.equal(getNextModuleOrder(modules), 4);
+  assert.deepEqual(reorderModulesAfterMove(modules, "m2", "up"), [
+    { id: "m2", order: 1 },
+    { id: "m1", order: 2 },
+    { id: "m3", order: 3 },
+  ]);
+  assert.deepEqual(reorderModulesAfterMove(modules, "m2", "down"), [
+    { id: "m1", order: 1 },
+    { id: "m3", order: 2 },
+    { id: "m2", order: 3 },
+  ]);
 });

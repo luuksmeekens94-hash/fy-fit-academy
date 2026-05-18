@@ -199,6 +199,7 @@ function mapCourseDetail(course: {
       moduleId: string | null;
       title: string;
       slug: string;
+      description: string | null;
       type: LessonDetail["type"];
       order: number;
       isRequired: boolean;
@@ -322,6 +323,7 @@ function mapCourseDetail(course: {
             moduleId: lesson.moduleId,
             title: lesson.title,
             slug: lesson.slug,
+            description: lesson.description,
             type: lesson.type,
             order: lesson.order,
             isRequired: lesson.isRequired,

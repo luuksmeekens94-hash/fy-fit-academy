@@ -169,6 +169,7 @@ export type LessonSummary = {
   moduleId: string | null;
   title: string;
   slug: string;
+  description?: string | null;
   type: LessonType;
   order: number;
   isRequired: boolean;
