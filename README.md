@@ -99,7 +99,8 @@ Benodigde variabelen:
 ```env
 DATABASE_URL=postgresql://...
 DIRECT_URL=postgresql://...
-SESSION_SECRET=...
+SESSION_SECRET=***
+BLOB_READ_WRITE_TOKEN=***
 ```
 
 Deze staan lokaal in `.env.local` en in Vercel als project environment variables.
