@@ -1076,6 +1076,8 @@ export async function saveCourseBuilderLessonAction(formData: FormData) {
     description: getOptionalString(formData, "lessonDescription"),
     type: getString(formData, "lessonType"),
     content: getString(formData, "lessonContent"),
+    mediaUrl: getOptionalString(formData, "lessonMediaUrl"),
+    mediaLabel: getOptionalString(formData, "lessonMediaLabel"),
     order: getString(formData, "lessonOrder"),
     estimatedMinutes: getString(formData, "lessonEstimatedMinutes"),
     isRequired: formData.get("lessonIsRequired") === "on",

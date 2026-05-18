@@ -1,26 +1,38 @@
 export type LessonMediaBlock =
   | { type: "text"; text: string }
   | { type: "video"; src: string }
-  | { type: "image"; src: string };
+  | { type: "image"; src: string }
+  | { type: "document"; src: string; label: string };
 
 export type LessonMedia = {
   text: string;
   videos: string[];
   images: string[];
+  documents: string[];
   blocks: LessonMediaBlock[];
 };
 
-const mediaPathPattern = /\/lms\/[^\s)]+\.(?:mp4|png|jpg|jpeg|webp)/gi;
-const mediaReferenceLinePattern = /^\s*(?:[-•]\s*)?(?:Video:\s*)?\/lms\/[^\s)]+\.(?:mp4|png|jpg|jpeg|webp)\s*$/i;
+const mediaPathPattern = /(?:https?:\/\/[^\s)]+|\/lms\/[^\s)]+)\.(?:mp4|png|jpg|jpeg|webp|pdf|doc|docx|ppt|pptx|xls|xlsx)/gi;
+const mediaReferenceLinePattern = /^\s*(?:[-•]\s*)?(?:(?:[A-Za-zÀ-ÿ\d][^:]{0,80}):\s*)?(?:https?:\/\/[^\s)]+|\/lms\/[^\s)]+)\.(?:mp4|png|jpg|jpeg|webp|pdf|doc|docx|ppt|pptx|xls|xlsx)\s*$/i;
 const mediaIntroLinePattern = /^\s*(?:Afbeeldingen bij deze les|Media bij deze les|Video bij deze les|Bekijk de video bij deze module)\s*:?\s*$/i;
+const documentExtensionPattern = /\.(pdf|doc|docx|ppt|pptx|xls|xlsx)$/i;
 
 function normalizeText(text: string) {
   return text.replace(/\n{3,}/g, "\n\n").trim();
 }
 
-function toMediaBlock(path: string): LessonMediaBlock {
+function labelFromLine(line: string) {
+  const label = line.replace(/^\s*[-•]\s*/, "").match(/^([^:]{2,80}):\s*(?:https?:\/\/|\/lms\/)/i)?.[1]?.trim();
+  return label || "Document bij deze les";
+}
+
+function toMediaBlock(path: string, line = ""): LessonMediaBlock {
   if (path.toLowerCase().endsWith(".mp4")) {
     return { type: "video", src: path };
+  }
+
+  if (documentExtensionPattern.test(path)) {
+    return { type: "document", src: path, label: labelFromLine(line) };
   }
 
   return { type: "image", src: path };
@@ -30,6 +42,7 @@ export function extractLessonMedia(content: string): LessonMedia {
   const mediaPaths = Array.from(new Set(content.match(mediaPathPattern) ?? []));
   const videos = mediaPaths.filter((path) => path.toLowerCase().endsWith(".mp4"));
   const images = mediaPaths.filter((path) => /\.(png|jpg|jpeg|webp)$/i.test(path));
+  const documents = mediaPaths.filter((path) => documentExtensionPattern.test(path));
   const blocks: LessonMediaBlock[] = [];
   const textLines: string[] = [];
   let pendingTextLines: string[] = [];
@@ -58,7 +71,7 @@ export function extractLessonMedia(content: string): LessonMedia {
 
     const lineWithoutMedia = normalizeText(
       lineMediaPaths.reduce((cleanedLine, mediaPath) => cleanedLine.replace(mediaPath, ""), line)
-        .replace(/^\s*(?:[-•]\s*)?(?:Video:\s*)?\s*$/i, "")
+        .replace(/^\s*(?:[-•]\s*)?(?:[A-Za-zÀ-ÿ\d][^:]{0,80}:\s*)?\s*$/i, "")
     );
 
     if (lineWithoutMedia && !mediaReferenceLinePattern.test(line)) {
@@ -68,7 +81,7 @@ export function extractLessonMedia(content: string): LessonMedia {
 
     flushTextBlock();
     for (const mediaPath of lineMediaPaths) {
-      blocks.push(toMediaBlock(mediaPath));
+      blocks.push(toMediaBlock(mediaPath, line));
     }
   }
 
@@ -81,5 +94,5 @@ export function extractLessonMedia(content: string): LessonMedia {
       .join("\n")
   );
 
-  return { text, videos, images, blocks };
+  return { text, videos, images, documents, blocks };
 }

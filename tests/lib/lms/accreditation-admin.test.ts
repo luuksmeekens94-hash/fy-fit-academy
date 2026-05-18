@@ -98,7 +98,9 @@ test("parseLessonBuilderInput validates adminproof lesson form values", () => {
       title: "Video: intake observeren",
       description: "Bekijk de intake en noteer klinische signalen.",
       type: "VIDEO",
-      content: "/lms/intake.mp4",
+      content: "Bekijk eerst de video en noteer klinische signalen.",
+      mediaUrl: "/lms/intake.mp4",
+      mediaLabel: "Intakevideo",
       order: "2",
       estimatedMinutes: "18",
       isRequired: "on",
@@ -107,7 +109,7 @@ test("parseLessonBuilderInput validates adminproof lesson form values", () => {
       title: "Video: intake observeren",
       description: "Bekijk de intake en noteer klinische signalen.",
       type: "VIDEO",
-      content: "/lms/intake.mp4",
+      content: "Bekijk eerst de video en noteer klinische signalen.\n\nIntakevideo: /lms/intake.mp4",
       order: 2,
       estimatedMinutes: 18,
       isRequired: true,
@@ -115,7 +117,7 @@ test("parseLessonBuilderInput validates adminproof lesson form values", () => {
   );
 
   assert.throws(
-    () => parseLessonBuilderInput({ title: "Te kort", type: "VIDEO", content: "", order: "1", estimatedMinutes: "5" }),
+    () => parseLessonBuilderInput({ title: "Te kort", type: "VIDEO", content: "", mediaUrl: "", order: "1", estimatedMinutes: "5" }),
     /Video- of documentlessen hebben een link of beschrijving nodig/,
   );
 });

@@ -74,12 +74,15 @@ function parseWorkForms(value: string | undefined) {
 }
 
 const LESSON_TYPES = ["TEXT", "VIDEO", "DOCUMENT", "CASE", "REFLECTION", "ASSESSMENT"] as const satisfies LessonType[];
+const LESSON_MEDIA_URL_PATTERN = /^(?:https?:\/\/[^\s]+|\/lms\/[^\s]+)\.(?:mp4|png|jpg|jpeg|webp|pdf|doc|docx|ppt|pptx|xls|xlsx)$/i;
 
 export type LessonBuilderInput = {
   title?: string | null;
   description?: string | null;
   type?: string | null;
   content?: string | null;
+  mediaUrl?: string | null;
+  mediaLabel?: string | null;
   order?: string | number | null;
   estimatedMinutes?: string | number | null;
   isRequired?: string | boolean | null;
@@ -94,6 +97,32 @@ export type ParsedLessonBuilderInput = {
   estimatedMinutes: number;
   isRequired: boolean;
 };
+
+function composeLessonContentWithMedia(content: string, mediaUrl?: string | null, mediaLabel?: string | null) {
+  const normalizedContent = content.trim();
+  const normalizedMediaUrl = optionalString(String(mediaUrl ?? ""));
+
+  if (!normalizedMediaUrl) {
+    return normalizedContent;
+  }
+
+  if (!LESSON_MEDIA_URL_PATTERN.test(normalizedMediaUrl)) {
+    throw new Error("Mediabron moet een geldige https:// of /lms/ link zijn naar video, afbeelding of document.");
+  }
+
+  const label = optionalString(String(mediaLabel ?? "")) ?? "Media";
+  const mediaLine = `${label}: ${normalizedMediaUrl}`;
+
+  if (!normalizedContent) {
+    return mediaLine;
+  }
+
+  if (normalizedContent.includes(normalizedMediaUrl)) {
+    return normalizedContent;
+  }
+
+  return `${normalizedContent}\n\n${mediaLine}`;
+}
 
 function normalizeSlugPart(value: string) {
   return value
@@ -126,7 +155,7 @@ export function buildLessonSlug(title: string, existingSlugs: readonly string[])
 export function parseLessonBuilderInput(input: LessonBuilderInput): ParsedLessonBuilderInput {
   const title = optionalString(String(input.title ?? ""));
   const description = optionalString(String(input.description ?? ""));
-  const content = String(input.content ?? "").trim();
+  const content = composeLessonContentWithMedia(String(input.content ?? ""), input.mediaUrl, input.mediaLabel);
   const type = String(input.type ?? "TEXT").trim().toUpperCase() as LessonType;
   const order = parsePositiveInt(String(input.order ?? ""), "Lesvolgorde moet een positief getal zijn.");
   const estimatedMinutes = parsePositiveInt(

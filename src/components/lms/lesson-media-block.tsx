@@ -24,6 +24,23 @@ function MediaImage({ src }: { src: string }) {
   );
 }
 
+function MediaDocument({ src, label }: { src: string; label: string }) {
+  return (
+    <a
+      href={src}
+      target="_blank"
+      rel="noreferrer"
+      className="my-5 flex items-center justify-between gap-4 rounded-[22px] border border-[var(--border)] bg-white px-5 py-4 text-sm font-semibold text-[var(--foreground)] shadow-[0_18px_50px_-44px_rgba(35,27,18,0.7)] transition hover:-translate-y-0.5 hover:border-[var(--teal)]"
+    >
+      <span className="flex min-w-0 flex-col gap-1">
+        <span className="text-[0.72rem] uppercase tracking-[0.18em] text-[var(--teal)]">Document</span>
+        <span className="truncate">{label}</span>
+      </span>
+      <span className="shrink-0 rounded-full bg-[var(--sage-soft)] px-3 py-1 text-xs text-slate-700">Openen</span>
+    </a>
+  );
+}
+
 function looksLikeHeading(text: string) {
   const trimmed = text.trim();
   return trimmed.length <= 96 && headingPattern.test(trimmed);
@@ -82,6 +99,10 @@ export function LessonMediaBlock({ media }: LessonMediaBlockProps) {
 
         if (block.type === "image") {
           return <MediaImage key={`${block.src}-${index}`} src={block.src} />;
+        }
+
+        if (block.type === "document") {
+          return <MediaDocument key={`${block.src}-${index}`} src={block.src} label={block.label} />;
         }
 
         return <LessonText key={`text-${index}`} text={block.text} />;

@@ -32,6 +32,7 @@ import {
   exportPeOnlinePresenceCsv,
   type ParticipantCompletionReport,
 } from "@/lib/lms/participant-report";
+import { extractLessonMedia } from "@/lib/lms/lesson-media";
 import type { CourseDetail } from "@/lib/lms/types";
 
 
@@ -123,8 +124,19 @@ function buildDataDownloadHref(content: string, mimeType: string) {
   return `data:${mimeType};charset=utf-8,${encodeURIComponent(content)}`;
 }
 
-function formatQuestionOptionsForInput(options: NonNullable<CourseDetail["activeVersion"]>["assessments"][number]["questions"][number]["options"]) {
+function formatQuestionOptionsForInput(options: { label: string; isCorrect: boolean }[]) {
   return options.map((option) => `${option.label}||${option.isCorrect ? "true" : "false"}`).join("\n");
+}
+
+function formatLessonMediaSummary(content?: string | null) {
+  const media = extractLessonMedia(content ?? "");
+  const parts = [
+    media.videos.length ? `${media.videos.length} video${media.videos.length === 1 ? "" : "'s"}` : null,
+    media.documents.length ? `${media.documents.length} document${media.documents.length === 1 ? "" : "en"}` : null,
+    media.images.length ? `${media.images.length} afbeelding${media.images.length === 1 ? "" : "en"}` : null,
+  ].filter(Boolean);
+
+  return parts.length ? parts.join(" • ") : "geen media gekoppeld";
 }
 
 function formatQuestionType(type: string) {
@@ -1093,8 +1105,16 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
                             <input name="lessonOrder" type="number" defaultValue={lesson.order} className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" required />
                             <input name="lessonEstimatedMinutes" type="number" defaultValue={lesson.estimatedMinutes} className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" required />
                           </div>
+                          <div className="flex flex-wrap gap-2 text-[0.7rem] font-semibold text-slate-700">
+                            <span className="rounded-full bg-[var(--sand)] px-3 py-1">Media: {formatLessonMediaSummary(lesson.content)}</span>
+                          </div>
                           <input name="lessonDescription" defaultValue={lesson.description ?? ""} placeholder="Omschrijving" className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" />
-                          <textarea name="lessonContent" defaultValue={lesson.content ?? ""} rows={3} className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" required />
+                          <div className="grid gap-2 lg:grid-cols-[0.8fr_1.2fr]">
+                            <input name="lessonMediaLabel" placeholder="Mediatitel, bv. Video module 1" className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" />
+                            <input name="lessonMediaUrl" placeholder="https://... of /lms/... mp4/pdf/png" className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" />
+                          </div>
+                          <p className="text-[0.68rem] leading-5 text-[var(--ink-soft)]">Nieuwe mediabron wordt netjes aan de lesinhoud toegevoegd en in de les als video, afbeelding of documentkaart getoond.</p>
+                          <textarea name="lessonContent" defaultValue={lesson.content ?? ""} rows={3} placeholder="Lesinhoud. Ruwe mediaregels worden straks als nette blokken weergegeven." className="rounded-2xl border border-[var(--border)] px-3 py-2 text-xs" required />
                           <label className="flex items-center gap-2 text-xs font-medium text-slate-900">
                             <input type="checkbox" name="lessonIsRequired" defaultChecked={lesson.isRequired} className="h-4 w-4" />
                             Telt mee voor afronding/studielast
@@ -1122,7 +1142,12 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
                       <input name="lessonEstimatedMinutes" type="number" placeholder="Min." className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" required />
                     </div>
                     <input name="lessonDescription" placeholder="Korte omschrijving" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
-                    <textarea name="lessonContent" rows={4} placeholder="Tekst, instructie of media/document-link" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" required />
+                    <div className="grid gap-3 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--sage-soft)]/40 p-3 lg:grid-cols-[0.75fr_1.25fr]">
+                      <input name="lessonMediaLabel" placeholder="Mediatitel, bv. Video module 1" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                      <input name="lessonMediaUrl" placeholder="Media/document URL: https://... of /lms/... mp4/pdf/png" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                      <p className="lg:col-span-2 text-xs leading-5 text-[var(--ink-soft)]">Voor nu registreer je een bestaande videolink/documentlink. De deelnemer ziet daarna een nette videospeler, afbeelding of documentkaart in plaats van een ruwe URL.</p>
+                    </div>
+                    <textarea name="lessonContent" rows={4} placeholder="Tekst of instructie. Voeg hierboven eventueel één mediabron toe." className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" required />
                     <label className="flex items-center gap-2 text-sm font-medium text-slate-900">
                       <input type="checkbox" name="lessonIsRequired" defaultChecked className="h-4 w-4" />
                       Telt mee voor afronding/studielast
