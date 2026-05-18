@@ -226,18 +226,39 @@ export type LessonProgressInfo = {
 
 // ─── Assessment ───────────────────────────────────────────────────────────────
 
+export type AssessmentQuestionSummary = {
+  id: string;
+  type: QuestionType;
+  prompt: string;
+  explanation: string | null;
+  order: number;
+  points: number;
+  objectiveIds: string[];
+  options: AssessmentQuestionOptionSummary[];
+};
+
+export type AssessmentQuestionOptionSummary = {
+  id: string;
+  label: string;
+  isCorrect: boolean;
+  order: number;
+};
+
 export type AssessmentSummary = {
   id: string;
   lessonId: string | null;
   title: string;
+  description: string | null;
   passPercentage: number;
   maxAttempts: number;
+  timeLimitMinutes: number | null;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   questionCount: number;
   allQuestionsLinkedToObjectives: boolean;
   coveredObjectiveIds: string[];
   isRequiredForCompletion: boolean;
+  questions: AssessmentQuestionSummary[];
 };
 
 export type AssessmentDetail = {

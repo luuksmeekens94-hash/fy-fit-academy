@@ -1,10 +1,12 @@
 import {
   applyStandardEvaluationTemplateAction,
+  deleteAssessmentQuestionAction,
   deleteCourseBuilderModuleAction,
   duplicateCourseBuilderModuleAction,
   moveCourseBuilderModuleAction,
   publishCourseAccreditationReadyAction,
-  saveAssessmentAccreditationRulesAction,
+  saveAssessmentBuilderAction,
+  saveAssessmentQuestionAction,
   saveCourseAccreditationMetadataAction,
   saveCourseAccreditationStructureAction,
   saveCourseBuilderLessonAction,
@@ -119,6 +121,39 @@ function formatWorkForm(value: string) {
 
 function buildDataDownloadHref(content: string, mimeType: string) {
   return `data:${mimeType};charset=utf-8,${encodeURIComponent(content)}`;
+}
+
+function formatQuestionOptionsForInput(options: NonNullable<CourseDetail["activeVersion"]>["assessments"][number]["questions"][number]["options"]) {
+  return options.map((option) => `${option.label}||${option.isCorrect ? "true" : "false"}`).join("\n");
+}
+
+function formatQuestionType(type: string) {
+  const labels: Record<string, string> = {
+    MULTIPLE_CHOICE: "Single choice",
+    MULTIPLE_RESPONSE: "Multiple response",
+    TRUE_FALSE: "Waar/onwaar",
+    OPEN_TEXT: "Open tekst",
+  };
+
+  return labels[type] ?? type;
+}
+
+function getLessonTitle(lessons: NonNullable<CourseDetail["activeVersion"]>["lessons"], lessonId: string | null) {
+  if (!lessonId) {
+    return "Niet gekoppeld aan een toetsles";
+  }
+
+  return lessons.find((lesson) => lesson.id === lessonId)?.title ?? "Onbekende les";
+}
+
+function formatAssessmentObjectiveCodes(
+  objectives: NonNullable<CourseDetail["activeVersion"]>["objectives"],
+  objectiveIds: string[],
+) {
+  return objectiveIds
+    .map((objectiveId) => objectives.find((objective) => objective.id === objectiveId)?.code)
+    .filter(Boolean)
+    .join(", ");
 }
 
 function formatObjectiveCoverage(course: CourseDetail, assessment: CourseDetail["activeVersion"] extends null ? never : NonNullable<CourseDetail["activeVersion"]>["assessments"][number]) {
@@ -712,6 +747,39 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
 
         <div className="rounded-[28px] bg-[var(--teal-soft)] p-5">
           <h3 className="text-lg font-semibold text-slate-950">Toetsing en evaluatie</h3>
+          {mode === "beheer" ? (
+            <form action={saveAssessmentBuilderAction} className="mt-4 rounded-2xl border border-[var(--teal)]/20 bg-white p-4">
+              <input type="hidden" name="courseId" value={course.id} />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">Nieuwe toets/toetsbank toevoegen</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--ink-soft)]">Koppel bij voorkeur aan een toetsles. Norm staat standaard op 70%, max. 3 pogingen.</p>
+                </div>
+                <StatusBadge label="Kwaliteitshuis norm" tone="success" />
+              </div>
+              <div className="mt-4 grid gap-3 lg:grid-cols-[1.2fr_0.8fr_0.5fr_0.5fr]">
+                <input name="assessmentTitle" placeholder="Toetstitel" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" required />
+                <select name="assessmentLessonId" defaultValue="__none" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm">
+                  <option value="__none">Geen toetsles koppelen</option>
+                  {lessons.filter((lesson) => lesson.type === "ASSESSMENT").map((lesson) => (
+                    <option key={lesson.id} value={lesson.id}>{lesson.title}</option>
+                  ))}
+                </select>
+                <input name="passPercentage" type="number" defaultValue={70} min={1} max={100} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                <input name="maxAttempts" type="number" defaultValue={3} min={1} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+              </div>
+              <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_0.4fr]">
+                <textarea name="assessmentDescription" placeholder="Korte instructie voor deelnemer/reviewer" rows={2} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                <input name="timeLimitMinutes" type="number" placeholder="Tijdslimiet min. optioneel" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+              </div>
+              <div className="mt-3 grid gap-2 md:grid-cols-3">
+                <label className="flex items-center gap-3 text-sm font-medium text-slate-900"><input type="checkbox" name="shuffleQuestions" defaultChecked className="h-4 w-4" /> Vragen randomiseren</label>
+                <label className="flex items-center gap-3 text-sm font-medium text-slate-900"><input type="checkbox" name="shuffleOptions" defaultChecked className="h-4 w-4" /> Antwoorden randomiseren</label>
+                <label className="flex items-center gap-3 text-sm font-medium text-slate-900"><input type="checkbox" name="isRequiredForCompletion" defaultChecked className="h-4 w-4" /> Vereist voor certificaat</label>
+              </div>
+              <button type="submit" className="mt-4 rounded-full bg-[var(--teal)] px-5 py-3 text-sm font-semibold text-white">Toets toevoegen</button>
+            </form>
+          ) : null}
           <div className="mt-4 rounded-2xl border border-[var(--teal)]/20 bg-white/80 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm font-semibold text-slate-950">Toetsblueprint: leerdoelen × modules</p>
@@ -740,31 +808,128 @@ export function AccreditationPanel({ course, mode = "beheer", completionReport =
           <div className="mt-4 space-y-3">
             {assessments.map((assessment) => (
               <div key={assessment.id} className="rounded-2xl bg-white/85 p-4 text-sm leading-6 text-[var(--ink-soft)]">
-                <p className="font-semibold text-slate-950">{assessment.title}</p>
-                <p>{assessment.questionCount} vragen • {assessment.passPercentage}% norm • max. {assessment.maxAttempts} pogingen • antwoorden randomiseren: {assessment.shuffleOptions ? "ja" : "nee"}</p>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-950">{assessment.title}</p>
+                    <p>{assessment.questionCount} vragen • {assessment.passPercentage}% norm • max. {assessment.maxAttempts} pogingen • antwoorden randomiseren: {assessment.shuffleOptions ? "ja" : "nee"}</p>
+                    <p className="text-xs leading-5">Gekoppelde toetsles: {getLessonTitle(lessons, assessment.lessonId)}</p>
+                  </div>
+                  <StatusBadge label={assessment.allQuestionsLinkedToObjectives ? "leerdoeldekking compleet" : "leerdoelen missen"} tone={assessment.allQuestionsLinkedToObjectives ? "success" : "warning"} />
+                </div>
                 {mode === "beheer" ? (
-                  <form action={saveAssessmentAccreditationRulesAction} className="mt-4 grid gap-3 rounded-2xl border border-[var(--border)] bg-white p-4">
+                  <form action={saveAssessmentBuilderAction} className="mt-4 grid gap-3 rounded-2xl border border-[var(--border)] bg-white p-4">
                     <input type="hidden" name="courseId" value={course.id} />
                     <input type="hidden" name="assessmentId" value={assessment.id} />
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <input name="passPercentage" type="number" defaultValue={assessment.passPercentage} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
-                      <input name="maxAttempts" type="number" defaultValue={assessment.maxAttempts} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                    <div className="grid gap-3 lg:grid-cols-[1fr_0.8fr_0.35fr_0.35fr]">
+                      <input name="assessmentTitle" defaultValue={assessment.title} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                      <select name="assessmentLessonId" defaultValue={assessment.lessonId ?? "__none"} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm">
+                        <option value="__none">Geen toetsles koppelen</option>
+                        {lessons.filter((lesson) => lesson.type === "ASSESSMENT").map((lesson) => (
+                          <option key={lesson.id} value={lesson.id}>{lesson.title}</option>
+                        ))}
+                      </select>
+                      <input name="passPercentage" type="number" min={1} max={100} defaultValue={assessment.passPercentage} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                      <input name="maxAttempts" type="number" min={1} defaultValue={assessment.maxAttempts} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
                     </div>
-                    <label className="flex items-center gap-3 text-sm font-medium text-slate-900">
-                      <input type="checkbox" name="shuffleQuestions" defaultChecked={assessment.shuffleQuestions} className="h-4 w-4" />
-                      Vragen randomiseren
-                    </label>
-                    <label className="flex items-center gap-3 text-sm font-medium text-slate-900">
-                      <input type="checkbox" name="shuffleOptions" defaultChecked={assessment.shuffleOptions} className="h-4 w-4" />
-                      Antwoordvolgorde randomiseren
-                    </label>
-                    <label className="flex items-center gap-3 text-sm font-medium text-slate-900">
-                      <input type="checkbox" name="isRequiredForCompletion" defaultChecked={assessment.isRequiredForCompletion} className="h-4 w-4" />
-                      Vereist voor certificaat
-                    </label>
-                    <button type="submit" className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white">Toetsnormen opslaan</button>
+                    <div className="grid gap-3 lg:grid-cols-[1fr_0.35fr]">
+                      <textarea name="assessmentDescription" defaultValue={assessment.description ?? ""} rows={2} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                      <input name="timeLimitMinutes" type="number" defaultValue={assessment.timeLimitMinutes ?? ""} placeholder="Tijdslimiet" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                    </div>
+                    <div className="grid gap-2 md:grid-cols-3">
+                      <label className="flex items-center gap-3 text-sm font-medium text-slate-900"><input type="checkbox" name="shuffleQuestions" defaultChecked={assessment.shuffleQuestions} className="h-4 w-4" /> Vragen randomiseren</label>
+                      <label className="flex items-center gap-3 text-sm font-medium text-slate-900"><input type="checkbox" name="shuffleOptions" defaultChecked={assessment.shuffleOptions} className="h-4 w-4" /> Antwoorden randomiseren</label>
+                      <label className="flex items-center gap-3 text-sm font-medium text-slate-900"><input type="checkbox" name="isRequiredForCompletion" defaultChecked={assessment.isRequiredForCompletion} className="h-4 w-4" /> Vereist voor certificaat</label>
+                    </div>
+                    <button type="submit" className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white">Toets opslaan</button>
                   </form>
                 ) : null}
+                <div className="mt-4 space-y-3">
+                  {assessment.questions.map((question) => (
+                    <div key={question.id} className="rounded-2xl border border-[var(--border)] bg-white p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-slate-950">Vraag {question.order}: {question.prompt}</p>
+                          <p className="text-xs leading-5">{formatQuestionType(question.type)} • {question.points} punt(en) • leerdoelen: {formatAssessmentObjectiveCodes(objectives, question.objectiveIds) || "niet gekoppeld"}</p>
+                          {question.explanation ? <p className="mt-1 text-xs leading-5">Feedback/uitleg: {question.explanation}</p> : null}
+                        </div>
+                        <StatusBadge label={question.objectiveIds.length ? "gekoppeld" : "mist leerdoel"} tone={question.objectiveIds.length ? "success" : "warning"} />
+                      </div>
+                      {question.options.length ? (
+                        <ol className="mt-3 list-decimal space-y-1 pl-5 text-xs leading-5">
+                          {question.options.map((option) => (
+                            <li key={option.id} className={option.isCorrect ? "font-semibold text-[var(--brand-deep)]" : ""}>{option.label}{option.isCorrect ? " ✓" : ""}</li>
+                          ))}
+                        </ol>
+                      ) : null}
+                      {mode === "beheer" ? (
+                        <div className="mt-4 grid gap-3">
+                          <form action={saveAssessmentQuestionAction} className="grid gap-3 rounded-2xl border border-[var(--border)] bg-[var(--brand-soft)] p-4">
+                            <input type="hidden" name="courseId" value={course.id} />
+                            <input type="hidden" name="assessmentId" value={assessment.id} />
+                            <input type="hidden" name="questionId" value={question.id} />
+                            <div className="grid gap-3 lg:grid-cols-[1fr_0.5fr_0.25fr_0.25fr]">
+                              <input name="questionPrompt" defaultValue={question.prompt} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                              <select name="questionType" defaultValue={question.type} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm">
+                                <option value="MULTIPLE_CHOICE">Single choice</option>
+                                <option value="MULTIPLE_RESPONSE">Multiple response</option>
+                                <option value="TRUE_FALSE">Waar/onwaar</option>
+                                <option value="OPEN_TEXT">Open tekst</option>
+                              </select>
+                              <input name="questionOrder" type="number" min={1} defaultValue={question.order} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                              <input name="questionPoints" type="number" min={1} defaultValue={question.points} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                            </div>
+                            <textarea name="questionExplanation" defaultValue={question.explanation ?? ""} rows={2} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                            <textarea name="questionOptions" defaultValue={formatQuestionOptionsForInput(question.options)} rows={3} className="rounded-2xl border border-[var(--border)] px-4 py-3 font-mono text-xs" />
+                            <div className="grid gap-2 md:grid-cols-2">
+                              {objectives.map((objective) => (
+                                <label key={objective.id} className="flex items-center gap-2 text-xs text-slate-900">
+                                  <input type="checkbox" name="objectiveIds" value={objective.id} defaultChecked={question.objectiveIds.includes(objective.id)} />
+                                  {objective.code} — {objective.text}
+                                </label>
+                              ))}
+                            </div>
+                            <button type="submit" className="rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-semibold text-white">Vraag opslaan</button>
+                          </form>
+                          <form action={deleteAssessmentQuestionAction}>
+                            <input type="hidden" name="courseId" value={course.id} />
+                            <input type="hidden" name="assessmentId" value={assessment.id} />
+                            <input type="hidden" name="questionId" value={question.id} />
+                            <button type="submit" className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700">Vraag verwijderen</button>
+                          </form>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                  {mode === "beheer" ? (
+                    <form action={saveAssessmentQuestionAction} className="grid gap-3 rounded-2xl border border-dashed border-[var(--teal)] bg-white p-4">
+                      <input type="hidden" name="courseId" value={course.id} />
+                      <input type="hidden" name="assessmentId" value={assessment.id} />
+                      <p className="text-sm font-semibold text-slate-950">Nieuwe toetsvraag toevoegen</p>
+                      <div className="grid gap-3 lg:grid-cols-[1fr_0.5fr_0.25fr_0.25fr]">
+                        <input name="questionPrompt" placeholder="Vraagtekst" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" required />
+                        <select name="questionType" defaultValue="MULTIPLE_CHOICE" className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm">
+                          <option value="MULTIPLE_CHOICE">Single choice</option>
+                          <option value="MULTIPLE_RESPONSE">Multiple response</option>
+                          <option value="TRUE_FALSE">Waar/onwaar</option>
+                          <option value="OPEN_TEXT">Open tekst</option>
+                        </select>
+                        <input name="questionOrder" type="number" min={1} defaultValue={assessment.questions.length + 1} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                        <input name="questionPoints" type="number" min={1} defaultValue={1} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                      </div>
+                      <textarea name="questionExplanation" placeholder="Feedback/uitleg na beantwoorden" rows={2} className="rounded-2xl border border-[var(--border)] px-4 py-3 text-sm" />
+                      <textarea name="questionOptions" placeholder="Antwoord A||true&#10;Antwoord B||false&#10;Antwoord C||false" rows={3} className="rounded-2xl border border-[var(--border)] px-4 py-3 font-mono text-xs" />
+                      <div className="grid gap-2 md:grid-cols-2">
+                        {objectives.map((objective) => (
+                          <label key={objective.id} className="flex items-center gap-2 text-xs text-slate-900">
+                            <input type="checkbox" name="objectiveIds" value={objective.id} />
+                            {objective.code} — {objective.text}
+                          </label>
+                        ))}
+                      </div>
+                      <button type="submit" className="rounded-full bg-[var(--teal)] px-4 py-2 text-xs font-semibold text-white">Vraag toevoegen</button>
+                    </form>
+                  ) : null}
+                </div>
               </div>
             ))}
             {evaluationForms.map((form) => (

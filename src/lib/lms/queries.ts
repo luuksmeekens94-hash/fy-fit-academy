@@ -9,6 +9,7 @@ import type { ParticipantCompletionReport } from "./participant-report";
 import type { WorkForm } from "@prisma/client";
 import type {
   AssessmentDetail,
+  AssessmentQuestionSummary,
   AttemptResult,
   CertificateSummary,
   CourseDetail,
@@ -210,12 +211,23 @@ function mapCourseDetail(course: {
       id: string;
       lessonId: string | null;
       title: string;
+      description: string | null;
       passPercentage: number;
       maxAttempts: number;
+      timeLimitMinutes: number | null;
       shuffleQuestions: boolean;
       shuffleOptions: boolean;
       isRequiredForCompletion: boolean;
-      questions: { objectives: { learningObjectiveId: string }[] }[];
+      questions: {
+        id: string;
+        type: AssessmentQuestionSummary["type"];
+        prompt: string;
+        explanation: string | null;
+        order: number;
+        points: number;
+        objectives: { learningObjectiveId: string }[];
+        options: { id: string; label: string; isCorrect: boolean; order: number }[];
+      }[];
     }[];
   }[];
 }): CourseDetail {
@@ -334,8 +346,10 @@ function mapCourseDetail(course: {
             id: assessment.id,
             lessonId: assessment.lessonId,
             title: assessment.title,
+            description: assessment.description,
             passPercentage: assessment.passPercentage,
             maxAttempts: assessment.maxAttempts,
+            timeLimitMinutes: assessment.timeLimitMinutes,
             shuffleQuestions: assessment.shuffleQuestions,
             shuffleOptions: assessment.shuffleOptions,
             questionCount: assessment.questions.length,
@@ -346,6 +360,25 @@ function mapCourseDetail(course: {
               new Set(assessment.questions.flatMap((question) => question.objectives.map((objective) => objective.learningObjectiveId)))
             ),
             isRequiredForCompletion: assessment.isRequiredForCompletion,
+            questions: [...assessment.questions]
+              .sort((left, right) => left.order - right.order)
+              .map((question) => ({
+                id: question.id,
+                type: question.type,
+                prompt: question.prompt,
+                explanation: question.explanation,
+                order: question.order,
+                points: question.points,
+                objectiveIds: question.objectives.map((objective) => objective.learningObjectiveId),
+                options: [...question.options]
+                  .sort((left, right) => left.order - right.order)
+                  .map((option) => ({
+                    id: option.id,
+                    label: option.label,
+                    isCorrect: option.isCorrect,
+                    order: option.order,
+                  })),
+              })),
           })),
         }
       : null,
@@ -376,7 +409,7 @@ async function getCourseDetailRecord(where: { id?: string; slug?: string }) {
               lessons: { orderBy: { order: "asc" } },
               assessments: {
                 include: {
-                  questions: { include: { objectives: true } },
+                  questions: { include: { objectives: true, options: true } },
                 },
               },
             },
@@ -405,7 +438,7 @@ async function getCourseDetailRecord(where: { id?: string; slug?: string }) {
               lessons: { orderBy: { order: "asc" } },
               assessments: {
                 include: {
-                  questions: { include: { objectives: true } },
+                  questions: { include: { objectives: true, options: true } },
                 },
               },
             },

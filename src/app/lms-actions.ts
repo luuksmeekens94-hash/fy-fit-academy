@@ -16,6 +16,7 @@ import {
   parseLessonBuilderInput,
   parseLiteratureReferencesInput,
   parseModulesInput,
+  parseQuestionBuilderInput,
   parseWorkFormsInput,
   reorderModulesAfterMove,
 } from "@/lib/lms/accreditation-admin";
@@ -1244,6 +1245,231 @@ export async function saveCourseAccreditationStructureAction(formData: FormData)
     await createCourseNotifications(courseId, "updated");
   }
   await revalidateLearningPaths({ courseId });
+}
+
+export async function saveAssessmentBuilderAction(formData: FormData) {
+  const user = await requireAccreditationManager();
+  const courseId = getString(formData, "courseId");
+  const assessmentId = getOptionalString(formData, "assessmentId");
+  const title = getString(formData, "assessmentTitle");
+  const description = getOptionalString(formData, "assessmentDescription");
+  const lessonId = getOptionalString(formData, "assessmentLessonId");
+  const passPercentage = getOptionalNumber(formData, "passPercentage") ?? 70;
+  const maxAttempts = getOptionalNumber(formData, "maxAttempts") ?? 3;
+  const timeLimitMinutes = getOptionalNumber(formData, "timeLimitMinutes");
+
+  assert(courseId, "Cursus ontbreekt.");
+  assert(title.length >= 3, "Toetstitel is te kort.");
+  assert(passPercentage >= 1 && passPercentage <= 100, "Slagingsnorm moet tussen 1 en 100 liggen.");
+  assert(maxAttempts > 0, "Maximum pogingen is verplicht.");
+
+  const { course, activeVersion } = await getActiveVersionForManagement(courseId);
+  const shouldNotifyCourseUpdate = course.status === "PUBLISHED";
+  const normalizedLessonId = lessonId && lessonId !== "__none" ? lessonId : null;
+  if (normalizedLessonId) {
+    assert(
+      activeVersion.lessons.some((lesson) => lesson.id === normalizedLessonId),
+      "Gekoppelde toetsles hoort niet bij deze cursusversie.",
+    );
+  }
+
+  if (assessmentId) {
+    const existingAssessment = await prisma.assessment.findUnique({ where: { id: assessmentId } });
+    assert(existingAssessment?.courseVersionId === activeVersion.id, "Toets hoort niet bij de actieve cursusversie.");
+  }
+
+  if (normalizedLessonId) {
+    const duplicateLessonAssessment = await prisma.assessment.findFirst({
+      where: {
+        courseVersionId: activeVersion.id,
+        lessonId: normalizedLessonId,
+        ...(assessmentId ? { id: { not: assessmentId } } : {}),
+      },
+    });
+    assert(!duplicateLessonAssessment, "Deze toetsles heeft al een gekoppelde toets.");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const assessment = assessmentId
+      ? await tx.assessment.update({
+          where: { id: assessmentId },
+          data: {
+            title,
+            description,
+            lessonId: normalizedLessonId,
+            passPercentage,
+            maxAttempts,
+            timeLimitMinutes,
+            shuffleQuestions: formData.get("shuffleQuestions") === "on",
+            shuffleOptions: formData.get("shuffleOptions") === "on",
+            isRequiredForCompletion: formData.get("isRequiredForCompletion") === "on",
+          },
+        })
+      : await tx.assessment.create({
+          data: {
+            courseVersionId: activeVersion.id,
+            title,
+            description,
+            lessonId: normalizedLessonId,
+            passPercentage,
+            maxAttempts,
+            timeLimitMinutes,
+            shuffleQuestions: formData.get("shuffleQuestions") === "on",
+            shuffleOptions: formData.get("shuffleOptions") === "on",
+            isRequiredForCompletion: formData.get("isRequiredForCompletion") === "on",
+          },
+        });
+
+    await tx.courseChangeLog.create({
+      data: {
+        courseId,
+        courseVersionId: activeVersion.id,
+        changedById: user.id,
+        changeType: assessmentId ? "ASSESSMENT_UPDATED" : "ASSESSMENT_CREATED",
+        summary: `${assessmentId ? "Toets bijgewerkt" : "Toets aangemaakt"}: ${assessment.title}.`,
+      },
+    });
+  });
+
+  if (shouldNotifyCourseUpdate) {
+    await createCourseNotifications(courseId, "updated");
+  }
+  await revalidateLearningPaths({ courseId, lessonId: normalizedLessonId ?? undefined });
+}
+
+export async function saveAssessmentQuestionAction(formData: FormData) {
+  const user = await requireAccreditationManager();
+  const courseId = getString(formData, "courseId");
+  const assessmentId = getString(formData, "assessmentId");
+  const questionId = getOptionalString(formData, "questionId");
+
+  assert(courseId, "Cursus ontbreekt.");
+  assert(assessmentId, "Toets ontbreekt.");
+
+  const { course, activeVersion } = await getActiveVersionForManagement(courseId);
+  const shouldNotifyCourseUpdate = course.status === "PUBLISHED";
+  const assessment = await prisma.assessment.findUnique({ where: { id: assessmentId } });
+  assert(assessment?.courseVersionId === activeVersion.id, "Toets hoort niet bij de actieve cursusversie.");
+
+  const questionInput = parseQuestionBuilderInput({
+    prompt: getString(formData, "questionPrompt"),
+    type: getString(formData, "questionType"),
+    explanation: getOptionalString(formData, "questionExplanation"),
+    order: getString(formData, "questionOrder"),
+    points: getString(formData, "questionPoints"),
+    options: getOptionalString(formData, "questionOptions"),
+    objectiveIds: formData.getAll("objectiveIds").map((value) => String(value)),
+  });
+
+  const objectiveIds = new Set(activeVersion.objectives.map((objective) => objective.id));
+  assert(questionInput.objectiveIds.every((objectiveId) => objectiveIds.has(objectiveId)), "Een gekoppeld leerdoel hoort niet bij deze cursusversie.");
+
+  if (questionId) {
+    const existingQuestion = await prisma.question.findUnique({ where: { id: questionId } });
+    assert(existingQuestion?.assessmentId === assessmentId, "Vraag hoort niet bij deze toets.");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const question = questionId
+      ? await tx.question.update({
+          where: { id: questionId },
+          data: {
+            type: questionInput.type,
+            prompt: questionInput.prompt,
+            explanation: questionInput.explanation,
+            order: questionInput.order,
+            points: questionInput.points,
+          },
+        })
+      : await tx.question.create({
+          data: {
+            assessmentId,
+            type: questionInput.type,
+            prompt: questionInput.prompt,
+            explanation: questionInput.explanation,
+            order: questionInput.order,
+            points: questionInput.points,
+          },
+        });
+
+    await tx.questionLearningObjective.deleteMany({ where: { questionId: question.id } });
+    await tx.questionOption.deleteMany({ where: { questionId: question.id } });
+
+    if (questionInput.options.length) {
+      await tx.questionOption.createMany({
+        data: questionInput.options.map((option) => ({
+          questionId: question.id,
+          label: option.label,
+          isCorrect: option.isCorrect,
+          order: option.order,
+        })),
+      });
+    }
+
+    await tx.questionLearningObjective.createMany({
+      data: questionInput.objectiveIds.map((learningObjectiveId) => ({
+        questionId: question.id,
+        learningObjectiveId,
+      })),
+      skipDuplicates: true,
+    });
+
+    await tx.courseChangeLog.create({
+      data: {
+        courseId,
+        courseVersionId: activeVersion.id,
+        changedById: user.id,
+        changeType: questionId ? "QUESTION_UPDATED" : "QUESTION_CREATED",
+        summary: `${questionId ? "Toetsvraag bijgewerkt" : "Toetsvraag toegevoegd"}: ${assessment.title}.`,
+      },
+    });
+  });
+
+  if (shouldNotifyCourseUpdate) {
+    await createCourseNotifications(courseId, "updated");
+  }
+  await revalidateLearningPaths({ courseId, lessonId: assessment.lessonId ?? undefined });
+}
+
+export async function deleteAssessmentQuestionAction(formData: FormData) {
+  const user = await requireAccreditationManager();
+  const courseId = getString(formData, "courseId");
+  const assessmentId = getString(formData, "assessmentId");
+  const questionId = getString(formData, "questionId");
+
+  assert(courseId, "Cursus ontbreekt.");
+  assert(assessmentId, "Toets ontbreekt.");
+  assert(questionId, "Vraag ontbreekt.");
+
+  const { course, activeVersion } = await getActiveVersionForManagement(courseId);
+  const shouldNotifyCourseUpdate = course.status === "PUBLISHED";
+  const question = await prisma.question.findUnique({
+    where: { id: questionId },
+    include: { assessment: true, answers: true },
+  });
+  assert(question?.assessmentId === assessmentId, "Vraag hoort niet bij deze toets.");
+  assert(question.assessment.courseVersionId === activeVersion.id, "Toetsvraag hoort niet bij de actieve cursusversie.");
+  assert(question.answers.length === 0, "Deze vraag heeft al antwoorden/pogingen. Archiveer of maak een nieuwe toetsversie in plaats van verwijderen.");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.questionLearningObjective.deleteMany({ where: { questionId } });
+    await tx.questionOption.deleteMany({ where: { questionId } });
+    await tx.question.delete({ where: { id: questionId } });
+    await tx.courseChangeLog.create({
+      data: {
+        courseId,
+        courseVersionId: activeVersion.id,
+        changedById: user.id,
+        changeType: "QUESTION_DELETED",
+        summary: `Toetsvraag verwijderd uit ${question.assessment.title}.`,
+      },
+    });
+  });
+
+  if (shouldNotifyCourseUpdate) {
+    await createCourseNotifications(courseId, "updated");
+  }
+  await revalidateLearningPaths({ courseId, lessonId: question.assessment.lessonId ?? undefined });
 }
 
 export async function saveAssessmentAccreditationRulesAction(formData: FormData) {

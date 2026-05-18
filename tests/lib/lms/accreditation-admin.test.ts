@@ -10,6 +10,7 @@ import {
   parseLiteratureReferencesInput,
   parseModulesInput,
   parseLessonBuilderInput,
+  parseQuestionBuilderInput,
   reorderModulesAfterMove,
 } from "../../../src/lib/lms/accreditation-admin.ts";
 
@@ -137,4 +138,41 @@ test("module builder helpers calculate next order and safe move order", () => {
     { id: "m3", order: 2 },
     { id: "m2", order: 3 },
   ]);
+});
+
+test("parseQuestionBuilderInput validates answer options and objective links", () => {
+  assert.deepEqual(
+    parseQuestionBuilderInput({
+      prompt: "Welke signalen passen bij gele vlaggen?",
+      type: "MULTIPLE_RESPONSE",
+      explanation: "Gele vlaggen zijn psychosociale herstelbelemmerende factoren.",
+      order: "3",
+      points: "2",
+      options: "Pijneducatie overslaan||false\nCatastroferen||true\nAngst voor bewegen||true",
+      objectiveIds: ["lo1", "lo2"],
+    }),
+    {
+      prompt: "Welke signalen passen bij gele vlaggen?",
+      type: "MULTIPLE_RESPONSE",
+      explanation: "Gele vlaggen zijn psychosociale herstelbelemmerende factoren.",
+      order: 3,
+      points: 2,
+      options: [
+        { label: "Pijneducatie overslaan", isCorrect: false, order: 1 },
+        { label: "Catastroferen", isCorrect: true, order: 2 },
+        { label: "Angst voor bewegen", isCorrect: true, order: 3 },
+      ],
+      objectiveIds: ["lo1", "lo2"],
+    },
+  );
+
+  assert.throws(
+    () => parseQuestionBuilderInput({ prompt: "Welke optie is juist in deze casus?", options: "A||false\nB||false", objectiveIds: ["lo1"] }),
+    /Minimaal één antwoordoptie moet juist zijn/,
+  );
+
+  assert.throws(
+    () => parseQuestionBuilderInput({ prompt: "Open reflectievraag over toepassing in de praktijk", type: "OPEN_TEXT", objectiveIds: [] }),
+    /Koppel minimaal één leerdoel/,
+  );
 });

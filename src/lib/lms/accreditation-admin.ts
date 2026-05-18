@@ -1,4 +1,4 @@
-import type { LessonType, WorkForm } from "@prisma/client";
+import type { LessonType, QuestionType, WorkForm } from "@prisma/client";
 
 import type { CourseAuthorExpert } from "./types";
 
@@ -158,6 +158,105 @@ export function parseLessonBuilderInput(input: LessonBuilderInput): ParsedLesson
     order,
     estimatedMinutes,
     isRequired: input.isRequired === true || input.isRequired === "on" || input.isRequired === "true",
+  };
+}
+
+export type QuestionBuilderOptionInput = {
+  label: string;
+  isCorrect: boolean;
+  order: number;
+};
+
+export type QuestionBuilderInput = {
+  prompt?: string | null;
+  type?: string | null;
+  explanation?: string | null;
+  order?: string | number | null;
+  points?: string | number | null;
+  options?: string | null;
+  objectiveIds?: string[] | null;
+};
+
+export type ParsedQuestionBuilderInput = {
+  prompt: string;
+  type: QuestionType;
+  explanation: string | null;
+  order: number;
+  points: number;
+  options: QuestionBuilderOptionInput[];
+  objectiveIds: string[];
+};
+
+const QUESTION_TYPES = ["MULTIPLE_CHOICE", "MULTIPLE_RESPONSE", "TRUE_FALSE", "OPEN_TEXT"] as const satisfies QuestionType[];
+
+function parseBooleanLabel(value: string | undefined) {
+  return ["true", "waar", "juist", "correct", "1", "yes", "ja", "on"].includes((value ?? "").trim().toLowerCase());
+}
+
+function parseQuestionOptions(value: string | null | undefined) {
+  return splitRows(value ?? "").map((row, index) => {
+    const [label, isCorrect] = splitParts(row);
+    if (!label) {
+      throw new Error(`Antwoordoptie ${index + 1} heeft tekst nodig.`);
+    }
+
+    return {
+      label,
+      isCorrect: parseBooleanLabel(isCorrect),
+      order: index + 1,
+    };
+  });
+}
+
+export function parseQuestionBuilderInput(input: QuestionBuilderInput): ParsedQuestionBuilderInput {
+  const prompt = optionalString(String(input.prompt ?? ""));
+  const type = String(input.type ?? "MULTIPLE_CHOICE").trim().toUpperCase() as QuestionType;
+  const explanation = optionalString(String(input.explanation ?? ""));
+  const order = parsePositiveInt(String(input.order ?? "1"), "Vraagvolgorde moet een positief getal zijn.");
+  const points = parsePositiveInt(String(input.points ?? "1"), "Punten moeten een positief getal zijn.");
+  const objectiveIds = Array.from(new Set((input.objectiveIds ?? []).map((id) => id.trim()).filter(Boolean)));
+
+  if (!prompt || prompt.length < 10) {
+    throw new Error("Vraagtekst is te kort.");
+  }
+
+  if (!QUESTION_TYPES.includes(type)) {
+    throw new Error(`Onbekend vraagtype: ${input.type}`);
+  }
+
+  if (!objectiveIds.length) {
+    throw new Error("Koppel minimaal één leerdoel aan deze toetsvraag.");
+  }
+
+  const options = type === "OPEN_TEXT" ? [] : parseQuestionOptions(input.options);
+
+  if (type !== "OPEN_TEXT") {
+    if (options.length < 2) {
+      throw new Error("Meerkeuzevragen hebben minimaal twee antwoordopties nodig.");
+    }
+
+    const correctOptionCount = options.filter((option) => option.isCorrect).length;
+    if (correctOptionCount < 1) {
+      throw new Error("Minimaal één antwoordoptie moet juist zijn.");
+    }
+
+    if (type === "MULTIPLE_CHOICE" && correctOptionCount !== 1) {
+      throw new Error("Een single-choice vraag heeft precies één juist antwoord nodig.");
+    }
+
+    if (type === "TRUE_FALSE" && options.length !== 2) {
+      throw new Error("Waar/onwaar-vragen hebben precies twee antwoordopties nodig.");
+    }
+  }
+
+  return {
+    prompt,
+    type,
+    explanation,
+    order,
+    points,
+    options,
+    objectiveIds,
   };
 }
 
