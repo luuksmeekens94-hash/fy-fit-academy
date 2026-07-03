@@ -85,6 +85,33 @@ function getReviewerFigureItems(moduleNumber: string | null) {
   return figureMap[moduleNumber] ?? [];
 }
 
+function getReviewerAssignment(moduleNumber: string | null) {
+  const assignmentMap: Record<string, { title: string; prompt: string }> = {
+    "1": {
+      title: "Community opdracht – Casusreflectie Module 1",
+      prompt:
+        "Lees onderstaande casus en beantwoord de reflectievragen. Deel je antwoorden in de community.\n\nCasus: Je ziet een 28-jarige recreatieve hardloopster met drie maanden toenemende pijn rondom haar rechter knieschijf. Een eerdere behandelaar vertelde haar dat ze “last heeft van kraakbeenslijtage” en adviseerde te stoppen met hardlopen. Ze durft nauwelijks meer te bewegen. De MRI toont geen structurele afwijkingen.\n\n1. Welk verouderd verklaringsmodel hanteerde de eerdere behandelaar? Hoe zou jij dit reframen vanuit het homeostasemodel?\n2. Beschrijf aan de hand van het Envelope of Function-model wat er waarschijnlijk aan de hand is.\n3. Formuleer een concrete educatieve boodschap die aansluit bij “niets stuk, wel van slag”.",
+    },
+    "2": {
+      title: "Community opdracht – Praktijkopdracht Module 2",
+      prompt:
+        "Voer de DSDT en de LLROM-test uit bij een collega of patiënt. Noteer de uitkomsten en beantwoord:\n\n1. Wat is de MPFH en hoe verhoudt deze zich tot de referentiewaarden (39-45°)?\n2. In welke subgroep (1, 2 of 3) deel je de proefpersoon in op basis van de LLROM?\n3. Waar voelde de proefpersoon spanning of pijn? Hoe richt je op basis daarvan de behandeling?",
+    },
+    "3": {
+      title: "Community opdracht – Behandelplan Module 3",
+      prompt:
+        "Stel een behandelplan op voor een eigen PFP-patiënt volgens het 3-fasenmodel:\n\n1. Welke educatieve boodschap geef je en hoe sluit deze aan bij het homeostasemodel?\n2. Welke LLROM-interventies voer je uit in fase 1 en in welke subgroep valt je patiënt?\n3. Beschrijf je belastingsmanagement: welke VAS-grenzen hanteer je en hoe stel je bij?\n4. Wanneer zou je de diagnose heroverwegen?",
+    },
+    "4": {
+      title: "Community opdracht – Jouw klinische samenvatting",
+      prompt:
+        "Kijk terug op een recente patiënt met anterieure kniepijn en beantwoord:\n\n- Welke verouderde overtuiging over PFP kwam jij of je patiënt tegen?\n- Welke objectieve maat (DSDT/LLROM) zou jij voortaan standaard inzetten?\n- Hoe zou jij in maximaal drie zinnen uitleggen: “niets stuk, wel van slag”?",
+    },
+  };
+
+  return moduleNumber ? assignmentMap[moduleNumber] ?? null : null;
+}
+
 export default async function LmsLessonDetailPage({ params, searchParams }: LmsLessonDetailPageProps) {
   const user = await requireUser();
   const { courseId, lessonId } = await params;
@@ -174,6 +201,7 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
     ? course.activeVersion.literature.filter((reference) => reference.moduleId === moduleId)
     : [];
   const reviewerFigures = isReviewerModuleFlow ? getReviewerFigureItems(moduleNumber) : [];
+  const reviewerAssignment = getReviewerAssignment(moduleNumber);
   const stepLabel = isReviewerModuleFlow
     ? reviewerStep === "theorie"
       ? "Theorie"
@@ -269,6 +297,8 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
           moduleTitle={lesson.title}
           questions={moduleQuestions}
           phase={reviewerStep === "opdracht" ? "assignment" : "questions"}
+          assignmentTitle={reviewerAssignment?.title ?? `Opdracht bij ${lesson.title}`}
+          assignmentPrompt={reviewerAssignment?.prompt ?? "Noteer kort hoe je de theorie uit deze module zou toepassen in een patiëntcasus."}
           theoryHref={theoryHref}
           assignmentHref={assignmentHref}
           questionsHref={questionsHref}

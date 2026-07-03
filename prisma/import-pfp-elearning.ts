@@ -124,7 +124,7 @@ const questions = [
   {
     "module": 1,
     "prompt": "Welk mechanisme verklaart waarschijnlijk de pijn die PFP-patiënten ervaren bij langdurig zitten of belasting?",
-    "explanation": "Onderzoek toont aan dat verhoogde intra-ossale druk direct ernstige pijn veroorzaakt. B is onjuist: wrijving past in het verouderde mechanische model. C is onjuist: PFP gaat niet gepaard met structurele botafbraak. D is onjuist: er is geen bewijs voor synoviatekort als primaire oorzaak. Community opdracht – Casusreflectie Module 1 Lees onderstaande casus en beantwoord de reflectievragen. Deel je antwoorden in de community. Casus: Je ziet een 28-jarige recreatieve hardloopster met drie maanden toenemende pijn rondom haar rechter knieschijf. Een eerdere behandelaar vertelde haar dat ze “last heeft van kraakbeenslijtage” en adviseerde te stoppen met hardlopen. Ze durft nauwelijks meer te bewegen. De MRI toont geen structurele afwijkingen. 1. Welk verouderd verklaringsmodel hanteerde de eerdere behandelaar? Hoe zou jij dit reframen vanuit het homeostasemodel? 2. Beschrijf aan de hand van het Envelope of Function-model wat er waarschijnlijk aan de hand is. 3. Formuleer een concrete educatieve boodschap die aansluit bij “niets stuk, wel van slag”.",
+    "explanation": "Onderzoek toont aan dat verhoogde intra-ossale druk direct ernstige pijn veroorzaakt. B is onjuist: wrijving past in het verouderde mechanische model. C is onjuist: PFP gaat niet gepaard met structurele botafbraak. D is onjuist: er is geen bewijs voor synoviatekort als primaire oorzaak.",
     "options": [
       {
         "label": "Veneuze stuwing en verhoogde intra-ossale druk in de patella, waardoor drukgevoelige zenuwen in het bot worden geprikkeld.",
@@ -239,7 +239,7 @@ const questions = [
   {
     "module": 2,
     "prompt": "Een patiënt scoort bij de LLROM knieflexietest 98° (norm ≥126°) en ervaart hierbij herkenbare kniepijn. In welke subgroep valt deze patiënt?",
-    "explanation": "Beperkte knieflexie met herkenbare pijn in de anterieure keten wijst op subgroep 1. A geldt bij patellofemorale mobiliteitsbeperkingen. B geldt bij de laterale keten. D is onjuist: 98° ligt ruim onder de norm. Community opdracht – Praktijkopdracht Module 2 Voer de DSDT en de LLROM-test uit bij een collega of patiënt. Noteer de uitkomsten en beantwoord: 1. Wat is de MPFH en hoe verhoudt deze zich tot de referentiewaarden (39-45°)? 2. In welke subgroep (1, 2 of 3) deel je de proefpersoon in op basis van de LLROM? 3. Waar voelde de proefpersoon spanning of pijn? Hoe richt je op basis daarvan de behandeling?",
+    "explanation": "Beperkte knieflexie met herkenbare pijn in de anterieure keten wijst op subgroep 1. A geldt bij patellofemorale mobiliteitsbeperkingen. B geldt bij de laterale keten. D is onjuist: 98° ligt ruim onder de norm.",
     "options": [
       {
         "label": "Subgroep 2: start met mediale en caudale glides om de patella te mobiliseren.",
@@ -354,7 +354,7 @@ const questions = [
   {
     "module": 3,
     "prompt": "Een patiënt traint 8 weken. De MPFH is verbeterd van 42° naar 65°, maar de AKPS-score is slechts 4 punten gestegen. Welke conclusie is het meest passend?",
-    "explanation": "Na 6 weken adviseert de richtlijn aanvullende conservatieve middelen bij onvoldoende subjectief resultaat. A is onjuist: de AKPS is een gevalideerde maat. C is onjuist: beeldvorming pas na 12 weken. D is onjuist: intensiever trainen kan de homeostase verstoren. Community opdracht – Behandelplan Module 3 Stel een behandelplan op voor een eigen PFP-patiënt volgens het 3-fasenmodel: 1. Welke educatieve boodschap geef je en hoe sluit deze aan bij het homeostasemodel? 2. Welke LLROM-interventies voer je uit in fase 1 en in welke subgroep valt je patiënt? 3. Beschrijf je belastingsmanagement: welke VAS-grenzen hanteer je en hoe stel je bij? 4. Wanneer zou je de diagnose heroverwegen?",
+    "explanation": "Na 6 weken adviseert de richtlijn aanvullende conservatieve middelen bij onvoldoende subjectief resultaat. A is onjuist: de AKPS is een gevalideerde maat. C is onjuist: beeldvorming pas na 12 weken. D is onjuist: intensiever trainen kan de homeostase verstoren.",
     "options": [
       {
         "label": "De behandeling is succesvol: de MPFH-verbetering is voldoende en de AKPS is niet relevant.",
@@ -469,7 +469,7 @@ const questions = [
   {
     "module": 4,
     "prompt": "Welke boodschap sluit het beste aan bij moderne educatie rondom PFP?",
-    "explanation": "Dit sluit aan bij het homeostasemodel en ondersteunt graded exposure. Community opdracht – Jouw klinische samenvatting Kijk terug op een recente patiënt met anterieure kniepijn en beantwoord: - Welke verouderde overtuiging over PFP kwam jij of je patiënt tegen? - Welke objectieve maat (DSDT/LLROM) zou jij voortaan standaard inzetten? - Hoe zou jij in maximaal drie zinnen uitleggen: “niets stuk, wel van slag”?",
+    "explanation": "Dit sluit aan bij het homeostasemodel en ondersteunt graded exposure.",
     "options": [
       {
         "label": "“Je kraakbeen is beschadigd, maar we kunnen de schade beperken.”",

@@ -11,6 +11,8 @@ type ReviewerModulePracticeProps = {
   moduleTitle: string;
   questions: AssessmentDetail["questions"];
   phase: "assignment" | "questions";
+  assignmentTitle: string;
+  assignmentPrompt: string;
   theoryHref: string;
   assignmentHref: string;
   questionsHref: string;
@@ -45,6 +47,8 @@ export function ReviewerModulePractice({
   moduleTitle,
   questions,
   phase,
+  assignmentTitle,
+  assignmentPrompt,
   theoryHref,
   assignmentHref,
   questionsHref,
@@ -116,10 +120,10 @@ export function ReviewerModulePractice({
             <StatusBadge label="Stap 2" tone="brand" />
             <StatusBadge label="praktijkopdracht" tone="neutral" />
           </div>
-          <h3 className="mt-4 text-2xl font-semibold text-slate-950">Opdracht bij {moduleTitle}</h3>
-          <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
-            Noteer kort hoe je de theorie uit deze module zou toepassen in een patiëntcasus. Denk aan uitleg, klinisch redeneren, onderzoek of behandelkeuze — afhankelijk van de module.
-          </p>
+          <h3 className="mt-4 text-2xl font-semibold text-slate-950">{assignmentTitle || `Opdracht bij ${moduleTitle}`}</h3>
+          <div className="mt-3 whitespace-pre-line rounded-[24px] border border-[var(--border)] bg-[var(--brand-wash)]/45 px-4 py-4 text-sm leading-7 text-[var(--ink-soft)]">
+            {assignmentPrompt}
+          </div>
           <textarea
             value={assignmentText}
             onChange={(event) => setAssignmentText(event.target.value)}
