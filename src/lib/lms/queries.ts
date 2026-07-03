@@ -721,6 +721,7 @@ export const getAssessmentDetail = cache(
         id: question.id,
         type: question.type,
         prompt: question.prompt,
+        explanation: question.explanation,
         order: question.order,
         points: question.points,
         objectiveCodes: question.objectives.map(
@@ -729,6 +730,7 @@ export const getAssessmentDetail = cache(
         options: question.options.map((option) => ({
           id: option.id,
           label: option.label,
+          isCorrect: option.isCorrect,
           order: option.order,
         })),
       })),

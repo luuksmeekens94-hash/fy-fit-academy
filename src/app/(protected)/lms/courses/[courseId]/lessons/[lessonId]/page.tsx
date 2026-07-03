@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { completeLessonAction } from "@/app/lms-actions";
 import { AssessmentRunner } from "@/components/lms/assessment-runner";
 import { LessonMediaBlock } from "@/components/lms/lesson-media-block";
+import { ReviewerAssessmentPreview } from "@/components/lms/reviewer-assessment-preview";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
@@ -95,105 +96,103 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
   }
 
   const lessonMedia = extractLessonMedia(lesson.content);
+  const lessonIndex = course.activeVersion.lessons.findIndex((entry) => entry.id === lesson.id);
+  const previousLesson = lessonIndex > 0 ? course.activeVersion.lessons[lessonIndex - 1] : null;
+  const nextLesson = lessonIndex >= 0 ? course.activeVersion.lessons[lessonIndex + 1] ?? null : null;
+  const isReviewer = user.role === "REVIEWER";
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow={`LMS les ${lesson.order}`}
+        eyebrow={isReviewer ? `Stap ${lesson.order}` : `LMS les ${lesson.order}`}
         title={lesson.title}
-        description={lesson.description ?? "Deze les hoort bij het eerste LMS-traject van de Academy."}
+        description={lesson.description ?? "Doorloop dit onderdeel rustig en ga daarna verder naar de volgende stap."}
       />
 
       {lesson.type !== "ASSESSMENT" ? (
-        <section className="card-surface overflow-hidden rounded-[34px] p-0">
-          <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border)] bg-[linear-gradient(135deg,rgba(246,234,215,0.5),rgba(255,253,250,0.9))] px-6 py-5">
-            <StatusBadge label={lesson.type} tone="neutral" />
-            <StatusBadge
-              label={enrollment ? progress?.status ?? "NOT_STARTED" : previewState.label}
-              tone={enrollment ? getProgressTone(progress?.status ?? "NOT_STARTED") : "brand"}
-            />
-            {lesson.isRequired ? <StatusBadge label="Need to know" tone="brand" /> : null}
-            <StatusBadge label={`${lesson.estimatedMinutes} minuten`} tone="neutral" />
+        <section className="overflow-hidden rounded-[38px] border border-[var(--border)] bg-white shadow-[0_28px_80px_-44px_rgba(35,27,18,0.55)]">
+          <div className="academy-gradient-panel px-6 py-6 sm:px-8 lg:px-10">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
+                  {lesson.type === "VIDEO" ? "Module met video" : lesson.type === "DOCUMENT" ? "Ondersteunende documenten" : "E-learning module"}
+                </p>
+                <h2 className="display-font mt-2 text-3xl font-semibold leading-tight text-slate-950 lg:text-4xl">
+                  {lesson.title}
+                </h2>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {isReviewer ? <StatusBadge label="review zonder opslag" tone="success" /> : null}
+                {!isReviewer ? <StatusBadge label={enrollment ? progress?.status ?? "NOT_STARTED" : previewState.label} tone={enrollment ? getProgressTone(progress?.status ?? "NOT_STARTED") : "brand"} /> : null}
+              </div>
+            </div>
           </div>
 
-          <div className="mx-3 mb-3 mt-3 rounded-[30px] border border-[var(--border)] bg-white/88 px-5 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:px-7 lg:px-9 lg:py-8">
+          <div className="bg-white px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
             <LessonMediaBlock media={lessonMedia} />
           </div>
         </section>
       ) : null}
 
-      {previewState.isPreview ? (
-        <section className="rounded-[28px] border border-[var(--brand)] bg-[var(--brand-soft)] p-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <StatusBadge label={previewState.label} tone="brand" />
-            <StatusBadge label="read-only" tone="success" />
-          </div>
-          <p className="mt-3 text-sm leading-7 text-[var(--brand-deep)]">
-            Reviewer-preview actief: deze les kan volledig bekeken worden, maar knoppen voor voortgang, toetspogingen en resultaatopslag zijn uitgeschakeld om rapportages schoon te houden.
-          </p>
-        </section>
+      {lesson.type === "ASSESSMENT" && assessment && isReviewer ? (
+        <ReviewerAssessmentPreview assessment={assessment} />
       ) : null}
 
-      {lesson.type === "ASSESSMENT" && assessment && previewState.canMutateProgress ? (
+      {lesson.type === "ASSESSMENT" && assessment && !isReviewer && previewState.canMutateProgress ? (
         <AssessmentRunner courseId={courseId} assessment={assessment} initialAttempts={attempts} />
       ) : null}
 
-      {lesson.type === "ASSESSMENT" && assessment && !previewState.canMutateProgress ? (
-        <section className="card-surface rounded-[32px] p-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <StatusBadge label="Toetspreview" tone="brand" />
-            <StatusBadge label={`${assessment.questions.length} vragen`} tone="neutral" />
-            <StatusBadge label={`${assessment.passPercentage}% norm`} tone="neutral" />
-            <StatusBadge label={`max. ${assessment.maxAttempts} pogingen`} tone="neutral" />
-          </div>
-          <h2 className="mt-4 text-xl font-semibold text-slate-950">Toetsopbouw voor reviewer</h2>
-          <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
-            Deze preview toont de toetsinstellingen zonder poging, score of voortgangsdata aan te maken.
-          </p>
-        </section>
+      {lesson.type === "ASSESSMENT" && assessment && !isReviewer && !previewState.canMutateProgress ? (
+        <ReviewerAssessmentPreview assessment={assessment} />
       ) : null}
 
-      <section className="flex flex-wrap items-center gap-3">
-        <Link
-          href={`/lms/courses/${courseId}`}
-          className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
-        >
-          Terug naar cursus
-        </Link>
+      <section className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href={`/lms/courses/${courseId}`}
+            className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
+          >
+            Overzicht
+          </Link>
+          {previousLesson ? (
+            <Link
+              href={`/lms/courses/${courseId}/lessons/${previousLesson.id}`}
+              className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
+            >
+              Vorige stap
+            </Link>
+          ) : null}
+        </div>
 
-        {lesson.type !== "ASSESSMENT" && previewState.canMutateProgress ? (
-          progress?.status === "COMPLETED" ? (
-            <span className="inline-flex rounded-full bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-100">
-              Les afgerond
-            </span>
-          ) : (
-            <form action={completeLessonAction}>
-              <input type="hidden" name="courseId" value={courseId} />
-              <input type="hidden" name="lessonId" value={lesson.id} />
-              <button
-                type="submit"
-                className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
-              >
-                Markeer les als afgerond
-              </button>
-            </form>
-          )
-        ) : null}
+        <div className="flex flex-wrap items-center gap-3">
+          {lesson.type !== "ASSESSMENT" && !isReviewer && previewState.canMutateProgress ? (
+            progress?.status === "COMPLETED" ? (
+              <span className="inline-flex rounded-full bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-100">
+                Les afgerond
+              </span>
+            ) : (
+              <form action={completeLessonAction}>
+                <input type="hidden" name="courseId" value={courseId} />
+                <input type="hidden" name="lessonId" value={lesson.id} />
+                <button
+                  type="submit"
+                  className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
+                >
+                  Markeer les als afgerond
+                </button>
+              </form>
+            )
+          ) : null}
 
-        {lesson.type === "ASSESSMENT" && previewState.canMutateProgress ? (
-          <span className="inline-flex rounded-full bg-[var(--brand-soft)] px-5 py-3 text-sm font-semibold text-[var(--brand-deep)] ring-1 ring-[var(--border)]">
-            Rond de toets af om deze les te voltooien
-          </span>
-        ) : null}
-      </section>
-
-      <section className="card-surface rounded-[32px] p-6">
-        <h2 className="text-xl font-semibold text-slate-950">Cursuscontext</h2>
-        <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
-          {enrollment
-            ? `Je voortgang in deze cursus staat momenteel op ${enrollment.progress}%. Doorloop de need-to-know lessen en rond daarna de toets af om het certificaat vrij te spelen.`
-            : "Previewmodus: je bekijkt de lesinhoud zonder voortgang, toetsresultaten of certificaatdata aan te maken."}
-        </p>
+          {nextLesson ? (
+            <Link
+              href={`/lms/courses/${courseId}/lessons/${nextLesson.id}`}
+              className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
+            >
+              Volgende stap
+            </Link>
+          ) : null}
+        </div>
       </section>
     </div>
   );

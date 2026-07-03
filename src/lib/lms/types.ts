@@ -281,6 +281,7 @@ export type QuestionDetail = {
   id: string;
   type: QuestionType;
   prompt: string;
+  explanation?: string | null;
   order: number;
   points: number;
   objectiveCodes: string[];
@@ -290,6 +291,7 @@ export type QuestionDetail = {
 export type QuestionOptionDetail = {
   id: string;
   label: string;
+  isCorrect?: boolean;
   order: number;
 };
 
