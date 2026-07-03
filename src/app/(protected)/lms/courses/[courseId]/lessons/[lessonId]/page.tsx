@@ -23,7 +23,10 @@ import {
 
 type LmsLessonDetailPageProps = {
   params: Promise<{ courseId: string; lessonId: string }>;
+  searchParams: Promise<{ stap?: string }>;
 };
+
+type ReviewerStep = "theorie" | "opdracht" | "toetsvragen";
 
 function getProgressTone(status: string) {
   if (status === "COMPLETED") {
@@ -37,9 +40,56 @@ function getProgressTone(status: string) {
   return "brand" as const;
 }
 
-export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPageProps) {
+function getReviewerStep(value: string | undefined): ReviewerStep {
+  if (value === "opdracht" || value === "toetsvragen") {
+    return value;
+  }
+
+  return "theorie";
+}
+
+function getModuleNumberFromLessonTitle(title: string) {
+  return title.match(/Module\s+(\d+)/i)?.[1] ?? null;
+}
+
+function getReviewerFigureItems(moduleNumber: string | null) {
+  if (!moduleNumber) {
+    return [];
+  }
+
+  const figureMap: Record<string, { src: string; caption: string }[]> = {
+    "1": [
+      {
+        src: "/lms/pfp/figures/module-1-figuur-1.png",
+        caption: "Figuur module 1: load, frequentie en de envelope of function als basis voor klinisch redeneren bij PFP.",
+      },
+    ],
+    "2": [
+      {
+        src: "/lms/pfp/figures/module-2-figuur-1.png",
+        caption: "Figuur module 2: visuele ondersteuning bij onderzoek en klinisch redeneren.",
+      },
+    ],
+    "3": [
+      {
+        src: "/lms/pfp/figures/module-3-figuur-1.png",
+        caption: "Figuur module 3: visuele ondersteuning bij behandeling en oefenopbouw.",
+      },
+      {
+        src: "/lms/pfp/figures/module-3-figuur-2.png",
+        caption: "Figuur module 3: aanvullende illustratie bij behandelprincipes en progressie.",
+      },
+    ],
+  };
+
+  return figureMap[moduleNumber] ?? [];
+}
+
+export default async function LmsLessonDetailPage({ params, searchParams }: LmsLessonDetailPageProps) {
   const user = await requireUser();
   const { courseId, lessonId } = await params;
+  const { stap } = await searchParams;
+  const reviewerStep = getReviewerStep(stap);
 
   const [course, enrollment, lesson] = await Promise.all([
     getCourseDetail(courseId),
@@ -98,8 +148,8 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
     notFound();
   }
 
-  const moduleNumberMatch = lesson.title.match(/Module\s+(\d+)/i);
-  const moduleQuestionPrefix = moduleNumberMatch ? `M${moduleNumberMatch[1]}-` : null;
+  const moduleNumber = getModuleNumberFromLessonTitle(lesson.title);
+  const moduleQuestionPrefix = moduleNumber ? `M${moduleNumber}-` : null;
   const moduleQuestions = moduleQuestionPrefix
     ? courseAssessment?.questions.filter((question) => question.objectiveCodes.some((code) => code.startsWith(moduleQuestionPrefix))) ?? []
     : [];
@@ -109,16 +159,74 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
   const previousLesson = lessonIndex > 0 ? course.activeVersion.lessons[lessonIndex - 1] : null;
   const nextLesson = lessonIndex >= 0 ? course.activeVersion.lessons[lessonIndex + 1] ?? null : null;
   const isReviewer = user.role === "REVIEWER";
+  const isReviewerModuleFlow = isReviewer && lesson.type !== "ASSESSMENT" && moduleQuestions.length > 0;
+  const lessonBaseHref = `/lms/courses/${courseId}/lessons/${lesson.id}`;
+  const theoryHref = lessonBaseHref;
+  const assignmentHref = `${lessonBaseHref}?stap=opdracht`;
+  const questionsHref = `${lessonBaseHref}?stap=toetsvragen`;
+  const courseHref = `/lms/courses/${courseId}`;
+  const lmsHref = "/lms";
+  const nextLessonHref = nextLesson ? `/lms/courses/${courseId}/lessons/${nextLesson.id}` : null;
+  const moduleId = moduleNumber
+    ? course.activeVersion.objectives.find((objective) => objective.code.startsWith(`M${moduleNumber}-`))?.moduleId ?? null
+    : null;
+  const moduleLiterature = moduleId
+    ? course.activeVersion.literature.filter((reference) => reference.moduleId === moduleId)
+    : [];
+  const reviewerFigures = isReviewerModuleFlow ? getReviewerFigureItems(moduleNumber) : [];
+  const stepLabel = isReviewerModuleFlow
+    ? reviewerStep === "theorie"
+      ? "Theorie"
+      : reviewerStep === "opdracht"
+        ? "Opdracht"
+        : "Toetsvragen"
+    : lesson.type === "ASSESSMENT"
+      ? "Eindtoets"
+      : "Onderdeel";
+  const progressValue = Math.round(
+    ((Math.max(lessonIndex, 0) + (isReviewerModuleFlow ? (reviewerStep === "theorie" ? 0.15 : reviewerStep === "opdracht" ? 0.55 : 0.9) : 1)) /
+      course.activeVersion.lessons.length) *
+      100,
+  );
 
   return (
     <div className="space-y-6">
+      {isReviewer ? (
+        <section className="sticky top-3 z-20 rounded-[28px] border border-[var(--border)] bg-white/92 p-4 shadow-[0_18px_60px_-44px_rgba(15,23,42,0.45)] backdrop-blur">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--brand-deep)]">Voortgang e-learning</p>
+              <p className="mt-1 text-sm font-semibold text-slate-950">
+                Stap {Math.max(lessonIndex, 0) + 1} van {course.activeVersion.lessons.length} · {stepLabel}
+              </p>
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-2 lg:max-w-xl">
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-[linear-gradient(90deg,var(--brand),var(--teal))] transition-all"
+                  style={{ width: `${progressValue}%` }}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Link href={courseHref} className="rounded-full border border-[var(--border)] bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
+                  Module-overzicht
+                </Link>
+                <Link href={lmsHref} className="rounded-full border border-[var(--border)] bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
+                  E-learning overzicht
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <PageHeader
-        eyebrow={isReviewer ? `Stap ${lesson.order}` : `LMS les ${lesson.order}`}
+        eyebrow={isReviewer ? `Stap ${lesson.order}${isReviewerModuleFlow ? ` · ${stepLabel}` : ""}` : `LMS les ${lesson.order}`}
         title={lesson.title}
         description={lesson.description ?? "Doorloop dit onderdeel rustig en ga daarna verder naar de volgende stap."}
       />
 
-      {lesson.type !== "ASSESSMENT" ? (
+      {lesson.type !== "ASSESSMENT" && (!isReviewerModuleFlow || reviewerStep === "theorie") ? (
         <section className="overflow-hidden rounded-[38px] border border-[var(--border)] bg-white shadow-[0_28px_80px_-44px_rgba(35,27,18,0.55)]">
           <div className="academy-gradient-panel px-6 py-6 sm:px-8 lg:px-10">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -138,13 +246,36 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
           </div>
 
           <div className="bg-white px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
-            <LessonMediaBlock media={lessonMedia} />
+            <LessonMediaBlock media={lessonMedia} figures={reviewerFigures} literature={moduleLiterature} />
           </div>
+
+          {isReviewerModuleFlow ? (
+            <div className="border-t border-[var(--border)] bg-[var(--brand-wash)]/45 px-5 py-5 sm:px-8 lg:px-12">
+              <div className="mx-auto flex max-w-[82ch] flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <p className="text-sm leading-6 text-[var(--ink-soft)]">
+                  Theorie gelezen? Ga dan door naar de opdracht op een aparte stap-pagina.
+                </p>
+                <Link href={assignmentHref} className="rounded-full bg-[var(--brand)] px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
+                  Door met opdracht
+                </Link>
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
-      {lesson.type !== "ASSESSMENT" && isReviewer && moduleQuestions.length > 0 ? (
-        <ReviewerModulePractice moduleTitle={lesson.title} questions={moduleQuestions} />
+      {isReviewerModuleFlow && reviewerStep !== "theorie" ? (
+        <ReviewerModulePractice
+          moduleTitle={lesson.title}
+          questions={moduleQuestions}
+          phase={reviewerStep === "opdracht" ? "assignment" : "questions"}
+          theoryHref={theoryHref}
+          assignmentHref={assignmentHref}
+          questionsHref={questionsHref}
+          nextHref={nextLessonHref}
+          courseHref={courseHref}
+          lmsHref={lmsHref}
+        />
       ) : null}
 
       {lesson.type === "ASSESSMENT" && assessment && isReviewer ? (
@@ -162,11 +293,35 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
       <section className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            href={`/lms/courses/${courseId}`}
+            href={courseHref}
             className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
           >
-            Overzicht
+            Module-overzicht
           </Link>
+          {isReviewer ? (
+            <Link
+              href={lmsHref}
+              className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
+            >
+              E-learning overzicht
+            </Link>
+          ) : null}
+          {isReviewerModuleFlow && reviewerStep !== "theorie" ? (
+            <Link
+              href={theoryHref}
+              className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
+            >
+              Theorie
+            </Link>
+          ) : null}
+          {isReviewerModuleFlow && reviewerStep === "toetsvragen" ? (
+            <Link
+              href={assignmentHref}
+              className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
+            >
+              Opdracht
+            </Link>
+          ) : null}
           {previousLesson ? (
             <Link
               href={`/lms/courses/${courseId}/lessons/${previousLesson.id}`}
@@ -197,12 +352,30 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
             )
           ) : null}
 
-          {nextLesson ? (
+          {isReviewerModuleFlow && reviewerStep === "theorie" ? (
             <Link
-              href={`/lms/courses/${courseId}/lessons/${nextLesson.id}`}
+              href={assignmentHref}
               className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
             >
-              Volgende stap
+              Door met opdracht
+            </Link>
+          ) : null}
+
+          {isReviewerModuleFlow && reviewerStep === "opdracht" ? (
+            <Link
+              href={questionsHref}
+              className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
+            >
+              Door met toetsvragen
+            </Link>
+          ) : null}
+
+          {nextLesson && (!isReviewerModuleFlow || reviewerStep === "toetsvragen") ? (
+            <Link
+              href={nextLessonHref ?? "#"}
+              className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
+            >
+              {isReviewer ? "Door naar volgende module" : "Volgende stap"}
             </Link>
           ) : null}
         </div>
