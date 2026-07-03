@@ -95,7 +95,6 @@ function ReviewerCourseFlow({ course }: { course: NonNullable<Awaited<ReturnType
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge label={lesson.type === "ASSESSMENT" ? "Toetsing" : lesson.type === "DOCUMENT" ? "Documenten" : lesson.type === "VIDEO" ? "Module + video" : "Module"} tone="neutral" />
-                  {lesson.estimatedMinutes > 0 ? <StatusBadge label={`${lesson.estimatedMinutes} min`} tone="neutral" /> : null}
                 </div>
                 <h3 className="mt-2 text-lg font-semibold text-slate-950">{lesson.title}</h3>
                 {lesson.description ? (
