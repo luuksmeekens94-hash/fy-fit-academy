@@ -5,6 +5,7 @@ import { completeLessonAction } from "@/app/lms-actions";
 import { AssessmentRunner } from "@/components/lms/assessment-runner";
 import { LessonMediaBlock } from "@/components/lms/lesson-media-block";
 import { ReviewerAssessmentPreview } from "@/components/lms/reviewer-assessment-preview";
+import { ReviewerModulePractice } from "@/components/lms/reviewer-module-practice";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
@@ -84,16 +85,24 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
     notFound();
   }
 
-  const [assessment, attempts] = assessmentSummary
-    ? await Promise.all([
-        getAssessmentDetail(assessmentSummary.id),
-        getMyAttempts(user.id, assessmentSummary.id),
-      ])
-    : [null, []];
+  const courseAssessmentSummary = course.activeVersion.assessments[0] ?? null;
+  const [assessment, attempts, courseAssessment] = await Promise.all([
+    assessmentSummary ? getAssessmentDetail(assessmentSummary.id) : Promise.resolve(null),
+    assessmentSummary ? getMyAttempts(user.id, assessmentSummary.id) : Promise.resolve([]),
+    courseAssessmentSummary && lesson.type !== "ASSESSMENT" && user.role === "REVIEWER"
+      ? getAssessmentDetail(courseAssessmentSummary.id)
+      : Promise.resolve(null),
+  ]);
 
   if (lesson.type === "ASSESSMENT" && !assessment) {
     notFound();
   }
+
+  const moduleNumberMatch = lesson.title.match(/Module\s+(\d+)/i);
+  const moduleQuestionPrefix = moduleNumberMatch ? `M${moduleNumberMatch[1]}-` : null;
+  const moduleQuestions = moduleQuestionPrefix
+    ? courseAssessment?.questions.filter((question) => question.objectiveCodes.some((code) => code.startsWith(moduleQuestionPrefix))) ?? []
+    : [];
 
   const lessonMedia = extractLessonMedia(lesson.content);
   const lessonIndex = course.activeVersion.lessons.findIndex((entry) => entry.id === lesson.id);
@@ -132,6 +141,10 @@ export default async function LmsLessonDetailPage({ params }: LmsLessonDetailPag
             <LessonMediaBlock media={lessonMedia} />
           </div>
         </section>
+      ) : null}
+
+      {lesson.type !== "ASSESSMENT" && isReviewer && moduleQuestions.length > 0 ? (
+        <ReviewerModulePractice moduleTitle={lesson.title} questions={moduleQuestions} />
       ) : null}
 
       {lesson.type === "ASSESSMENT" && assessment && isReviewer ? (
