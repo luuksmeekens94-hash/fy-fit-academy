@@ -26,6 +26,43 @@ export default async function LmsOverviewPage() {
     ? buildReviewerCoursePreviewSummary(reviewerCourses)
     : null;
 
+  if (user.role === "REVIEWER") {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Accreditatie-review"
+          title="E-learning reviewomgeving"
+          description="Open de e-learning en doorloop de modules in volgorde."
+        />
+
+        <section className="grid gap-4">
+          {reviewerPreviewSummary?.items.map((course) => (
+            <Link
+              key={course.id}
+              href={course.previewPath}
+              className="card-surface rounded-[32px] p-6 transition hover:-translate-y-0.5 hover:border-[var(--brand)]"
+            >
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
+                    Beschikbaar voor review
+                  </p>
+                  <h2 className="mt-2 text-2xl font-semibold text-slate-950">{course.title}</h2>
+                  <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
+                    Doorloop module voor module. Geen voortgang, toetsresultaten of certificaten worden opgeslagen.
+                  </p>
+                </div>
+                <span className="self-start rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white lg:self-center">
+                  Open e-learning
+                </span>
+              </div>
+            </Link>
+          ))}
+        </section>
+      </div>
+    );
+  }
+
   const completedCount = enrollments.filter((entry) => entry.status === "COMPLETED").length;
   const inProgressCount = enrollments.filter((entry) => entry.status === "IN_PROGRESS").length;
   const requiredCount = enrollments.filter((entry) => entry.assignmentType === "REQUIRED").length;

@@ -103,7 +103,7 @@ export function AppShell({ user, notificationCenter, children }: AppShellProps) 
 
         <div className="flex-1 py-6 lg:py-8">
           <main className="space-y-6">
-            <NotificationFeed center={notificationCenter} />
+            {user.role !== "REVIEWER" ? <NotificationFeed center={notificationCenter} /> : null}
             {children}
           </main>
         </div>

@@ -47,6 +47,72 @@ function formatDate(date: Date | null) {
   }).format(date);
 }
 
+
+function ReviewerCourseFlow({ course }: { course: NonNullable<Awaited<ReturnType<typeof getCourseDetail>>> }) {
+  const lessons = course.activeVersion?.lessons ?? [];
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Accreditatie-review"
+        title={course.title}
+        description="Doorloop de e-learning stap voor stap. Alles wat de reviewer nodig heeft staat in deze flow."
+      />
+
+      <section className="card-surface rounded-[32px] p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
+              Revieweromgeving
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-950">E-learning doorlopen</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--ink-soft)]">
+              Open de onderdelen in volgorde. De module-inhoud, video’s, toetsing, evaluatie en ondersteunende documenten zijn read-only zichtbaar; er wordt geen voortgang, score of certificaat aangemaakt.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-sm">
+            <span className="rounded-full bg-[var(--brand-soft)] px-3 py-1 font-semibold text-[var(--brand-deep)]">
+              {lessons.length} stappen
+            </span>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-700">
+              read-only
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        {lessons.map((lesson, index) => (
+          <Link
+            key={lesson.id}
+            href={`/lms/courses/${course.id}/lessons/${lesson.id}`}
+            className="card-surface flex flex-col gap-4 rounded-[28px] p-5 transition hover:-translate-y-0.5 hover:border-[var(--brand)] lg:flex-row lg:items-center lg:justify-between"
+          >
+            <div className="flex gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-sm font-semibold text-[var(--brand-deep)]">
+                {index + 1}
+              </span>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge label={lesson.type === "ASSESSMENT" ? "Toetsing" : lesson.type === "DOCUMENT" ? "Documenten" : lesson.type === "VIDEO" ? "Module + video" : "Module"} tone="neutral" />
+                  {lesson.estimatedMinutes > 0 ? <StatusBadge label={`${lesson.estimatedMinutes} min`} tone="neutral" /> : null}
+                </div>
+                <h3 className="mt-2 text-lg font-semibold text-slate-950">{lesson.title}</h3>
+                {lesson.description ? (
+                  <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">{lesson.description}</p>
+                ) : null}
+              </div>
+            </div>
+            <span className="self-start rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white lg:self-center">
+              Open
+            </span>
+          </Link>
+        ))}
+      </section>
+    </div>
+  );
+}
+
 export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPageProps) {
   const user = await requireUser();
   const { courseId } = await params;
@@ -63,6 +129,10 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
 
   if (user.role === "REVIEWER" && course.reviewerId !== user.id) {
     notFound();
+  }
+
+  if (user.role === "REVIEWER") {
+    return <ReviewerCourseFlow course={course} />;
   }
 
   const previewState = getReviewerPreviewMode(user.role, Boolean(enrollment));
