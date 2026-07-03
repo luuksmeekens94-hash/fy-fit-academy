@@ -20,7 +20,7 @@ export default async function LmsOverviewPage() {
   const isPreviewUser = user.role === "REVIEWER" || user.role === "BEHEERDER";
   const [enrollments, reviewerCourses] = await Promise.all([
     getMyEnrollments(user.id),
-    isPreviewUser ? getAllCourses() : Promise.resolve([]),
+    isPreviewUser ? getAllCourses(user.role === "REVIEWER" ? user.id : undefined) : Promise.resolve([]),
   ]);
   const reviewerPreviewSummary = isPreviewUser
     ? buildReviewerCoursePreviewSummary(reviewerCourses)

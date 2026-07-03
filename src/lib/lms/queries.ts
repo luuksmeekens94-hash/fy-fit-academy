@@ -451,8 +451,9 @@ async function getCourseDetailRecord(where: { id?: string; slug?: string }) {
 
 // ─── Cursusoverzicht (admin) ───────────────────────────────────────────────────
 
-export const getAllCourses = cache(async (): Promise<CourseSummary[]> => {
+export const getAllCourses = cache(async (reviewerId?: string): Promise<CourseSummary[]> => {
   const courses = await prisma.course.findMany({
+    where: reviewerId ? { reviewerId } : undefined,
     include: {
       author: true,
       versions: { where: { isActive: true } },

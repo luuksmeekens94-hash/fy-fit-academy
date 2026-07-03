@@ -61,6 +61,10 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
     notFound();
   }
 
+  if (user.role === "REVIEWER" && course.reviewerId !== user.id) {
+    notFound();
+  }
+
   const previewState = getReviewerPreviewMode(user.role, Boolean(enrollment));
 
   if (!enrollment && !previewState.canViewWithoutEnrollment) {
