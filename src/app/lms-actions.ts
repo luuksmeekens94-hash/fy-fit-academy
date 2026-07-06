@@ -519,6 +519,95 @@ export async function completeLessonAction(formData: FormData) {
   await revalidateLearningPaths({ courseId, lessonId });
 }
 
+export async function submitCommunityAssignmentAction(formData: FormData) {
+  const user = await requireUser();
+  const courseId = getString(formData, "courseId");
+  const lessonId = getString(formData, "lessonId");
+  const title = getString(formData, "title");
+  const prompt = getString(formData, "prompt");
+  const answer = getString(formData, "answer");
+
+  assert(courseId, "Cursus ontbreekt.");
+  assert(lessonId, "Les ontbreekt.");
+  assert(title.length >= 3, "Opdrachttitel ontbreekt.");
+  assert(prompt.length >= 10, "Opdrachtprompt ontbreekt.");
+  assert(answer.length >= 20, "Werk je antwoord iets verder uit voordat je inlevert.");
+
+  await assertCourseAccessibleForUser({
+    userId: user.id,
+    role: user.role,
+    courseId,
+  });
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: {
+      id: true,
+      reviewerId: true,
+      versions: {
+        where: { isActive: true },
+        select: {
+          id: true,
+          lessons: {
+            where: { id: lessonId },
+            select: { id: true, moduleId: true, courseVersionId: true },
+          },
+        },
+      },
+    },
+  });
+
+  assert(course, "Cursus niet gevonden.");
+  if (user.role === "REVIEWER") {
+    assert(course.reviewerId === user.id, "Reviewer is niet gekoppeld aan deze cursus.");
+  }
+
+  const activeVersion = course.versions[0] ?? null;
+  const lesson = activeVersion?.lessons[0] ?? null;
+  assert(activeVersion, "Geen actieve cursusversie gevonden.");
+  assert(lesson, "Les niet gevonden in de actieve cursusversie.");
+  assert(lesson.courseVersionId === activeVersion.id, "Les hoort niet bij de actieve cursusversie.");
+
+  const saved = await prisma.communityAssignmentSubmission.upsert({
+    where: {
+      userId_lessonId: {
+        userId: user.id,
+        lessonId,
+      },
+    },
+    update: {
+      title,
+      prompt,
+      answer,
+      courseId,
+      courseVersionId: activeVersion.id,
+      moduleId: lesson.moduleId,
+      submittedAt: new Date(),
+    },
+    create: {
+      userId: user.id,
+      courseId,
+      courseVersionId: activeVersion.id,
+      moduleId: lesson.moduleId,
+      lessonId,
+      title,
+      prompt,
+      answer,
+    },
+    select: {
+      submittedAt: true,
+      updatedAt: true,
+    },
+  });
+
+  await revalidateLearningPaths({ courseId, lessonId });
+
+  return {
+    submittedAt: saved.submittedAt.toISOString(),
+    updatedAt: saved.updatedAt.toISOString(),
+  };
+}
+
 export async function startAssessmentAttemptAction(formData: FormData) {
   const user = await requireUser();
   const courseId = getString(formData, "courseId");

@@ -9,6 +9,7 @@ import { ReviewerModulePractice } from "@/components/lms/reviewer-module-practic
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { extractLessonMedia } from "@/lib/lms/lesson-media";
 import { getLearnerLmsRedirectPath } from "@/lib/lms/route-access";
 import { getReviewerPreviewMode } from "@/lib/lms/reviewer-preview";
@@ -202,6 +203,21 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
     : [];
   const reviewerFigures = isReviewerModuleFlow ? getReviewerFigureItems(moduleNumber) : [];
   const reviewerAssignment = getReviewerAssignment(moduleNumber);
+  const reviewerAssignmentSubmission = isReviewerModuleFlow
+    ? await prisma.communityAssignmentSubmission.findUnique({
+        where: {
+          userId_lessonId: {
+            userId: user.id,
+            lessonId: lesson.id,
+          },
+        },
+        select: {
+          answer: true,
+          submittedAt: true,
+        },
+      })
+    : null;
+  const minimumPassPercentage = courseAssessment?.passPercentage ?? 70;
   const stepLabel = isReviewerModuleFlow
     ? reviewerStep === "theorie"
       ? "Theorie"
@@ -294,11 +310,16 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
 
       {isReviewerModuleFlow && reviewerStep !== "theorie" ? (
         <ReviewerModulePractice
+          courseId={courseId}
+          lessonId={lesson.id}
           moduleTitle={lesson.title}
           questions={moduleQuestions}
           phase={reviewerStep === "opdracht" ? "assignment" : "questions"}
           assignmentTitle={reviewerAssignment?.title ?? `Opdracht bij ${lesson.title}`}
           assignmentPrompt={reviewerAssignment?.prompt ?? "Noteer kort hoe je de theorie uit deze module zou toepassen in een patiëntcasus."}
+          initialAssignmentText={reviewerAssignmentSubmission?.answer ?? ""}
+          initialAssignmentSubmittedAt={reviewerAssignmentSubmission?.submittedAt.toISOString() ?? null}
+          minimumPassPercentage={minimumPassPercentage}
           theoryHref={theoryHref}
           assignmentHref={assignmentHref}
           questionsHref={questionsHref}
@@ -391,16 +412,8 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
             </Link>
           ) : null}
 
-          {isReviewerModuleFlow && reviewerStep === "opdracht" ? (
-            <Link
-              href={questionsHref}
-              className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"
-            >
-              Door met toetsvragen
-            </Link>
-          ) : null}
 
-          {nextLesson && (!isReviewerModuleFlow || reviewerStep === "toetsvragen") ? (
+          {nextLesson && !isReviewerModuleFlow ? (
             <Link
               href={nextLessonHref ?? "#"}
               className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]"

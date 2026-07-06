@@ -196,6 +196,7 @@ model User {
   assignedEnrollments            Enrollment[]           @relation("EnrollmentAssigner")
   lessonProgress                 LessonProgress[]
   assessmentAttempts             AssessmentAttempt[]    @relation("AttemptUser")
+  communityAssignmentSubmissions CommunityAssignmentSubmission[]
   certificates                   Certificate[]          @relation("CertificateUser")
   evaluationSubmissions          EvaluationSubmission[]
   courseChangeLogs               CourseChangeLog[]
@@ -401,9 +402,10 @@ model Course {
   updatedAt                 DateTime          @updatedAt
   author                    User              @relation("CourseAuthor", fields: [authorId], references: [id])
   reviewer                  User?             @relation("CourseReviewer", fields: [reviewerId], references: [id])
-  versions                  CourseVersion[]
-  enrollments               Enrollment[]
-  certificates              Certificate[]
+  versions                       CourseVersion[]
+  enrollments                    Enrollment[]
+  communityAssignmentSubmissions CommunityAssignmentSubmission[]
+  certificates                   Certificate[]
   changeLogs                CourseChangeLog[]
 }
 
@@ -423,8 +425,9 @@ model CourseVersion {
   competencies    CompetencyReference[]
   lessons         Lesson[]
   assessments     Assessment[]
-  attempts        AssessmentAttempt[]
-  certificates    Certificate[]
+  attempts                       AssessmentAttempt[]
+  communityAssignmentSubmissions CommunityAssignmentSubmission[]
+  certificates                   Certificate[]
   evaluationForms EvaluationForm[]
   changeLogs      CourseChangeLog[]
 }
@@ -443,7 +446,8 @@ model CourseModule {
   lessons          Lesson[]
   objectives       LearningObjective[]
   literature       LiteratureReference[]
-  competencies     CompetencyReference[]
+  competencies                    CompetencyReference[]
+  communityAssignmentSubmissions CommunityAssignmentSubmission[]
 
   @@unique([courseVersionId, order])
 }
@@ -502,8 +506,9 @@ model Lesson {
   publishedAt      DateTime?
   courseVersion    CourseVersion    @relation(fields: [courseVersionId], references: [id])
   module           CourseModule?    @relation(fields: [moduleId], references: [id])
-  progress         LessonProgress[]
-  assessments      Assessment[]
+  progress                       LessonProgress[]
+  assessments                    Assessment[]
+  communityAssignmentSubmissions CommunityAssignmentSubmission[]
 
   @@unique([courseVersionId, slug])
 }
@@ -539,6 +544,29 @@ model LessonProgress {
   lesson       Lesson               @relation(fields: [lessonId], references: [id])
 
   @@unique([userId, lessonId])
+}
+
+model CommunityAssignmentSubmission {
+  id              String        @id @default(cuid())
+  userId          String
+  courseId        String
+  courseVersionId String
+  moduleId        String?
+  lessonId        String
+  title           String
+  prompt          String
+  answer          String
+  submittedAt     DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  user            User          @relation(fields: [userId], references: [id])
+  course          Course        @relation(fields: [courseId], references: [id])
+  courseVersion   CourseVersion @relation(fields: [courseVersionId], references: [id])
+  module          CourseModule? @relation(fields: [moduleId], references: [id])
+  lesson          Lesson        @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
+  @@index([courseId, submittedAt])
+  @@index([courseVersionId, submittedAt])
 }
 
 model Assessment {

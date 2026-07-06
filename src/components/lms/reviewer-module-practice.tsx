@@ -1,18 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 
+import { submitCommunityAssignmentAction } from "@/app/lms-actions";
 import { StatusBadge } from "@/components/status-badge";
 import type { AssessmentDetail } from "@/lib/lms/types";
 import { cn } from "@/lib/utils";
 
 type ReviewerModulePracticeProps = {
+  courseId: string;
+  lessonId: string;
   moduleTitle: string;
   questions: AssessmentDetail["questions"];
   phase: "assignment" | "questions";
   assignmentTitle: string;
   assignmentPrompt: string;
+  initialAssignmentText?: string;
+  initialAssignmentSubmittedAt?: string | null;
+  minimumPassPercentage: number;
   theoryHref: string;
   assignmentHref: string;
   questionsHref: string;
@@ -22,6 +28,8 @@ type ReviewerModulePracticeProps = {
 };
 
 type Responses = Record<string, string[]>;
+
+type AssignmentStatus = "idle" | "saved" | "error";
 
 function isQuestionCorrect(question: AssessmentDetail["questions"][number], selectedIds: string[]) {
   const correctIds = question.options.filter((option) => option.isCorrect).map((option) => option.id).sort();
@@ -43,12 +51,30 @@ function StepPill({ label, active, done }: { label: string; active?: boolean; do
   );
 }
 
+function formatSavedAt(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("nl-NL", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 export function ReviewerModulePractice({
+  courseId,
+  lessonId,
   moduleTitle,
   questions,
   phase,
   assignmentTitle,
   assignmentPrompt,
+  initialAssignmentText = "",
+  initialAssignmentSubmittedAt = null,
+  minimumPassPercentage,
   theoryHref,
   assignmentHref,
   questionsHref,
@@ -56,15 +82,23 @@ export function ReviewerModulePractice({
   courseHref,
   lmsHref,
 }: ReviewerModulePracticeProps) {
-  const [assignmentText, setAssignmentText] = useState("");
+  const [assignmentText, setAssignmentText] = useState(initialAssignmentText);
+  const [assignmentStatus, setAssignmentStatus] = useState<AssignmentStatus>(initialAssignmentText.trim().length ? "saved" : "idle");
+  const [assignmentSavedAt, setAssignmentSavedAt] = useState<string | null>(initialAssignmentSubmittedAt);
+  const [assignmentError, setAssignmentError] = useState<string | null>(null);
+  const [isSavingAssignment, startSavingAssignment] = useTransition();
   const [submitted, setSubmitted] = useState(false);
   const [responses, setResponses] = useState<Responses>({});
 
+  const normalizedMinimumPassPercentage = Number.isFinite(minimumPassPercentage) ? minimumPassPercentage : 70;
+  const answerIsLongEnough = assignmentText.trim().length >= 20;
+  const assignmentSaved = assignmentStatus === "saved" && answerIsLongEnough;
   const unanswered = questions.filter((question) => (responses[question.id] ?? []).length === 0).length;
   const score = useMemo(() => {
     const raw = questions.reduce((total, question) => total + (isQuestionCorrect(question, responses[question.id] ?? []) ? 1 : 0), 0);
-    return { raw, total: questions.length, percentage: questions.length ? Math.round((raw / questions.length) * 100) : 0 };
-  }, [questions, responses]);
+    const percentage = questions.length ? Math.round((raw / questions.length) * 100) : 0;
+    return { raw, total: questions.length, percentage, passed: percentage >= normalizedMinimumPassPercentage };
+  }, [questions, responses, normalizedMinimumPassPercentage]);
 
   function setSingleAnswer(questionId: string, optionId: string) {
     setSubmitted(false);
@@ -82,10 +116,37 @@ export function ReviewerModulePractice({
     });
   }
 
+  function submitAssignment() {
+    setAssignmentError(null);
+    startSavingAssignment(async () => {
+      try {
+        const formData = new FormData();
+        formData.set("courseId", courseId);
+        formData.set("lessonId", lessonId);
+        formData.set("title", assignmentTitle);
+        formData.set("prompt", assignmentPrompt);
+        formData.set("answer", assignmentText);
+        const saved = await submitCommunityAssignmentAction(formData);
+        setAssignmentStatus("saved");
+        setAssignmentSavedAt(saved.submittedAt);
+      } catch (error) {
+        setAssignmentStatus("error");
+        setAssignmentError(error instanceof Error ? error.message : "Inleveren is niet gelukt. Probeer het opnieuw.");
+      }
+    });
+  }
+
+  function resetQuiz() {
+    setResponses({});
+    setSubmitted(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   const phaseTitle = phase === "assignment" ? "Opdracht uitvoeren" : "Moduletoets maken";
   const phaseDescription = phase === "assignment"
-    ? "Werk eerst de opdracht uit. Daarna ga je door naar de moduletoetsvragen. Dit is bewust een aparte stap, zoals bij een cursist."
-    : "Beantwoord de vragen echt. Na controle kun je pas inhoudelijk door naar de volgende module of terug naar het overzicht.";
+    ? "Werk de community-opdracht uit en lever je antwoord in. Daarna kun je door naar de toetsvragen."
+    : `Beantwoord alle vragen. Je moet minimaal ${normalizedMinimumPassPercentage}% goed halen om door te gaan naar de volgende module.`;
+  const savedAtLabel = formatSavedAt(assignmentSavedAt);
 
   return (
     <section className="space-y-6 rounded-[38px] border border-[var(--border)] bg-[linear-gradient(180deg,#fffdfa,#f7f4ec)] p-5 shadow-[0_28px_80px_-48px_rgba(35,27,18,0.55)] sm:p-7 lg:p-9">
@@ -115,33 +176,71 @@ export function ReviewerModulePractice({
       </div>
 
       {phase === "assignment" ? (
-        <div className="rounded-[30px] border border-[var(--border)] bg-white/92 p-5 sm:p-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge label="Stap 2" tone="brand" />
-            <StatusBadge label="praktijkopdracht" tone="neutral" />
-          </div>
-          <h3 className="mt-4 text-2xl font-semibold text-slate-950">{assignmentTitle || `Opdracht bij ${moduleTitle}`}</h3>
-          <div className="mt-3 whitespace-pre-line rounded-[24px] border border-[var(--border)] bg-[var(--brand-wash)]/45 px-4 py-4 text-sm leading-7 text-[var(--ink-soft)]">
-            {assignmentPrompt}
-          </div>
-          <textarea
-            value={assignmentText}
-            onChange={(event) => setAssignmentText(event.target.value)}
-            rows={8}
-            className="mt-5 w-full rounded-[24px] border border-[var(--border)] bg-white px-4 py-3 text-base leading-8 text-slate-950 outline-none transition focus:border-[var(--brand)]"
-            placeholder="Schrijf hier je opdrachtantwoord zoals een cursist dat zou doen..."
-          />
-          <div className="mt-5 flex flex-col gap-3 rounded-[24px] border border-[var(--border)] bg-[var(--brand-wash)]/55 p-4 md:flex-row md:items-center md:justify-between">
-            <p className="text-sm leading-6 text-[var(--ink-soft)]">
-              {assignmentText.trim() ? "Opdracht ingevuld. Je kunt door naar de toetsvragen." : "Vul eerst kort de opdracht in voordat je doorgaat."}
+        <div className="overflow-hidden rounded-[34px] border border-[var(--border)] bg-white shadow-[0_24px_70px_-52px_rgba(35,27,18,0.8)]">
+          <div className="bg-[linear-gradient(135deg,#fff7ed,#eef7ef)] px-5 py-5 sm:px-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge label="Stap 2" tone="brand" />
+              <StatusBadge label="community-opdracht" tone="neutral" />
+              <StatusBadge label={assignmentSaved ? "ingeleverd" : "nog niet ingeleverd"} tone={assignmentSaved ? "success" : "warning"} />
+            </div>
+            <h3 className="display-font mt-4 text-2xl font-semibold text-slate-950">{assignmentTitle || `Opdracht bij ${moduleTitle}`}</h3>
+            <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
+              Je antwoord wordt opgeslagen in de Academy-database, zodat het later door Fy-Fit kan worden ingezien.
             </p>
-            {assignmentText.trim() ? (
-              <Link href={questionsHref} className="rounded-full bg-[var(--brand)] px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
-                Door met toetsvragen
-              </Link>
-            ) : (
-              <span className="rounded-full bg-slate-200 px-6 py-3 text-center text-sm font-semibold text-slate-500">Door met toetsvragen</span>
-            )}
+          </div>
+
+          <div className="space-y-5 px-5 py-5 sm:px-6">
+            <div className="whitespace-pre-line rounded-[26px] border border-[var(--border)] bg-[var(--brand-wash)]/45 px-5 py-5 text-sm leading-7 text-[var(--ink-soft)]">
+              {assignmentPrompt}
+            </div>
+
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-950">Jouw antwoord</span>
+              <textarea
+                value={assignmentText}
+                onChange={(event) => {
+                  setAssignmentText(event.target.value);
+                  setAssignmentStatus("idle");
+                  setAssignmentError(null);
+                }}
+                rows={9}
+                className="mt-3 w-full rounded-[26px] border border-[var(--border)] bg-white px-4 py-4 text-base leading-8 text-slate-950 outline-none transition focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand)]/10"
+                placeholder="Schrijf hier je opdrachtantwoord zoals een cursist dat zou doen..."
+              />
+            </label>
+
+            <div className="flex flex-col gap-3 rounded-[26px] border border-[var(--border)] bg-[var(--brand-wash)]/55 p-4 md:flex-row md:items-center md:justify-between">
+              <div className="text-sm leading-6 text-[var(--ink-soft)]">
+                <p className="font-semibold text-slate-950">
+                  {assignmentSaved ? "Opdracht ingeleverd" : answerIsLongEnough ? "Klaar om in te leveren" : "Werk je antwoord eerst kort uit"}
+                </p>
+                <p>
+                  {assignmentSaved && savedAtLabel
+                    ? `Laatst ingeleverd: ${savedAtLabel}. Je kunt je antwoord aanpassen en opnieuw inleveren.`
+                    : answerIsLongEnough
+                      ? "Klik op Inleveren om het antwoord vast te leggen in de database."
+                      : "Minimaal 20 tekens nodig voordat je kunt inleveren."}
+                </p>
+                {assignmentError ? <p className="mt-2 font-semibold text-red-700">{assignmentError}</p> : null}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={submitAssignment}
+                  disabled={!answerIsLongEnough || isSavingAssignment}
+                  className="rounded-full bg-slate-950 px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  {isSavingAssignment ? "Inleveren..." : assignmentSaved ? "Opnieuw inleveren" : "Inleveren"}
+                </button>
+                {assignmentSaved ? (
+                  <Link href={questionsHref} className="rounded-full bg-[var(--brand)] px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
+                    Door met toetsvragen
+                  </Link>
+                ) : (
+                  <span className="rounded-full bg-slate-200 px-6 py-3 text-center text-sm font-semibold text-slate-500">Door met toetsvragen</span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
@@ -151,12 +250,27 @@ export function ReviewerModulePractice({
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge label="Stap 3" tone="brand" />
             <StatusBadge label={`${questions.length} modulevragen`} tone="neutral" />
-            <StatusBadge label={submitted ? `${score.percentage}%` : `${unanswered} open`} tone={submitted ? (score.percentage >= 70 ? "success" : "warning") : "neutral"} />
+            <StatusBadge label={`${normalizedMinimumPassPercentage}% norm`} tone="brand" />
+            <StatusBadge label={submitted ? `${score.percentage}%` : `${unanswered} open`} tone={submitted ? (score.passed ? "success" : "warning") : "neutral"} />
           </div>
           <h3 className="mt-4 text-2xl font-semibold text-slate-950">Toetsvragen bij {moduleTitle}</h3>
           <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
-            Beantwoord alle vragen. Dit is alleen lokale reviewerfeedback; er wordt niets opgeslagen in de Academy.
+            Beantwoord alle vragen. Pas bij minimaal {normalizedMinimumPassPercentage}% goed verschijnt de knop naar de volgende module.
           </p>
+
+          {submitted ? (
+            <div className={cn(
+              "mt-5 rounded-[26px] border px-5 py-4 text-sm leading-7",
+              score.passed ? "border-emerald-100 bg-emerald-50 text-emerald-800" : "border-amber-100 bg-amber-50 text-amber-900",
+            )}>
+              <p className="font-semibold">
+                {score.passed
+                  ? `Gehaald: ${score.percentage}% (${score.raw}/${score.total}). Je kunt door.`
+                  : `Nog niet gehaald: ${score.percentage}% (${score.raw}/${score.total}). Minimaal ${normalizedMinimumPassPercentage}% nodig.`}
+              </p>
+              {!score.passed ? <p className="mt-1">Maak de toets opnieuw voordat je naar de volgende module gaat.</p> : null}
+            </div>
+          ) : null}
 
           <form
             className="mt-5 space-y-5"
@@ -220,15 +334,26 @@ export function ReviewerModulePractice({
 
             <div className="flex flex-col gap-3 rounded-[24px] border border-[var(--border)] bg-white p-4 md:flex-row md:items-center md:justify-between">
               <p className="text-sm leading-6 text-[var(--ink-soft)]">
-                {unanswered === 0 ? "Alle vragen zijn beantwoord." : `Nog ${unanswered} ${unanswered === 1 ? "vraag" : "vragen"} open.`} {submitted ? `Reviewscore: ${score.raw}/${score.total}.` : "Controleer daarna je antwoorden."}
+                {unanswered === 0 ? "Alle vragen zijn beantwoord." : `Nog ${unanswered} ${unanswered === 1 ? "vraag" : "vragen"} open.`} {submitted ? `Score: ${score.raw}/${score.total}.` : "Controleer daarna je antwoorden."}
               </p>
-              <button
-                type="submit"
-                disabled={unanswered > 0}
-                className="rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                Controleer antwoorden
-              </button>
+              <div className="flex flex-wrap gap-3">
+                {submitted && !score.passed ? (
+                  <button
+                    type="button"
+                    onClick={resetQuiz}
+                    className="rounded-full border border-[var(--border)] bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:border-[var(--brand)]"
+                  >
+                    Toets opnieuw maken
+                  </button>
+                ) : null}
+                <button
+                  type="submit"
+                  disabled={unanswered > 0}
+                  className="rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  Controleer antwoorden
+                </button>
+              </div>
             </div>
           </form>
 
@@ -236,11 +361,11 @@ export function ReviewerModulePractice({
             <Link href={assignmentHref} className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
               Terug naar opdracht
             </Link>
-            {submitted && nextHref ? (
+            {submitted && score.passed && nextHref ? (
               <Link href={nextHref} className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
                 Door naar volgende module
               </Link>
-            ) : submitted ? (
+            ) : submitted && score.passed ? (
               <Link href={courseHref} className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
                 Terug naar module-overzicht
               </Link>
