@@ -74,6 +74,10 @@ export function getDashboardLabel(role: Role) {
 }
 
 export function getNavigationItems(role: Role, isOnboarding = false): NavigationItem[] {
+  if (role === "REVIEWER") {
+    return [{ href: "/lms", label: "Accreditatie-preview" }];
+  }
+
   const items: NavigationItem[] = [{ href: "/", label: getDashboardLabel(role) }];
 
   if (canUsePersonalLms(role)) {
