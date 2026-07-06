@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { requireUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { getLearnerLmsRedirectPath } from "@/lib/lms/route-access";
 import { getReviewerPreviewMode } from "@/lib/lms/reviewer-preview";
 import {
@@ -154,6 +155,21 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
   const participantReport = previewState.canViewWithoutEnrollment
     ? await getCourseParticipantCompletionReport(course.id)
     : [];
+  const communitySubmissions = user.role === "BEHEERDER"
+    ? await prisma.communityAssignmentSubmission.findMany({
+        where: { courseId: course.id },
+        orderBy: { submittedAt: "desc" },
+        take: 12,
+        select: {
+          id: true,
+          title: true,
+          answer: true,
+          submittedAt: true,
+          user: { select: { name: true, email: true } },
+          lesson: { select: { title: true } },
+        },
+      })
+    : [];
 
   return (
     <div className="space-y-6">
@@ -235,6 +251,45 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
           mode={previewState.mode === "reviewer" ? "reviewer" : "beheer"}
           completionReport={participantReport}
         />
+      ) : null}
+
+      {user.role === "BEHEERDER" ? (
+        <section className="card-surface overflow-hidden rounded-[32px]">
+          <div className="academy-gradient-panel px-6 py-6 sm:px-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
+              Community-opdrachten
+            </p>
+            <h2 className="display-font mt-2 text-3xl font-semibold text-slate-950">Ingeleverde moduleopdrachten</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--ink-soft)]">
+              De laatste antwoorden uit de community-opdrachten. Deze worden opgeslagen zodra een cursist/reviewer op Inleveren klikt.
+            </p>
+          </div>
+          <div className="grid gap-4 bg-white px-5 py-5 sm:px-8">
+            {communitySubmissions.length ? communitySubmissions.map((submission) => (
+              <article key={submission.id} className="rounded-[26px] border border-[var(--border)] bg-[var(--brand-wash)]/35 p-5">
+                <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand-deep)]">
+                      {submission.lesson.title}
+                    </p>
+                    <h3 className="mt-2 text-lg font-semibold text-slate-950">{submission.title}</h3>
+                    <p className="mt-1 text-xs text-[var(--ink-soft)]">
+                      {submission.user.name} · {submission.user.email} · {formatDate(submission.submittedAt)}
+                    </p>
+                  </div>
+                  <StatusBadge label="ingeleverd" tone="success" />
+                </div>
+                <p className="mt-4 whitespace-pre-line rounded-[20px] bg-white/85 px-4 py-3 text-sm leading-7 text-[var(--ink-soft)]">
+                  {submission.answer}
+                </p>
+              </article>
+            )) : (
+              <div className="rounded-[26px] border border-dashed border-[var(--border)] bg-white/80 p-5 text-sm leading-7 text-[var(--ink-soft)]">
+                Nog geen community-opdrachten ingeleverd voor deze e-learning.
+              </div>
+            )}
+          </div>
+        </section>
       ) : null}
 
       {certificate ? (
