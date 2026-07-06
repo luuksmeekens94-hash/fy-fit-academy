@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { completeLessonAction, completeReviewerLessonStepAction } from "@/app/lms-actions";
+import { completeLessonAction } from "@/app/lms-actions";
 import { AssessmentRunner } from "@/components/lms/assessment-runner";
 import { LessonMediaBlock } from "@/components/lms/lesson-media-block";
 import { ReviewerAssessmentPreview } from "@/components/lms/reviewer-assessment-preview";
+import { ReviewerLessonProgressButton } from "@/components/lms/reviewer-lesson-progress-button";
 import { ReviewerModulePractice } from "@/components/lms/reviewer-module-practice";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -363,15 +364,13 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
                       Vorige les
                     </Link>
                   ) : null}
-                  <form action={completeReviewerLessonStepAction}>
-                    <input type="hidden" name="courseId" value={courseId} />
-                    <input type="hidden" name="lessonId" value={lesson.id} />
-                    <input type="hidden" name="stepKey" value={selectedTheorySubLesson.key} />
-                    <input type="hidden" name="nextHref" value={nextTheorySubLesson ? `${lessonBaseHref}${buildSubLessonHrefSuffix(nextTheorySubLesson.key)}` : assignmentHref} />
-                    <button type="submit" className="rounded-full bg-[var(--brand)] px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
-                      {nextTheorySubLesson ? `Ga door met ${nextTheorySubLesson.label}` : "Door met opdracht"}
-                    </button>
-                  </form>
+                  <ReviewerLessonProgressButton
+                    courseId={courseId}
+                    lessonId={lesson.id}
+                    stepKey={selectedTheorySubLesson.key}
+                    nextHref={nextTheorySubLesson ? `${lessonBaseHref}${buildSubLessonHrefSuffix(nextTheorySubLesson.key)}` : assignmentHref}
+                    label={nextTheorySubLesson ? `Ga door met ${nextTheorySubLesson.label}` : "Door met opdracht"}
+                  />
                 </div>
               </div>
             </div>
