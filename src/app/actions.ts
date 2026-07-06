@@ -135,6 +135,11 @@ export async function loginAction(formData: FormData) {
   }
 
   await createSession(user.id);
+
+  if (user.role === Role.REVIEWER) {
+    redirect("/lms");
+  }
+
   redirect("/");
 }
 

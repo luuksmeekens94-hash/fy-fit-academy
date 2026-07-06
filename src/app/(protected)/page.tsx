@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
@@ -32,6 +33,11 @@ import { formatDate, getOnboardingCompletion, getStatusTone } from "@/lib/utils"
 
 export default async function DashboardPage() {
   const user = await requireUser();
+
+  if (user.role === "REVIEWER") {
+    redirect("/lms");
+  }
+
   const hasPersonalLms = canUsePersonalLms(user.role);
   const hasPersonalDevelopment = canUsePersonalDevelopment(user.role);
   const hasOwnTeamMonitor = canMonitorOwnTeam(user.role);
