@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 
-import { submitCommunityAssignmentAction } from "@/app/lms-actions";
+import { markReviewerLessonStepAction, submitCommunityAssignmentAction } from "@/app/lms-actions";
 import { StatusBadge } from "@/components/status-badge";
 import type { AssessmentDetail } from "@/lib/lms/types";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,8 @@ type ReviewerModulePracticeProps = {
   assignmentPrompt: string;
   initialAssignmentText?: string;
   initialAssignmentSubmittedAt?: string | null;
+  assignmentStepKey: string;
+  knowledgeCheckStepKey: string;
   minimumPassPercentage: number;
   theoryHref: string;
   assignmentHref: string;
@@ -74,6 +76,8 @@ export function ReviewerModulePractice({
   assignmentPrompt,
   initialAssignmentText = "",
   initialAssignmentSubmittedAt = null,
+  assignmentStepKey,
+  knowledgeCheckStepKey,
   minimumPassPercentage,
   theoryHref,
   assignmentHref,
@@ -87,6 +91,7 @@ export function ReviewerModulePractice({
   const [assignmentSavedAt, setAssignmentSavedAt] = useState<string | null>(initialAssignmentSubmittedAt);
   const [assignmentError, setAssignmentError] = useState<string | null>(null);
   const [isSavingAssignment, startSavingAssignment] = useTransition();
+  const [isSavingProgress, startSavingProgress] = useTransition();
   const [submitted, setSubmitted] = useState(false);
   const [responses, setResponses] = useState<Responses>({});
 
@@ -126,6 +131,7 @@ export function ReviewerModulePractice({
         formData.set("title", assignmentTitle);
         formData.set("prompt", assignmentPrompt);
         formData.set("answer", assignmentText);
+        formData.set("stepKey", assignmentStepKey);
         const saved = await submitCommunityAssignmentAction(formData);
         setAssignmentStatus("saved");
         setAssignmentSavedAt(saved.submittedAt);
@@ -140,6 +146,17 @@ export function ReviewerModulePractice({
     setResponses({});
     setSubmitted(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function continueAfterKnowledgeCheck() {
+    startSavingProgress(async () => {
+      const formData = new FormData();
+      formData.set("courseId", courseId);
+      formData.set("lessonId", lessonId);
+      formData.set("stepKey", knowledgeCheckStepKey);
+      await markReviewerLessonStepAction(formData);
+      window.location.href = nextHref ?? courseHref;
+    });
   }
 
   const phaseTitle = phase === "assignment" ? "Opdracht uitvoeren" : "Kennischeck maken";
@@ -361,14 +378,15 @@ export function ReviewerModulePractice({
             <Link href={assignmentHref} className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
               Terug naar opdracht
             </Link>
-            {submitted && score.passed && nextHref ? (
-              <Link href={nextHref} className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
-                Door naar volgende module
-              </Link>
-            ) : submitted && score.passed ? (
-              <Link href={courseHref} className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
-                Terug naar module-overzicht
-              </Link>
+            {submitted && score.passed ? (
+              <button
+                type="button"
+                onClick={continueAfterKnowledgeCheck}
+                disabled={isSavingProgress}
+                className="rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSavingProgress ? "Voortgang opslaan..." : nextHref ? "Door naar volgende module" : "Terug naar module-overzicht"}
+              </button>
             ) : (
               <span className="rounded-full bg-slate-200 px-6 py-3 text-sm font-semibold text-slate-500">
                 Door naar volgende module

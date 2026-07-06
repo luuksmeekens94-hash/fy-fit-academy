@@ -117,10 +117,10 @@ export function buildReviewerCoursePreviewSummary(
       evidenceMissingLabels,
       canFreelyNavigate: true,
       reviewerChecklist: [
-        "Vrije navigatie door modules en lessen zonder inschrijving",
-        "Toetsinstellingen en vraagenaantal zichtbaar zonder poging aan te maken",
-        "Accreditatiedossier, evaluatie en deelnemerrapportage read-only beschikbaar",
-        "Geen voortgang, evaluatie, toetspoging of certificaatmutatie in previewmodus",
+        "Vrije navigatie door modules en lessen",
+        "Toetsinstellingen en vraagenaantal duidelijk zichtbaar",
+        "Accreditatiedossier, evaluatie en deelnemerrapportage beschikbaar",
+        "Reviewflow module voor module beschikbaar",
       ],
     };
   });

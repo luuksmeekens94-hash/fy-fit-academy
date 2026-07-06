@@ -38,8 +38,9 @@ function toMediaBlock(path: string, line = ""): LessonMediaBlock {
   return { type: "image", src: path };
 }
 
-export function extractLessonMedia(content: string): LessonMedia {
-  const mediaPaths = Array.from(new Set(content.match(mediaPathPattern) ?? []));
+export function extractLessonMedia(content: string | null | undefined): LessonMedia {
+  const safeContent = content ?? "";
+  const mediaPaths = Array.from(new Set(safeContent.match(mediaPathPattern) ?? []));
   const videos = mediaPaths.filter((path) => path.toLowerCase().endsWith(".mp4"));
   const images = mediaPaths.filter((path) => /\.(png|jpg|jpeg|webp)$/i.test(path));
   const documents = mediaPaths.filter((path) => documentExtensionPattern.test(path));
@@ -55,7 +56,7 @@ export function extractLessonMedia(content: string): LessonMedia {
     pendingTextLines = [];
   }
 
-  for (const rawLine of content.split(/\r?\n/)) {
+  for (const rawLine of safeContent.split(/\r?\n/)) {
     const line = rawLine.trimEnd();
     const lineMediaPaths = Array.from(new Set(line.match(mediaPathPattern) ?? []));
 

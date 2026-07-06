@@ -162,26 +162,26 @@ enum QuestionType {
 }
 
 model User {
-  id                             String                 @id @default(cuid())
-  email                          String                 @unique
+  id                             String                          @id @default(cuid())
+  email                          String                          @unique
   passwordHash                   String
   name                           String
   role                           Role
-  audienceProfile                AudienceProfile        @default(FYSIOTHERAPEUT)
+  audienceProfile                AudienceProfile                 @default(FYSIOTHERAPEUT)
   team                           String?
   professionalRegistrationNumber String?
   title                          String
   location                       String
   bio                            String
   avatarColor                    String
-  isActive                       Boolean                @default(true)
-  isOnboarding                   Boolean                @default(false)
+  isActive                       Boolean                         @default(true)
+  isOnboarding                   Boolean                         @default(false)
   buddyId                        String?
   teamleaderId                   String?
-  buddy                          User?                  @relation("BuddyRelation", fields: [buddyId], references: [id])
-  buddyFor                       User[]                 @relation("BuddyRelation")
-  teamleader                     User?                  @relation("TeamleaderRelation", fields: [teamleaderId], references: [id])
-  teamMembers                    User[]                 @relation("TeamleaderRelation")
+  buddy                          User?                           @relation("BuddyRelation", fields: [buddyId], references: [id])
+  buddyFor                       User[]                          @relation("BuddyRelation")
+  teamleader                     User?                           @relation("TeamleaderRelation", fields: [teamleaderId], references: [id])
+  teamMembers                    User[]                          @relation("TeamleaderRelation")
   authoredModules                Module[]
   ownedDocuments                 Document[]
   moduleProgress                 ModuleProgress[]
@@ -189,19 +189,20 @@ model User {
   learningGoals                  LearningGoal[]
   developmentDocs                DevelopmentDocument[]
   // LMS relations
-  authoredCourses                Course[]               @relation("CourseAuthor")
-  reviewingCourses               Course[]               @relation("CourseReviewer")
-  courseVersionsCreated          CourseVersion[]        @relation("CourseVersionCreator")
-  enrollments                    Enrollment[]           @relation("EnrollmentUser")
-  assignedEnrollments            Enrollment[]           @relation("EnrollmentAssigner")
+  authoredCourses                Course[]                        @relation("CourseAuthor")
+  reviewingCourses               Course[]                        @relation("CourseReviewer")
+  courseVersionsCreated          CourseVersion[]                 @relation("CourseVersionCreator")
+  enrollments                    Enrollment[]                    @relation("EnrollmentUser")
+  assignedEnrollments            Enrollment[]                    @relation("EnrollmentAssigner")
   lessonProgress                 LessonProgress[]
-  assessmentAttempts             AssessmentAttempt[]    @relation("AttemptUser")
+  lessonStepProgress             LessonStepProgress[]
+  assessmentAttempts             AssessmentAttempt[]             @relation("AttemptUser")
   communityAssignmentSubmissions CommunityAssignmentSubmission[]
-  certificates                   Certificate[]          @relation("CertificateUser")
+  certificates                   Certificate[]                   @relation("CertificateUser")
   evaluationSubmissions          EvaluationSubmission[]
   courseChangeLogs               CourseChangeLog[]
-  announcementsCreated           Announcement[]         @relation("AnnouncementCreatedBy")
-  announcementsPublished         Announcement[]         @relation("AnnouncementPublishedBy")
+  announcementsCreated           Announcement[]                  @relation("AnnouncementCreatedBy")
+  announcementsPublished         Announcement[]                  @relation("AnnouncementPublishedBy")
   notifications                  Notification[]
 }
 
@@ -370,83 +371,83 @@ model Notification {
 // ─── LMS Models ──────────────────────────────────────────────────────────────
 
 model Course {
-  id                        String            @id @default(cuid())
-  title                     String
-  slug                      String            @unique
-  description               String
-  audience                  String?
-  visibleToAll              Boolean           @default(true)
-  visibleToRoles            Role[]            @default([])
-  visibleToAudienceProfiles AudienceProfile[] @default([])
-  visibleToUserIds          String[]          @default([])
-  learningObjectives        String?
-  goal                      String?
-  focus                     String?
-  learnerOutcomes           Json?
-  accreditationRegister     String?
-  accreditationKind         AccreditationKind @default(VAKINHOUDELIJK)
-  accreditationActivityId   String?
-  providerName              String?
-  providerSignatureName     String?
-  versionDate               DateTime?
-  authorExperts             Json?
-  requiredQuestionCount     Int?
-  studyLoadMinutes          Int               @default(0)
-  status                    CourseStatus      @default(CONCEPT)
-  isMandatory               Boolean           @default(false)
-  authorId                  String
-  reviewerId                String?
-  publishedAt               DateTime?
-  revisionDueAt             DateTime?
-  createdAt                 DateTime          @default(now())
-  updatedAt                 DateTime          @updatedAt
-  author                    User              @relation("CourseAuthor", fields: [authorId], references: [id])
-  reviewer                  User?             @relation("CourseReviewer", fields: [reviewerId], references: [id])
+  id                             String                          @id @default(cuid())
+  title                          String
+  slug                           String                          @unique
+  description                    String
+  audience                       String?
+  visibleToAll                   Boolean                         @default(true)
+  visibleToRoles                 Role[]                          @default([])
+  visibleToAudienceProfiles      AudienceProfile[]               @default([])
+  visibleToUserIds               String[]                        @default([])
+  learningObjectives             String?
+  goal                           String?
+  focus                          String?
+  learnerOutcomes                Json?
+  accreditationRegister          String?
+  accreditationKind              AccreditationKind               @default(VAKINHOUDELIJK)
+  accreditationActivityId        String?
+  providerName                   String?
+  providerSignatureName          String?
+  versionDate                    DateTime?
+  authorExperts                  Json?
+  requiredQuestionCount          Int?
+  studyLoadMinutes               Int                             @default(0)
+  status                         CourseStatus                    @default(CONCEPT)
+  isMandatory                    Boolean                         @default(false)
+  authorId                       String
+  reviewerId                     String?
+  publishedAt                    DateTime?
+  revisionDueAt                  DateTime?
+  createdAt                      DateTime                        @default(now())
+  updatedAt                      DateTime                        @updatedAt
+  author                         User                            @relation("CourseAuthor", fields: [authorId], references: [id])
+  reviewer                       User?                           @relation("CourseReviewer", fields: [reviewerId], references: [id])
   versions                       CourseVersion[]
   enrollments                    Enrollment[]
   communityAssignmentSubmissions CommunityAssignmentSubmission[]
   certificates                   Certificate[]
-  changeLogs                CourseChangeLog[]
+  changeLogs                     CourseChangeLog[]
 }
 
 model CourseVersion {
-  id              String                @id @default(cuid())
-  courseId        String
-  versionNumber   String
-  changeSummary   String?
-  isActive        Boolean               @default(false)
-  createdAt       DateTime              @default(now())
-  createdById     String
-  course          Course                @relation(fields: [courseId], references: [id])
-  createdBy       User                  @relation("CourseVersionCreator", fields: [createdById], references: [id])
-  modules         CourseModule[]
-  objectives      LearningObjective[]
-  literature      LiteratureReference[]
-  competencies    CompetencyReference[]
-  lessons         Lesson[]
-  assessments     Assessment[]
+  id                             String                          @id @default(cuid())
+  courseId                       String
+  versionNumber                  String
+  changeSummary                  String?
+  isActive                       Boolean                         @default(false)
+  createdAt                      DateTime                        @default(now())
+  createdById                    String
+  course                         Course                          @relation(fields: [courseId], references: [id])
+  createdBy                      User                            @relation("CourseVersionCreator", fields: [createdById], references: [id])
+  modules                        CourseModule[]
+  objectives                     LearningObjective[]
+  literature                     LiteratureReference[]
+  competencies                   CompetencyReference[]
+  lessons                        Lesson[]
+  assessments                    Assessment[]
   attempts                       AssessmentAttempt[]
   communityAssignmentSubmissions CommunityAssignmentSubmission[]
   certificates                   Certificate[]
-  evaluationForms EvaluationForm[]
-  changeLogs      CourseChangeLog[]
+  evaluationForms                EvaluationForm[]
+  changeLogs                     CourseChangeLog[]
 }
 
 model CourseModule {
-  id               String                @id @default(cuid())
-  courseVersionId  String
-  title            String
-  description      String?
-  introduction     String?
-  summary          String?
-  order            Int
-  estimatedMinutes Int                   @default(0)
-  workForms        WorkForm[]
-  courseVersion    CourseVersion         @relation(fields: [courseVersionId], references: [id])
-  lessons          Lesson[]
-  objectives       LearningObjective[]
-  literature       LiteratureReference[]
-  competencies                    CompetencyReference[]
+  id                             String                          @id @default(cuid())
+  courseVersionId                String
+  title                          String
+  description                    String?
+  introduction                   String?
+  summary                        String?
+  order                          Int
+  estimatedMinutes               Int                             @default(0)
+  workForms                      WorkForm[]
+  courseVersion                  CourseVersion                   @relation(fields: [courseVersionId], references: [id])
+  lessons                        Lesson[]
+  objectives                     LearningObjective[]
+  literature                     LiteratureReference[]
+  competencies                   CompetencyReference[]
   communityAssignmentSubmissions CommunityAssignmentSubmission[]
 
   @@unique([courseVersionId, order])
@@ -492,21 +493,22 @@ model CompetencyReference {
 }
 
 model Lesson {
-  id               String           @id @default(cuid())
-  courseVersionId  String
-  moduleId         String?
-  title            String
-  slug             String
-  description      String?
-  type             LessonType
-  content          String
-  order            Int
-  isRequired       Boolean          @default(true)
-  estimatedMinutes Int              @default(0)
-  publishedAt      DateTime?
-  courseVersion    CourseVersion    @relation(fields: [courseVersionId], references: [id])
-  module           CourseModule?    @relation(fields: [moduleId], references: [id])
+  id                             String                          @id @default(cuid())
+  courseVersionId                String
+  moduleId                       String?
+  title                          String
+  slug                           String
+  description                    String?
+  type                           LessonType
+  content                        String
+  order                          Int
+  isRequired                     Boolean                         @default(true)
+  estimatedMinutes               Int                             @default(0)
+  publishedAt                    DateTime?
+  courseVersion                  CourseVersion                   @relation(fields: [courseVersionId], references: [id])
+  module                         CourseModule?                   @relation(fields: [moduleId], references: [id])
   progress                       LessonProgress[]
+  stepProgress                   LessonStepProgress[]
   assessments                    Assessment[]
   communityAssignmentSubmissions CommunityAssignmentSubmission[]
 
@@ -544,6 +546,22 @@ model LessonProgress {
   lesson       Lesson               @relation(fields: [lessonId], references: [id])
 
   @@unique([userId, lessonId])
+}
+
+model LessonStepProgress {
+  id           String   @id @default(cuid())
+  userId       String
+  lessonId     String
+  stepKey      String
+  completedAt  DateTime @default(now())
+  lastViewedAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
+  lesson       Lesson   @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId, stepKey])
+  @@index([lessonId, stepKey])
 }
 
 model CommunityAssignmentSubmission {
@@ -711,27 +729,27 @@ model CourseChangeLog {
 }
 
 model Certificate {
-  id                            String             @id @default(cuid())
-  userId                        String
-  courseId                      String
-  courseVersionId               String
-  issuedAt                      DateTime           @default(now())
-  scorePercentage               Float?
-  studyLoadMinutes              Int?
-  certificateCode               String             @unique @default(cuid())
-  participantName               String?
-  registrationNumber            String?
-  courseTitle                   String?
-  completedAt                   DateTime?
-  attemptCount                  Int?
-  evaluationCompleted           Boolean            @default(false)
-  courseVersionNumber           String?
-  accreditationRegisterSnapshot String?
-  accreditationKindSnapshot     AccreditationKind?
+  id                              String             @id @default(cuid())
+  userId                          String
+  courseId                        String
+  courseVersionId                 String
+  issuedAt                        DateTime           @default(now())
+  scorePercentage                 Float?
+  studyLoadMinutes                Int?
+  certificateCode                 String             @unique @default(cuid())
+  participantName                 String?
+  registrationNumber              String?
+  courseTitle                     String?
+  completedAt                     DateTime?
+  attemptCount                    Int?
+  evaluationCompleted             Boolean            @default(false)
+  courseVersionNumber             String?
+  accreditationRegisterSnapshot   String?
+  accreditationKindSnapshot       AccreditationKind?
   accreditationActivityIdSnapshot String?
-  providerNameSnapshot          String?
-  providerSignatureNameSnapshot String?
-  user                          User               @relation("CertificateUser", fields: [userId], references: [id])
-  course                        Course             @relation(fields: [courseId], references: [id])
-  courseVersion                 CourseVersion      @relation(fields: [courseVersionId], references: [id])
+  providerNameSnapshot            String?
+  providerSignatureNameSnapshot   String?
+  user                            User               @relation("CertificateUser", fields: [userId], references: [id])
+  course                          Course             @relation(fields: [courseId], references: [id])
+  courseVersion                   CourseVersion      @relation(fields: [courseVersionId], references: [id])
 }

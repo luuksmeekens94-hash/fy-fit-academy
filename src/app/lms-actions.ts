@@ -2,6 +2,7 @@
 
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { requireUser } from "@/lib/auth";
 import { listActiveUsers } from "@/lib/data";
@@ -316,6 +317,75 @@ async function assertCourseAccessibleForUser(params: {
   );
 }
 
+async function assertReviewerCourseLessonAccess(params: {
+  userId: string;
+  role: Role;
+  courseId: string;
+  lessonId: string;
+}) {
+  assert(params.role === "REVIEWER" || params.role === "BEHEERDER", "Alleen reviewers en beheerders kunnen deze stapvoortgang bijwerken.");
+
+  const course = await prisma.course.findUnique({
+    where: { id: params.courseId },
+    select: {
+      id: true,
+      reviewerId: true,
+      versions: {
+        where: { isActive: true },
+        select: {
+          id: true,
+          lessons: {
+            where: { id: params.lessonId },
+            select: { id: true },
+          },
+        },
+      },
+    },
+  });
+
+  assert(course, "Cursus niet gevonden.");
+  if (params.role === "REVIEWER") {
+    assert(course.reviewerId === params.userId, "Reviewer is niet gekoppeld aan deze cursus.");
+  }
+
+  const activeVersion = course.versions[0] ?? null;
+  assert(activeVersion, "Geen actieve cursusversie gevonden.");
+  assert(activeVersion.lessons.length === 1, "Les hoort niet bij deze cursus.");
+}
+
+function assertSafeReviewerNextHref(nextHref: string, courseId: string) {
+  assert(!nextHref || nextHref.startsWith(`/lms/courses/${courseId}`) || nextHref === "/lms", "Ongeldige vervolgstap.");
+}
+
+async function upsertLessonStepProgress(params: {
+  userId: string;
+  lessonId: string;
+  stepKey: string;
+}) {
+  assert(/^[a-z0-9-]{2,80}$/i.test(params.stepKey), "Ongeldige stapcode.");
+
+  return prisma.lessonStepProgress.upsert({
+    where: {
+      userId_lessonId_stepKey: {
+        userId: params.userId,
+        lessonId: params.lessonId,
+        stepKey: params.stepKey,
+      },
+    },
+    update: {
+      completedAt: new Date(),
+      lastViewedAt: new Date(),
+    },
+    create: {
+      userId: params.userId,
+      lessonId: params.lessonId,
+      stepKey: params.stepKey,
+      completedAt: new Date(),
+      lastViewedAt: new Date(),
+    },
+  });
+}
+
 async function getActiveCourseVersionId(courseId: string) {
   const course = await prisma.course.findUnique({
     where: { id: courseId },
@@ -519,6 +589,68 @@ export async function completeLessonAction(formData: FormData) {
   await revalidateLearningPaths({ courseId, lessonId });
 }
 
+export async function completeReviewerLessonStepAction(formData: FormData) {
+  const user = await requireUser();
+  const courseId = getString(formData, "courseId");
+  const lessonId = getString(formData, "lessonId");
+  const stepKey = getString(formData, "stepKey");
+  const nextHref = getString(formData, "nextHref");
+
+  assert(courseId, "Cursus ontbreekt.");
+  assert(lessonId, "Les ontbreekt.");
+  assert(stepKey, "Stap ontbreekt.");
+  assertSafeReviewerNextHref(nextHref, courseId);
+
+  await assertReviewerCourseLessonAccess({
+    userId: user.id,
+    role: user.role,
+    courseId,
+    lessonId,
+  });
+
+  await upsertLessonStepProgress({
+    userId: user.id,
+    lessonId,
+    stepKey,
+  });
+
+  await revalidateLearningPaths({ courseId, lessonId });
+
+  if (nextHref) {
+    redirect(nextHref);
+  }
+}
+
+export async function markReviewerLessonStepAction(formData: FormData) {
+  const user = await requireUser();
+  const courseId = getString(formData, "courseId");
+  const lessonId = getString(formData, "lessonId");
+  const stepKey = getString(formData, "stepKey");
+
+  assert(courseId, "Cursus ontbreekt.");
+  assert(lessonId, "Les ontbreekt.");
+  assert(stepKey, "Stap ontbreekt.");
+
+  await assertReviewerCourseLessonAccess({
+    userId: user.id,
+    role: user.role,
+    courseId,
+    lessonId,
+  });
+
+  const saved = await upsertLessonStepProgress({
+    userId: user.id,
+    lessonId,
+    stepKey,
+  });
+
+  await revalidateLearningPaths({ courseId, lessonId });
+
+  return {
+    completedAt: saved.completedAt.toISOString(),
+  };
+}
+
 export async function submitCommunityAssignmentAction(formData: FormData) {
   const user = await requireUser();
   const courseId = getString(formData, "courseId");
@@ -526,6 +658,7 @@ export async function submitCommunityAssignmentAction(formData: FormData) {
   const title = getString(formData, "title");
   const prompt = getString(formData, "prompt");
   const answer = getString(formData, "answer");
+  const stepKey = getOptionalString(formData, "stepKey");
 
   assert(courseId, "Cursus ontbreekt.");
   assert(lessonId, "Les ontbreekt.");
@@ -599,6 +732,14 @@ export async function submitCommunityAssignmentAction(formData: FormData) {
       updatedAt: true,
     },
   });
+
+  if (stepKey) {
+    await upsertLessonStepProgress({
+      userId: user.id,
+      lessonId,
+      stepKey,
+    });
+  }
 
   await revalidateLearningPaths({ courseId, lessonId });
 

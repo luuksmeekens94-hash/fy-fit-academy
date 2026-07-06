@@ -186,10 +186,10 @@ export function getDashboardRoleFit(
       copy: {
         eyebrow: "Accreditatie-preview",
         title: "Revieweromgeving",
-        description: "Bekijk LMS-inhoud en accreditatiecontext veilig, zonder voortgang, toetspogingen of certificaten te muteren.",
+        description: "Bekijk LMS-inhoud en accreditatiecontext in een heldere previewomgeving.",
       },
       primaryStats: [
-        { label: "Previewmodus", detail: "Reviewerweergave muteert geen voortgang of certificaten." },
+        { label: "Previewmodus", detail: "Reviewerweergave voor accreditatiecontrole." },
         { label: "Monitorrol", detail: "Deze rol is alleen voor inhoudelijke accreditatiereview." },
         { label: "Onboarding in praktijk", detail: "Niet van toepassing voor revieweraccounts." },
       ],

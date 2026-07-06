@@ -60,12 +60,12 @@ export function ReviewerAssessmentPreview({ assessment }: ReviewerAssessmentPrev
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">Toetsing</p>
           <h2 className="display-font mt-3 text-3xl font-semibold text-slate-950 lg:text-4xl">{assessment.title}</h2>
           <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--ink-soft)]">
-            {assessment.description ?? "Beantwoord de vragen zoals een cursist dat zou doen. De reviewer kan de volledige toets doorlopen zonder dat er iets wordt opgeslagen."}
+            {assessment.description ?? "Beantwoord de vragen zoals een cursist dat zou doen en controleer direct je score."}
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <StatusBadge label={`${assessment.questions.length} vragen`} tone="neutral" />
             <StatusBadge label={`${assessment.passPercentage}% norm`} tone="brand" />
-            <StatusBadge label="review zonder opslag" tone="success" />
+
           </div>
           <button
             type="button"
@@ -87,7 +87,7 @@ export function ReviewerAssessmentPreview({ assessment }: ReviewerAssessmentPrev
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">Toetsing</p>
             <h2 className="display-font mt-2 text-3xl font-semibold text-slate-950">{assessment.title}</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--ink-soft)]">
-              Kies de antwoorden en lever de toets lokaal in. Er wordt geen toetspoging, score of voortgang opgeslagen.
+              Kies de antwoorden en controleer direct of je de kennischeck voldoende beheerst.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -102,8 +102,8 @@ export function ReviewerAssessmentPreview({ assessment }: ReviewerAssessmentPrev
           "rounded-[28px] px-6 py-5 text-sm leading-7 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.35)]",
           score.passed ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100" : "bg-amber-50 text-amber-900 ring-1 ring-amber-100",
         )}>
-          <p className="font-semibold">Reviewscore: {score.percentage}% ({score.raw}/{score.max} punten)</p>
-          <p className="mt-1">Dit is alleen lokale reviewerfeedback. Er is niets opgeslagen in de Academy.</p>
+          <p className="font-semibold">Score: {score.percentage}% ({score.raw}/{score.max} punten)</p>
+          <p className="mt-1">{score.passed ? "Voldoende behaald." : `Nog niet voldoende. De norm is ${assessment.passPercentage}%.`}</p>
         </div>
       ) : null}
 

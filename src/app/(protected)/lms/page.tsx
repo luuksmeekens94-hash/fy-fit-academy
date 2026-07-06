@@ -2,10 +2,16 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { CourseCard } from "@/components/lms/course-card";
+import { ProgressBar } from "@/components/lms/progress-bar";
 import { requireUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { getLearnerLmsRedirectPath } from "@/lib/lms/route-access";
 import { getAllCourses, getMyEnrollments } from "@/lib/lms/queries";
 import { buildReviewerCoursePreviewSummary } from "@/lib/lms/reviewer-preview";
+import {
+  buildReviewerModuleProgress,
+  summarizeReviewerCourseProgress,
+} from "@/lib/lms/reviewer-sublessons";
 import { redirect } from "next/navigation";
 
 export default async function LmsOverviewPage() {
@@ -27,6 +33,54 @@ export default async function LmsOverviewPage() {
     : null;
 
   if (user.role === "REVIEWER") {
+    const courseIds = reviewerPreviewSummary?.items.map((course) => course.id) ?? [];
+    const [reviewerCourseDetails, stepProgress, assignmentSubmissions] = await Promise.all([
+      prisma.course.findMany({
+        where: { id: { in: courseIds } },
+        select: {
+          id: true,
+          versions: {
+            where: { isActive: true },
+            select: {
+              lessons: {
+                orderBy: { order: "asc" },
+                select: { id: true, title: true, content: true, order: true, type: true },
+              },
+            },
+          },
+        },
+      }),
+      prisma.lessonStepProgress.findMany({
+        where: { userId: user.id },
+        select: { lessonId: true, stepKey: true },
+      }),
+      prisma.communityAssignmentSubmission.findMany({
+        where: { userId: user.id, courseId: { in: courseIds } },
+        select: { courseId: true, lessonId: true },
+      }),
+    ]);
+    const completedStepKeysByLessonId = new Map<string, Set<string>>();
+
+    stepProgress.forEach((entry) => {
+      const current = completedStepKeysByLessonId.get(entry.lessonId) ?? new Set<string>();
+      current.add(entry.stepKey);
+      completedStepKeysByLessonId.set(entry.lessonId, current);
+    });
+
+    const progressByCourseId = new Map(
+      reviewerCourseDetails.map((course) => {
+        const lessons = course.versions[0]?.lessons ?? [];
+        const modules = buildReviewerModuleProgress({
+          lessons,
+          completedStepKeysByLessonId,
+          submittedAssignmentLessonIds: new Set(
+            assignmentSubmissions.filter((entry) => entry.courseId === course.id).map((entry) => entry.lessonId),
+          ),
+        });
+        return [course.id, summarizeReviewerCourseProgress(modules)] as const;
+      }),
+    );
+
     return (
       <div className="space-y-6">
         <PageHeader
@@ -36,28 +90,42 @@ export default async function LmsOverviewPage() {
         />
 
         <section className="grid gap-4">
-          {reviewerPreviewSummary?.items.map((course) => (
+          {reviewerPreviewSummary?.items.map((course) => {
+            const progress = progressByCourseId.get(course.id);
+            const progressLabel = progress?.isCompleted
+              ? "Afgerond"
+              : progress?.isStarted
+                ? `${progress.percentage}% doorlopen`
+                : "Nog niet gestart";
+
+            return (
             <Link
               key={course.id}
               href={course.previewPath}
               className="card-surface rounded-[32px] p-6 transition hover:-translate-y-0.5 hover:border-[var(--brand)]"
             >
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
                     Beschikbaar voor review
                   </p>
                   <h2 className="mt-2 text-2xl font-semibold text-slate-950">{course.title}</h2>
                   <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
-                    Doorloop module voor module. Geen voortgang, toetsresultaten of certificaten worden opgeslagen.
+                    {progressLabel}. Doorloop de modules in volgorde of ga verder waar je was gebleven.
                   </p>
+                  {progress ? (
+                    <div className="mt-4 max-w-xl">
+                      <ProgressBar value={progress.percentage} label={`${progress.completedModules}/${progress.totalModules} modules afgerond`} />
+                    </div>
+                  ) : null}
                 </div>
                 <span className="self-start rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white lg:self-center">
-                  Open e-learning
+                  {progress?.isStarted ? "Ga verder" : "Open e-learning"}
                 </span>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </section>
       </div>
     );
@@ -104,7 +172,7 @@ export default async function LmsOverviewPage() {
                 Accreditatiecommissie toegang
               </h2>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--ink-soft)]">
-                Je kunt alle e-learnings openen zonder inschrijving, voortgang, toetspogingen, evaluaties of certificaten aan te maken. Deze weergave is dus veilig voor commissiecontrole.
+                Gebruik deze preview om inhoud, toetsopbouw, evaluatie en bewijsvoering rustig na te lopen voor commissiecontrole.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm lg:min-w-72">
