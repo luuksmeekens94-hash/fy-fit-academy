@@ -33,7 +33,7 @@ function normalizePdfBullets(text: string) {
 }
 
 function isStandaloneHeadingLine(line: string) {
-  return /^(Module\s+\d+|Focus|Leerdoelen|Even voorstellen:?|Les\s+\d+(?:\.\d+)?:?.*|Figuur\s+\d+.*|Literatuur:?|Casus:?|Samenvatting:?|Kernpunten:?|Reflectie:?)$/i.test(line);
+  return /^(Module\s+\d+|Focus|Leerdoelen|Even voorstellen:?|Les\s+\d+(?:\.\d+)?:?.*|Figuur\s+\d+.*|Literatuur:?|Toetsvragen\s+Module\s+\d+|Casus:?|Samenvatting:?|Kernpunten:?|Reflectie:?)$/i.test(line);
 }
 
 function splitParagraphs(text: string) {

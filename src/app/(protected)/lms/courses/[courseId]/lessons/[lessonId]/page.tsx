@@ -62,23 +62,23 @@ function getReviewerFigureItems(moduleNumber: string | null) {
     "1": [
       {
         src: "/lms/pfp/figures/module-1-figuur-1.png",
-        caption: "Figuur module 1: load, frequentie en de envelope of function als basis voor klinisch redeneren bij PFP.",
+        caption: "Figuur 1. Envelope of Function: load, frequentie en de envelope of function als basis voor klinisch redeneren bij PFP.",
       },
     ],
     "2": [
       {
         src: "/lms/pfp/figures/module-2-figuur-1.png",
-        caption: "Figuur module 2: visuele ondersteuning bij onderzoek en klinisch redeneren.",
+        caption: "Figuur 2. Stroomdiagram LLROM: subgroepindeling en klinisch redeneren bij PFP.",
       },
     ],
     "3": [
       {
         src: "/lms/pfp/figures/module-3-figuur-1.png",
-        caption: "Figuur module 3: visuele ondersteuning bij behandeling en oefenopbouw.",
+        caption: "Figuur 2. Stroomdiagram LLROM: subgroepindeling voor gerichte fase-1 behandeling.",
       },
       {
         src: "/lms/pfp/figures/module-3-figuur-2.png",
-        caption: "Figuur module 3: aanvullende illustratie bij behandelprincipes en progressie.",
+        caption: "Figuur 3. Evidence-based klinische benaderingen voor PFP en PT, inclusief optimale behandeling en tijdspaden.",
       },
     ],
   };
@@ -223,7 +223,7 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
       ? "Theorie"
       : reviewerStep === "opdracht"
         ? "Opdracht"
-        : "Toetsvragen"
+        : "Kennischeck"
     : lesson.type === "ASSESSMENT"
       ? "Eindtoets"
       : "Onderdeel";

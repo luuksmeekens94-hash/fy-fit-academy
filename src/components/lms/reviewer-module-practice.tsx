@@ -142,9 +142,9 @@ export function ReviewerModulePractice({
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  const phaseTitle = phase === "assignment" ? "Opdracht uitvoeren" : "Moduletoets maken";
+  const phaseTitle = phase === "assignment" ? "Opdracht uitvoeren" : "Kennischeck maken";
   const phaseDescription = phase === "assignment"
-    ? "Werk de community-opdracht uit en lever je antwoord in. Daarna kun je door naar de toetsvragen."
+    ? "Werk de community-opdracht uit en lever je antwoord in. Daarna kun je door naar de kennischeck."
     : `Beantwoord alle vragen. Je moet minimaal ${normalizedMinimumPassPercentage}% goed halen om door te gaan naar de volgende module.`;
   const savedAtLabel = formatSavedAt(assignmentSavedAt);
 
@@ -159,7 +159,7 @@ export function ReviewerModulePractice({
         <div className="flex flex-wrap gap-2">
           <StepPill label="Theorie" done />
           <StepPill label="Opdracht" active={phase === "assignment"} done={phase === "questions"} />
-          <StepPill label="Toetsvragen" active={phase === "questions"} />
+          <StepPill label="Kennischeck" active={phase === "questions"} />
         </div>
       </div>
 
@@ -234,10 +234,10 @@ export function ReviewerModulePractice({
                 </button>
                 {assignmentSaved ? (
                   <Link href={questionsHref} className="rounded-full bg-[var(--brand)] px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
-                    Door met toetsvragen
+                    Door met kennischeck
                   </Link>
                 ) : (
-                  <span className="rounded-full bg-slate-200 px-6 py-3 text-center text-sm font-semibold text-slate-500">Door met toetsvragen</span>
+                  <span className="rounded-full bg-slate-200 px-6 py-3 text-center text-sm font-semibold text-slate-500">Door met kennischeck</span>
                 )}
               </div>
             </div>
@@ -253,7 +253,7 @@ export function ReviewerModulePractice({
             <StatusBadge label={`${normalizedMinimumPassPercentage}% norm`} tone="brand" />
             <StatusBadge label={submitted ? `${score.percentage}%` : `${unanswered} open`} tone={submitted ? (score.passed ? "success" : "warning") : "neutral"} />
           </div>
-          <h3 className="mt-4 text-2xl font-semibold text-slate-950">Toetsvragen bij {moduleTitle}</h3>
+          <h3 className="mt-4 text-2xl font-semibold text-slate-950">Kennischeck bij {moduleTitle}</h3>
           <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
             Beantwoord alle vragen. Pas bij minimaal {normalizedMinimumPassPercentage}% goed verschijnt de knop naar de volgende module.
           </p>

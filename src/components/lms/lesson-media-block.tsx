@@ -5,8 +5,10 @@ import { parseLessonRichText } from "@/lib/lms/lesson-rich-text";
 
 const headingPattern = /^(Module\s+\d+|Les\s+\d+\.|\d+(?:\.\d+)?\s+|\d+(?:\.\d+)?[A-ZÀ-ÿ]|Focus$|Leerdoelen$|Even voorstellen:?$|Casus:?$|Samenvatting:?$|Kernpunten:?$|Reflectie:?$)/i;
 const urlPattern = /(https?:\/\/[^\s)]+)(?=[\s)]|$)/g;
+const bareDoiPattern = /\b10\.\d{4,9}\/[-._;()/:A-Z0-9]+/gi;
 const figureMarkerPattern = /^Figuur\s+\d+\b/i;
 const literatureMarkerPattern = /^Literatuur\s*:?/i;
+const quizMarkerPattern = /^Toetsvragen\s+Module\s+\d+\s*$/i;
 
 type LiteratureItem = {
   id: string;
@@ -104,16 +106,92 @@ function renderTextWithLinks(text: string) {
 }
 
 function extractUrl(text: string) {
-  return text.match(urlPattern)?.[0] ?? null;
+  const directUrl = text.match(urlPattern)?.[0] ?? null;
+  if (directUrl) {
+    return directUrl;
+  }
+
+  const bareDoi = text.match(bareDoiPattern)?.[0]?.replace(/[.,;]+$/, "") ?? null;
+  return bareDoi ? `https://doi.org/${bareDoi}` : null;
+}
+
+type LiteratureLink = {
+  url: string;
+  label: string;
+  display: string;
+};
+
+function getKnownReferenceUrl(text: string) {
+  const normalized = text.toLowerCase();
+
+  if (normalized.includes("neurosensory mapping") && normalized.includes("dye") && normalized.includes("1998")) {
+    return "https://doi.org/10.1177/03635465980260060601";
+  }
+
+  return null;
+}
+
+function cleanReferenceText(text: string) {
+  return text
+    .replace(urlPattern, "")
+    .replace(bareDoiPattern, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function referenceStartsNewCitation(text: string) {
+  const trimmed = text.trim();
+
+  return /^[A-Za-zÀ-ÿ][^,]{1,90},\s+(?:[A-Z]\.|[A-Z][a-zà-ÿ]+).+\(\d{4}\)/u.test(trimmed);
+}
+
+function groupLiteratureReferences(entries: string[]) {
+  const groups: string[] = [];
+
+  entries.forEach((entry) => {
+    const trimmed = entry.trim();
+    if (!trimmed || quizMarkerPattern.test(trimmed)) {
+      return;
+    }
+
+    if (groups.length === 0 || referenceStartsNewCitation(trimmed)) {
+      groups.push(trimmed);
+      return;
+    }
+
+    groups[groups.length - 1] = `${groups[groups.length - 1]} ${trimmed}`.replace(/\s+/g, " ").trim();
+  });
+
+  return groups;
+}
+
+function resolveLiteratureLink(reference: string): LiteratureLink {
+  const directUrl = extractUrl(reference) ?? getKnownReferenceUrl(reference);
+  const title = cleanReferenceText(reference);
+
+  if (directUrl) {
+    return {
+      url: directUrl,
+      label: "Open artikel",
+      display: directUrl.replace(/^https?:\/\//, ""),
+    };
+  }
+
+  const scholarQuery = encodeURIComponent(title || reference);
+  return {
+    url: `https://scholar.google.com/scholar?q=${scholarQuery}`,
+    label: "Zoek bronartikel",
+    display: "Google Scholar",
+  };
 }
 
 function formatLiteratureTitle(text: string) {
-  return text.replace(urlPattern, "").replace(/\s+/g, " ").trim();
+  return cleanReferenceText(text);
 }
 
 function InlineLiteratureBox({ references }: { references: string[] }) {
   const citationLabels = references.filter((entry) => /^\(.+\)$/.test(entry.trim()));
-  const citationEntries = references.filter((entry) => !/^\(.+\)$/.test(entry.trim()));
+  const citationEntries = groupLiteratureReferences(references.filter((entry) => !/^\(.+\)$/.test(entry.trim())));
 
   return (
     <section className="my-9 overflow-hidden rounded-[30px] border border-[var(--border)] bg-white shadow-[0_22px_70px_-50px_rgba(35,27,18,0.8)]">
@@ -132,23 +210,21 @@ function InlineLiteratureBox({ references }: { references: string[] }) {
       </div>
       <div className="grid gap-3 bg-white px-5 py-5 sm:px-6">
         {citationEntries.map((reference, index) => {
-          const url = extractUrl(reference);
+          const link = resolveLiteratureLink(reference);
           const title = formatLiteratureTitle(reference);
 
           return (
             <div key={`${reference}-${index}`} className="rounded-[22px] border border-[var(--border)] bg-[var(--brand-wash)]/35 p-4">
               <p className="text-sm font-semibold leading-7 text-slate-950">{title || "Literatuurreferentie"}</p>
-              {url ? (
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_-24px_rgba(141,79,18,0.95)] transition hover:bg-[var(--brand-deep)]"
-                >
-                  <span>Open artikel</span>
-                  <span className="truncate opacity-90">{url.replace(/^https?:\/\//, "")}</span>
-                </a>
-              ) : null}
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_-24px_rgba(141,79,18,0.95)] transition hover:bg-[var(--brand-deep)]"
+              >
+                <span>{link.label}</span>
+                <span className="truncate opacity-90">{link.display}</span>
+              </a>
             </div>
           );
         })}
@@ -168,34 +244,35 @@ function LiteratureCards({ literature }: { literature: LiteratureItem[] }) {
       <h3 className="display-font mt-2 text-2xl font-semibold text-slate-950">Bronnen bij deze module</h3>
       <div className="mt-5 grid gap-3">
         {literature.map((reference) => {
+          const link = reference.url
+            ? {
+                url: reference.url,
+                label: "Open bronbestand",
+                display: reference.url.replace(/^https?:\/\//, ""),
+              }
+            : resolveLiteratureLink([reference.title, reference.source, reference.year ? String(reference.year) : null].filter(Boolean).join(" "));
           const content = (
             <>
               <span className="block text-sm font-semibold leading-6 text-slate-950">{reference.title}</span>
               <span className="mt-1 block text-xs leading-5 text-[var(--ink-soft)]">
                 {[reference.source, reference.guideline, reference.year ? String(reference.year) : null].filter(Boolean).join(" · ") || "Literatuurreferentie"}
               </span>
-              {reference.url ? <span className="mt-3 inline-flex rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-semibold text-white">Open artikel</span> : null}
+              <span className="mt-3 inline-flex max-w-full rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-semibold text-white">
+                {link.label}
+              </span>
             </>
           );
 
-          if (reference.url) {
-            return (
-              <a
-                key={reference.id}
-                href={reference.url}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-[22px] border border-[var(--border)] bg-white px-4 py-4 transition hover:-translate-y-0.5 hover:border-[var(--brand)]"
-              >
-                {content}
-              </a>
-            );
-          }
-
           return (
-            <div key={reference.id} className="rounded-[22px] border border-[var(--border)] bg-white px-4 py-4">
+            <a
+              key={reference.id}
+              href={link.url}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-[22px] border border-[var(--border)] bg-white px-4 py-4 transition hover:-translate-y-0.5 hover:border-[var(--brand)]"
+            >
               {content}
-            </div>
+            </a>
           );
         })}
       </div>
@@ -216,7 +293,29 @@ function isLiteratureMarker(text: string) {
   return literatureMarkerPattern.test(text.trim());
 }
 
-function LessonText({ text, figures = [] }: { text: string; figures?: FigureItem[] }) {
+function isQuizMarker(text: string) {
+  return quizMarkerPattern.test(text.trim());
+}
+
+function LessonVideos({ videos }: { videos: string[] }) {
+  if (videos.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="my-9 space-y-4">
+      <div className="rounded-[24px] border border-[var(--border)] bg-[var(--brand-wash)]/55 px-5 py-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--brand-deep)]">Video</p>
+        <p className="mt-1 text-sm leading-6 text-[var(--ink-soft)]">Bekijk eerst de videodemonstratie en ga daarna door naar de literatuur.</p>
+      </div>
+      {videos.map((src) => (
+        <MediaVideo key={src} src={src} />
+      ))}
+    </section>
+  );
+}
+
+function LessonText({ text, figures = [], videos = [] }: { text: string; figures?: FigureItem[]; videos?: string[] }) {
   const blocks = parseLessonRichText(text);
   const figureMarkerIndexes = blocks
     .map((block, index) => (block.type === "paragraph" && isFigureMarker(block.text) ? index : null))
@@ -225,11 +324,20 @@ function LessonText({ text, figures = [] }: { text: string; figures?: FigureItem
     figureMarkerIndexes.map((blockIndex, figureIndex) => [blockIndex, figures[figureIndex]] as const),
   );
   const inlineFigureCount = Math.min(figureMarkerIndexes.length, figures.length);
+  const firstLiteratureBlockIndex = blocks.findIndex((block) => block.type === "paragraph" && isLiteratureMarker(block.text));
 
   const nodes: ReactNode[] = [];
 
   for (let index = 0; index < blocks.length; index += 1) {
     const block = blocks[index];
+
+    if (index === firstLiteratureBlockIndex) {
+      nodes.push(<LessonVideos key="lesson-videos-before-literature" videos={videos} />);
+    }
+
+    if (block.type === "paragraph" && isQuizMarker(block.text)) {
+      continue;
+    }
 
     if (block.type === "bulletList") {
       nodes.push(
@@ -254,7 +362,7 @@ function LessonText({ text, figures = [] }: { text: string; figures?: FigureItem
     if (isFigureMarker(block.text)) {
       const figure = figureByBlockIndex.get(index) ?? null;
       if (figure) {
-        nodes.push(<MediaImage key={`inline-figure-${index}-${figure.src}`} src={figure.src} caption={`${block.text}. ${figure.caption}`} />);
+        nodes.push(<MediaImage key={`inline-figure-${index}-${figure.src}`} src={figure.src} caption={figure.caption} />);
       } else {
         nodes.push(
           <p key={`figure-marker-${index}`} className="rounded-2xl bg-[var(--brand-wash)]/55 px-4 py-3 text-sm font-semibold text-[var(--brand-deep)]">
@@ -274,7 +382,7 @@ function LessonText({ text, figures = [] }: { text: string; figures?: FigureItem
         if (candidate.type !== "paragraph") {
           break;
         }
-        if (looksLikeHeading(candidate.text) || isFigureMarker(candidate.text) || isLiteratureMarker(candidate.text)) {
+        if (looksLikeHeading(candidate.text) || isFigureMarker(candidate.text) || isLiteratureMarker(candidate.text) || isQuizMarker(candidate.text)) {
           break;
         }
         references.push(candidate.text);
@@ -304,6 +412,10 @@ function LessonText({ text, figures = [] }: { text: string; figures?: FigureItem
     );
   }
 
+  if (firstLiteratureBlockIndex === -1) {
+    nodes.push(<LessonVideos key="lesson-videos-after-text" videos={videos} />);
+  }
+
   figures.slice(inlineFigureCount).forEach((figure) => {
     nodes.push(<MediaImage key={`fallback-figure-${figure.src}`} src={figure.src} caption={figure.caption} />);
   });
@@ -313,12 +425,14 @@ function LessonText({ text, figures = [] }: { text: string; figures?: FigureItem
 
 export function LessonMediaBlock({ media, figures = [], literature = [] }: LessonMediaBlockProps) {
   const hasInlineLiterature = /(^|\n)\s*Literatuur\s*:?/i.test(media.text);
+  const videos = media.blocks.filter((block) => block.type === "video").map((block) => block.src);
+  const firstTextBlockIndex = media.blocks.findIndex((block) => block.type === "text");
 
   return (
     <div className="mx-auto max-w-[82ch] space-y-5">
       {media.blocks.map((block, index) => {
         if (block.type === "video") {
-          return <MediaVideo key={`${block.src}-${index}`} src={block.src} />;
+          return firstTextBlockIndex === -1 ? <MediaVideo key={`${block.src}-${index}`} src={block.src} /> : null;
         }
 
         if (block.type === "image") {
@@ -329,7 +443,7 @@ export function LessonMediaBlock({ media, figures = [], literature = [] }: Lesso
           return <MediaDocument key={`${block.src}-${index}`} src={block.src} label={block.label} />;
         }
 
-        return <LessonText key={`text-${index}`} text={block.text} figures={figures} />;
+        return <LessonText key={`text-${index}`} text={block.text} figures={figures} videos={index === firstTextBlockIndex ? videos : []} />;
       })}
 
       {!hasInlineLiterature ? <LiteratureCards literature={literature} /> : null}
