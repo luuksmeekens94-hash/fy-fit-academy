@@ -28,7 +28,7 @@ export type ReviewerModuleProgress = {
   firstSubLessonHrefSuffix: string;
 };
 
-const lessonHeadingPattern = /^\s*Les\s+(\d+\.\d+)\s*:??\s*(.*)$/i;
+const lessonHeadingPattern = /^\s*Les\s+(\d+\.\d+)\s*:?\s*(.*)$/i;
 const moduleTitlePattern = /^Module\s+(\d+)/i;
 
 function normalizeText(text: string | null | undefined) {
