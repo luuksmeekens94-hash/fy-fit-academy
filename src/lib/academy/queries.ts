@@ -128,14 +128,24 @@ export const getAcademyCourseBySlugForUser = cache(
     const enrollment =
       (await getEnrollmentDetailForUser(userId, course.id)) ?? buildDefaultEnrollmentDetail(userId, course);
 
-    const progressEntries = course.activeVersion
-      ? await getLessonProgressForVersion(userId, course.activeVersion.id)
-      : [];
+    const [progressEntries, evaluationSubmission] = await Promise.all([
+      course.activeVersion ? getLessonProgressForVersion(userId, course.activeVersion.id) : Promise.resolve([]),
+      course.activeVersion?.evaluationForms.length
+        ? prisma.evaluationSubmission.findFirst({
+            where: {
+              userId,
+              evaluationFormId: { in: course.activeVersion.evaluationForms.map((form) => form.id) },
+            },
+            select: { id: true },
+          })
+        : Promise.resolve(null),
+    ]);
 
     return buildAcademyCourseDetailView({
       course,
       enrollment,
       progressEntries,
+      evaluationCompleted: evaluationSubmission !== null,
     });
   },
 );

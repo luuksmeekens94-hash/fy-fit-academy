@@ -59,6 +59,20 @@ export type AcademyLessonListItemView = {
   href: string;
 };
 
+export type AcademyEvaluationStepView = {
+  title: string;
+  status: "COMPLETED" | "NOT_STARTED";
+  href: string;
+};
+
+export type AcademyRequiredLiteratureView = {
+  id: string;
+  title: string;
+  source: string | null;
+  year: number | null;
+  url: string | null;
+};
+
 export type AcademyCourseDetailView = {
   id: string;
   slug: string;
@@ -77,6 +91,8 @@ export type AcademyCourseDetailView = {
   startLabel: string;
   completionState: AcademyCompletionState;
   lessons: AcademyLessonListItemView[];
+  evaluationStep: AcademyEvaluationStepView | null;
+  requiredLiterature: AcademyRequiredLiteratureView[];
 };
 
 export type AcademyLessonNavLink = {

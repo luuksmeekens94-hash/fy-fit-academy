@@ -53,11 +53,24 @@ function formatDate(date: Date | null) {
   }).format(date);
 }
 
+function formatEvaluationAnswerValue(answer: { rating: number | null; booleanValue: boolean | null; text: string | null }) {
+  if (answer.rating !== null) {
+    return `${answer.rating}/5`;
+  }
+
+  if (answer.booleanValue !== null) {
+    return answer.booleanValue ? "Ja" : "Nee";
+  }
+
+  return answer.text || "Geen antwoord";
+}
+
 
 async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awaited<ReturnType<typeof getCourseDetail>>>; userId: string }) {
   const lessons = course.activeVersion?.lessons ?? [];
   const lessonIds = lessons.map((lesson) => lesson.id);
-  const [stepProgress, assignmentSubmissions] = await Promise.all([
+  const evaluationForm = course.activeVersion?.evaluationForms.find((form) => form.isRequired) ?? course.activeVersion?.evaluationForms[0] ?? null;
+  const [stepProgress, assignmentSubmissions, evaluationSubmission] = await Promise.all([
     prisma.lessonStepProgress.findMany({
       where: { userId, lessonId: { in: lessonIds } },
       select: { lessonId: true, stepKey: true },
@@ -66,6 +79,17 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
       where: { userId, courseId: course.id },
       select: { lessonId: true },
     }),
+    evaluationForm
+      ? prisma.evaluationSubmission.findUnique({
+          where: {
+            evaluationFormId_userId: {
+              evaluationFormId: evaluationForm.id,
+              userId,
+            },
+          },
+          select: { id: true, submittedAt: true },
+        })
+      : Promise.resolve(null),
   ]);
   const completedStepKeysByLessonId = new Map<string, Set<string>>();
 
@@ -80,14 +104,22 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
     completedStepKeysByLessonId,
     submittedAssignmentLessonIds: new Set(assignmentSubmissions.map((entry) => entry.lessonId)),
   });
-  const courseProgress = summarizeReviewerCourseProgress(moduleProgress);
+  const moduleSummary = summarizeReviewerCourseProgress(moduleProgress);
+  const evaluationStepCount = evaluationForm ? 1 : 0;
+  const completedEvaluationSteps = evaluationSubmission ? 1 : 0;
+  const totalCourseSteps = moduleSummary.totalSteps + evaluationStepCount;
+  const completedCourseSteps = moduleSummary.completedSteps + completedEvaluationSteps;
+  const coursePercentage = totalCourseSteps ? Math.round((completedCourseSteps / totalCourseSteps) * 100) : moduleSummary.percentage;
+  const requiredLiterature = course.activeVersion?.literature.filter((reference) => reference.guideline?.toLowerCase().includes("verplichte")) ?? [];
+  const moduleLessonIds = new Set(moduleProgress.map((entry) => entry.lessonId));
+  const supportingLessons = lessons.filter((lesson) => !moduleLessonIds.has(lesson.id));
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="E-learning"
         title={course.title}
-        description="Doorloop de modules zoals een cursist dat doet. Je kunt altijd direct naar een les, opdracht of kennischeck."
+        description="Doorloop de modules zoals een cursist dat doet. Je kunt altijd direct naar een les, opdracht, kennischeck of evaluatie."
       />
 
       <section className="card-surface rounded-[32px] p-6">
@@ -97,84 +129,123 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
               E-learning doorlopen
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-              {courseProgress.isCompleted ? "Alle modules afgerond" : courseProgress.isStarted ? `${courseProgress.percentage}% doorlopen` : "Start bij module 1"}
+              {completedCourseSteps >= totalCourseSteps && totalCourseSteps > 0 ? "E-learning afgerond" : completedCourseSteps > 0 ? `${coursePercentage}% doorlopen` : "Start bij module 1"}
             </h2>
             <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
               Open de volgende stap of spring kort terug naar een specifieke les wanneer je iets opnieuw wilt bekijken.
             </p>
           </div>
           <div className="min-w-[220px]">
-            <ProgressBar value={courseProgress.percentage} label={`${courseProgress.completedModules}/${courseProgress.totalModules} modules afgerond`} />
+            <ProgressBar value={coursePercentage} label={`${completedCourseSteps}/${totalCourseSteps} stappen afgerond`} />
           </div>
         </div>
       </section>
 
+      {requiredLiterature.length ? (
+        <section className="rounded-[32px] border border-[var(--border)] bg-[var(--brand-wash)]/55 p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--brand-deep)]">Verplichte literatuur</p>
+          <h2 className="mt-2 text-xl font-semibold text-slate-950">Twee artikelen die cursisten moeten lezen</h2>
+          <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
+            De onderbouwing blijft per les staan. Deze artikelen zijn daarnaast duidelijk gemarkeerd als verplichte zelfstudieliteratuur.
+          </p>
+          <div className="mt-5 grid gap-3 lg:grid-cols-2">
+            {requiredLiterature.map((reference) => (
+              <a key={reference.id} href={reference.url ?? "#"} target="_blank" rel="noreferrer" className="rounded-[24px] border border-[var(--border)] bg-white p-5 text-sm transition hover:-translate-y-0.5 hover:border-[var(--brand)]">
+                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand-deep)]">Verplicht artikel</span>
+                <span className="mt-2 block font-semibold text-slate-950">{reference.title}</span>
+                <span className="mt-2 block leading-6 text-[var(--ink-soft)]">{reference.source}{reference.year ? ` · ${reference.year}` : ""}</span>
+                <span className="mt-3 inline-flex rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-semibold text-white">Open artikel</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="space-y-4">
-        {lessons.map((lesson, index) => {
-          const progress = moduleProgress.find((entry) => entry.lessonId === lesson.id) ?? null;
-          const stepLinks = progress ? buildReviewerModuleStepLinks(lesson) : [];
+        {moduleProgress.map((progress, index) => {
+          const lesson = lessons.find((entry) => entry.id === progress.lessonId);
+          if (!lesson) return null;
+          const stepLinks = buildReviewerModuleStepLinks(lesson);
           const theoryStepCount = stepLinks.filter((step) => step.kind === "theory").length;
-          const href = progress
-            ? `/lms/courses/${course.id}/lessons/${lesson.id}${progress.nextStepHrefSuffix || progress.firstSubLessonHrefSuffix}`
-            : `/lms/courses/${course.id}/lessons/${lesson.id}`;
-          const statusLabel = progress?.isCompleted
-            ? "Afgerond"
-            : progress?.isStarted
-              ? `${progress.percentage}% doorlopen`
-              : lesson.type === "ASSESSMENT"
-                ? "Eindtoets"
-                : "Nog te starten";
-          const statusTone = progress?.isCompleted ? "success" : progress?.isStarted ? "warning" : "neutral";
-          const description = progress
-            ? `Doorloop ${theoryStepCount} lessen, daarna de opdracht en kennischeck van deze module.`
-            : lesson.type === "ASSESSMENT"
-              ? "Volledige toetsvragenbank bij deze e-learning."
-              : lesson.type === "DOCUMENT"
-                ? "Ondersteunende documenten en bronmateriaal bij deze e-learning."
-                : lesson.description;
-          const displayTitle = lesson.type === "DOCUMENT" ? "Bronmateriaal en ondersteunende documenten" : lesson.title;
-          const primaryLabel = progress?.isCompleted ? "Opnieuw bekijken" : progress?.isStarted ? "Ga verder" : "Open";
+          const href = `/lms/courses/${course.id}/lessons/${lesson.id}${progress.nextStepHrefSuffix || progress.firstSubLessonHrefSuffix}`;
+          const statusLabel = progress.isCompleted ? "Afgerond" : progress.isStarted ? `${progress.percentage}% doorlopen` : "Nog te starten";
+          const statusTone = progress.isCompleted ? "success" : progress.isStarted ? "warning" : "neutral";
+          const primaryLabel = progress.isCompleted ? "Opnieuw bekijken" : progress.isStarted ? "Ga verder" : "Open";
 
           return (
-            <article
-              key={lesson.id}
-              className="card-surface flex flex-col gap-4 rounded-[28px] p-5 transition hover:border-[var(--brand)] lg:flex-row lg:items-center lg:justify-between"
-            >
+            <article key={lesson.id} className="card-surface flex flex-col gap-4 rounded-[28px] p-5 transition hover:border-[var(--brand)] lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-1 gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-sm font-semibold text-[var(--brand-deep)]">
-                  {index + 1}
-                </span>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-sm font-semibold text-[var(--brand-deep)]">{index + 1}</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge label={statusLabel} tone={statusTone} />
-                    {progress ? <StatusBadge label={`${theoryStepCount} lessen`} tone="neutral" /> : null}
+                    <StatusBadge label={`${theoryStepCount} lessen`} tone="neutral" />
                   </div>
-                  <h3 className="mt-2 text-lg font-semibold text-slate-950">{displayTitle}</h3>
-                  {description ? (
-                    <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">{description}</p>
-                  ) : null}
-                  {progress ? (
-                    <div className="mt-4 max-w-xl">
-                      <ProgressBar value={progress.percentage} label={`${progress.completedSteps}/${progress.totalSteps} stappen`} />
-                    </div>
-                  ) : null}
-                  {stepLinks.length ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {stepLinks.map((step) => (
-                        <Link
-                          key={step.key}
-                          href={`/lms/courses/${course.id}/lessons/${lesson.id}${step.hrefSuffix}`}
-                          className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)] hover:bg-[var(--brand-wash)]"
-                        >
-                          {step.label}
-                        </Link>
-                      ))}
-                    </div>
-                  ) : null}
+                  <h3 className="mt-2 text-lg font-semibold text-slate-950">{lesson.title}</h3>
+                  <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">Doorloop {theoryStepCount} lessen, daarna de opdracht en kennischeck van deze module.</p>
+                  <div className="mt-4 max-w-xl">
+                    <ProgressBar value={progress.percentage} label={`${progress.completedSteps}/${progress.totalSteps} stappen`} />
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {stepLinks.map((step) => (
+                      <Link key={step.key} href={`/lms/courses/${course.id}/lessons/${lesson.id}${step.hrefSuffix}`} className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)] hover:bg-[var(--brand-wash)]">
+                        {step.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
               <Link href={href} className="self-start rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)] lg:self-center">
                 {primaryLabel}
+              </Link>
+            </article>
+          );
+        })}
+
+        {evaluationForm ? (
+          <article className="card-surface flex flex-col gap-4 rounded-[28px] p-5 transition hover:border-[var(--brand)] lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-1 gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-sm font-semibold text-[var(--brand-deep)]">{moduleProgress.length + 1}</span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge label={evaluationSubmission ? "Ingevuld" : "Nog in te vullen"} tone={evaluationSubmission ? "success" : "warning"} />
+                  <StatusBadge label="officiële stap 5" tone="brand" />
+                </div>
+                <h3 className="mt-2 text-lg font-semibold text-slate-950">Evaluatieformulier</h3>
+                <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">Vul na module 4 de evaluatie in. De antwoorden worden opgeslagen voor Fy-Fit.</p>
+                <div className="mt-4 max-w-xl">
+                  <ProgressBar value={evaluationSubmission ? 100 : 0} label={evaluationSubmission ? "Evaluatie ingevuld" : "Nog niet ingevuld"} />
+                </div>
+              </div>
+            </div>
+            <Link href={`/lms/courses/${course.id}/evaluation`} className="self-start rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)] lg:self-center">
+              {evaluationSubmission ? "Bekijken" : "Invullen"}
+            </Link>
+          </article>
+        ) : null}
+
+        {supportingLessons.map((lesson, index) => {
+          const displayTitle = lesson.type === "DOCUMENT" ? "Accreditatieondersteunende documenten en bronmateriaal" : lesson.type === "ASSESSMENT" ? "Volledige toetsvragenbank" : lesson.title;
+          const description = lesson.type === "DOCUMENT"
+            ? "Naslagwerk: formats, onderbouwing, literatuur en het PDF-evaluatieformulier."
+            : lesson.type === "ASSESSMENT"
+              ? "Naslag van de volledige vragenbank bij deze e-learning."
+              : lesson.description;
+
+          return (
+            <article key={lesson.id} className="card-surface flex flex-col gap-4 rounded-[28px] p-5 transition hover:border-[var(--brand)] lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-1 gap-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-sm font-semibold text-[var(--brand-deep)]">{moduleProgress.length + evaluationStepCount + index + 1}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge label={lesson.type === "DOCUMENT" ? "Naslagwerk" : "Naslag"} tone="neutral" />
+                  </div>
+                  <h3 className="mt-2 text-lg font-semibold text-slate-950">{displayTitle}</h3>
+                  {description ? <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">{description}</p> : null}
+                </div>
+              </div>
+              <Link href={`/lms/courses/${course.id}/lessons/${lesson.id}`} className="self-start rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)] lg:self-center">
+                Open
               </Link>
             </article>
           );
@@ -226,21 +297,36 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
   const participantReport = previewState.canViewWithoutEnrollment
     ? await getCourseParticipantCompletionReport(course.id)
     : [];
-  const communitySubmissions = user.role === "BEHEERDER"
-    ? await prisma.communityAssignmentSubmission.findMany({
-        where: { courseId: course.id },
-        orderBy: { submittedAt: "desc" },
-        take: 12,
-        select: {
-          id: true,
-          title: true,
-          answer: true,
-          submittedAt: true,
-          user: { select: { name: true, email: true } },
-          lesson: { select: { title: true } },
-        },
-      })
-    : [];
+  const activeEvaluationFormIds = course.activeVersion?.evaluationForms.map((form) => form.id) ?? [];
+  const [communitySubmissions, evaluationSubmissions] = user.role === "BEHEERDER"
+    ? await Promise.all([
+        prisma.communityAssignmentSubmission.findMany({
+          where: { courseId: course.id },
+          orderBy: { submittedAt: "desc" },
+          take: 12,
+          select: {
+            id: true,
+            title: true,
+            answer: true,
+            submittedAt: true,
+            user: { select: { name: true, email: true } },
+            lesson: { select: { title: true } },
+          },
+        }),
+        prisma.evaluationSubmission.findMany({
+          where: { evaluationFormId: { in: activeEvaluationFormIds } },
+          orderBy: { submittedAt: "desc" },
+          take: 20,
+          include: {
+            user: { select: { name: true, email: true } },
+            answers: {
+              include: { question: true },
+              orderBy: { question: { order: "asc" } },
+            },
+          },
+        }),
+      ])
+    : [[], []];
 
   return (
     <div className="space-y-6">
@@ -325,6 +411,7 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
       ) : null}
 
       {user.role === "BEHEERDER" ? (
+        <>
         <section className="card-surface overflow-hidden rounded-[32px]">
           <div className="academy-gradient-panel px-6 py-6 sm:px-8">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
@@ -361,6 +448,49 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
             )}
           </div>
         </section>
+
+        <section className="card-surface overflow-hidden rounded-[32px]">
+          <div className="academy-gradient-panel px-6 py-6 sm:px-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
+              Evaluatiedata
+            </p>
+            <h2 className="display-font mt-2 text-3xl font-semibold text-slate-950">Ingevulde evaluatieformulieren</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--ink-soft)]">
+              Antwoorden van cursisten/reviewers op stap 5. Hiermee kan Fy-Fit de evaluatiegegevens terugzien.
+            </p>
+          </div>
+          <div className="grid gap-4 bg-white px-5 py-5 sm:px-8">
+            {evaluationSubmissions.length ? evaluationSubmissions.map((submission) => (
+              <article key={submission.id} className="rounded-[26px] border border-[var(--border)] bg-[var(--brand-wash)]/35 p-5">
+                <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-950">{submission.user.name}</h3>
+                    <p className="mt-1 text-xs text-[var(--ink-soft)]">
+                      {submission.user.email} · {formatDate(submission.submittedAt)}
+                      {submission.actualStudyMinutes ? ` · ${submission.actualStudyMinutes} minuten zelfstudie` : ""}
+                    </p>
+                  </div>
+                  <StatusBadge label="evaluatie ingevuld" tone="success" />
+                </div>
+                <div className="mt-4 grid gap-3">
+                  {submission.answers.map((answer) => (
+                    <div key={answer.id} className="rounded-[18px] bg-white/85 px-4 py-3 text-sm leading-6">
+                      <p className="font-semibold text-slate-950">{answer.question.label}</p>
+                      <p className="mt-1 text-[var(--ink-soft)]">
+                        {formatEvaluationAnswerValue(answer)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            )) : (
+              <div className="rounded-[26px] border border-dashed border-[var(--border)] bg-white/80 p-5 text-sm leading-7 text-[var(--ink-soft)]">
+                Nog geen evaluatieformulieren ingevuld voor deze e-learning.
+              </div>
+            )}
+          </div>
+        </section>
+        </>
       ) : null}
 
       {certificate ? (

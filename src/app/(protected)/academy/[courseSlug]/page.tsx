@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { AcademyCourseHero } from "@/components/academy/academy-course-hero";
@@ -58,15 +59,49 @@ export default async function AcademyCourseDetailPage({
 
       <AcademyCourseIntro sections={course.introSections} />
 
+      {course.requiredLiterature.length ? (
+        <section className="rounded-[28px] border border-[var(--border)] bg-[var(--brand-wash)]/55 p-5">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--brand-deep)]">Verplichte literatuur</p>
+          <h2 className="mt-2 text-xl font-semibold text-slate-950">Lees deze artikelen tijdens de zelfstudie</h2>
+          <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
+            De onderbouwing blijft per les zichtbaar. Deze artikelen zijn daarnaast de verplichte literatuur bij deze e-learning.
+          </p>
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {course.requiredLiterature.map((reference) => (
+              <a key={reference.id} href={reference.url ?? "#"} target="_blank" rel="noreferrer" className="rounded-[20px] border border-[var(--border)] bg-white p-4 text-sm transition hover:border-[var(--brand)]">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand-deep)]">Verplicht artikel</span>
+                <span className="mt-2 block font-semibold text-slate-950">{reference.title}</span>
+                <span className="mt-1 block leading-6 text-[var(--ink-muted)]">{reference.source}{reference.year ? ` · ${reference.year}` : ""}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="space-y-4">
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold text-slate-950">Lessen</h2>
           <p className="text-sm leading-7 text-[var(--ink-soft)]">
-            Doorloop de lessen in volgorde en rond de toets af om deze e-learning compleet te maken.
+            Doorloop de lessen in volgorde, rond de toets af en vul daarna de evaluatie in om deze e-learning compleet te maken.
           </p>
         </div>
         <AcademyLessonList lessons={course.lessons} />
       </section>
+
+      {course.evaluationStep ? (
+        <section className="card-surface flex flex-col gap-4 rounded-[24px] p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--brand-deep)]">Stap 5 · Evaluatie</p>
+            <h2 className="mt-2 text-xl font-semibold text-slate-950">Evaluatieformulier invullen</h2>
+            <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
+              Vul na module 4 de evaluatie in. Je antwoorden worden opgeslagen voor Fy-Fit.
+            </p>
+          </div>
+          <Link href={course.evaluationStep.href} className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
+            {course.evaluationStep.status === "COMPLETED" ? "Evaluatie bekijken" : "Evaluatie invullen"}
+          </Link>
+        </section>
+      ) : null}
     </div>
   );
 }

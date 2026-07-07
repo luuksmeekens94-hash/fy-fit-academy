@@ -29,6 +29,7 @@ import {
   STANDARD_EVALUATION_FORM_TITLE,
 } from "@/lib/lms/accreditation-template";
 import { issueCertificate } from "@/lib/lms/certificates";
+import { buildEvaluationAnswerRecords } from "@/lib/lms/evaluation";
 import { getCourseDetail } from "@/lib/lms/queries";
 import { canMutateLearnerProgress } from "@/lib/lms/reviewer-preview";
 import { isCourseCompleted } from "@/lib/lms/rules";
@@ -1806,6 +1807,94 @@ export async function applyStandardEvaluationTemplateAction(formData: FormData) 
     await createCourseNotifications(courseId, "updated");
   }
   await revalidateLearningPaths({ courseId });
+}
+
+export async function submitCourseEvaluationAction(formData: FormData) {
+  const user = await requireUser();
+  const courseId = getString(formData, "courseId");
+  const evaluationFormId = getString(formData, "evaluationFormId");
+  const actualStudyMinutes = getOptionalNumber(formData, "actualStudyMinutes");
+
+  assert(courseId, "Cursus ontbreekt.");
+  assert(evaluationFormId, "Evaluatieformulier ontbreekt.");
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    include: {
+      enrollments: {
+        where: { userId: user.id },
+        select: { id: true },
+      },
+      versions: {
+        where: { isActive: true },
+        include: {
+          evaluationForms: {
+            include: { questions: { orderBy: { order: "asc" } } },
+          },
+        },
+      },
+    },
+  });
+
+  assert(course, "Cursus niet gevonden.");
+  const activeVersion = course.versions[0] ?? null;
+  assert(activeVersion, "Geen actieve cursusversie gevonden.");
+
+  const evaluationForm = activeVersion.evaluationForms.find((form) => form.id === evaluationFormId) ?? null;
+  assert(evaluationForm, "Evaluatieformulier hoort niet bij deze cursus.");
+
+  const canSubmitEvaluation =
+    user.role === "BEHEERDER" ||
+    (user.role === "REVIEWER" && course.reviewerId === user.id) ||
+    course.enrollments.length > 0;
+  assert(canSubmitEvaluation, "Je hebt geen toegang tot deze evaluatie.");
+
+  const answers = buildEvaluationAnswerRecords(evaluationForm.questions, (fieldName) => formData.get(fieldName));
+
+  await prisma.$transaction(async (tx) => {
+    const existingSubmission = await tx.evaluationSubmission.findUnique({
+      where: {
+        evaluationFormId_userId: {
+          evaluationFormId,
+          userId: user.id,
+        },
+      },
+      select: { id: true },
+    });
+
+    const submission = existingSubmission
+      ? await tx.evaluationSubmission.update({
+          where: { id: existingSubmission.id },
+          data: {
+            submittedAt: new Date(),
+            actualStudyMinutes,
+          },
+          select: { id: true },
+        })
+      : await tx.evaluationSubmission.create({
+          data: {
+            evaluationFormId,
+            userId: user.id,
+            actualStudyMinutes,
+          },
+          select: { id: true },
+        });
+
+    await tx.evaluationAnswer.deleteMany({ where: { evaluationSubmissionId: submission.id } });
+    await tx.evaluationAnswer.createMany({
+      data: answers.map((answer) => ({
+        evaluationSubmissionId: submission.id,
+        evaluationQuestionId: answer.evaluationQuestionId,
+        rating: answer.rating ?? null,
+        text: answer.text ?? null,
+        booleanValue: answer.booleanValue ?? null,
+      })),
+    });
+  });
+
+  revalidatePath(`/lms/courses/${courseId}`);
+  revalidatePath(`/lms/courses/${courseId}/evaluation`);
+  redirect(`/lms/courses/${courseId}/evaluation?ingediend=1`);
 }
 
 export async function publishCourseAccreditationReadyAction(formData: FormData) {

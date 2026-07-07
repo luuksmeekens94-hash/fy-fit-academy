@@ -211,6 +211,7 @@ export function buildAcademyCourseDetailView(params: {
   course: CourseDetail;
   enrollment: EnrollmentDetail;
   progressEntries: LessonProgressInfo[];
+  evaluationCompleted?: boolean;
 }): AcademyCourseDetailView {
   const introSections = [
     {
@@ -230,6 +231,9 @@ export function buildAcademyCourseDetailView(params: {
     },
   ];
 
+  const evaluationForm = params.course.activeVersion?.evaluationForms.find((form) => form.isRequired) ?? params.course.activeVersion?.evaluationForms[0] ?? null;
+  const requiredLiterature = params.course.activeVersion?.literature.filter((reference) => reference.guideline?.toLowerCase().includes("verplichte")) ?? [];
+
   return {
     id: params.course.id,
     slug: params.course.slug,
@@ -248,6 +252,20 @@ export function buildAcademyCourseDetailView(params: {
     startLabel: getCourseCtaLabel(params.enrollment.status),
     completionState: buildAcademyCompletionState(params.enrollment),
     lessons: buildLessonItems(params.course, params.progressEntries),
+    evaluationStep: evaluationForm
+      ? {
+          title: evaluationForm.title,
+          status: params.evaluationCompleted ? "COMPLETED" : "NOT_STARTED",
+          href: `/lms/courses/${params.course.id}/evaluation`,
+        }
+      : null,
+    requiredLiterature: requiredLiterature.map((reference) => ({
+      id: reference.id,
+      title: reference.title,
+      source: reference.source,
+      year: reference.year,
+      url: reference.url,
+    })),
   };
 }
 
