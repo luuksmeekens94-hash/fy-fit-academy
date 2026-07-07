@@ -45,17 +45,23 @@ export async function GET(_request: Request, { params }: PfpAssetRouteProps) {
   }
 
   const extension = path.extname(safeFile).toLowerCase();
-  const filePath = path.join(process.cwd(), "public", "lms", "pfp", safeFile);
-  const body = await readFile(filePath).catch(() => null);
+  const protectedFilePath = path.join(process.cwd(), "private", "lms", "pfp", safeFile);
+  const publicFilePath = path.join(process.cwd(), "public", "lms", "pfp", safeFile);
+  const body = await readFile(protectedFilePath).catch(() => readFile(publicFilePath).catch(() => null));
 
   if (!body) {
     notFound();
   }
 
+  const disposition = extension === ".docx" || extension === ".xlsx"
+    ? `attachment; filename="${safeFile}"`
+    : `inline; filename="${safeFile}"`;
+
   return new Response(body, {
     headers: {
       "Content-Type": contentTypes[extension] ?? "application/octet-stream",
-      "Content-Disposition": `inline; filename="${safeFile}"`,
+      "Content-Disposition": disposition,
+      "X-Content-Type-Options": "nosniff",
       "Cache-Control": "private, max-age=0, must-revalidate",
     },
   });

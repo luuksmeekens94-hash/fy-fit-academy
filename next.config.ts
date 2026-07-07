@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  outputFileTracingIncludes: {
+    "/lms/pfp/[file]": ["./private/lms/pfp/**/*"],
+  },
 };
 
 export default nextConfig;

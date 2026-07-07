@@ -9,12 +9,22 @@ import { prisma } from "@/lib/prisma";
 import { getReviewerPreviewMode } from "@/lib/lms/reviewer-preview";
 import { getCourseDetail, getEnrollmentDetailForUser } from "@/lib/lms/queries";
 
-const ratingLabels = [
-  "Helemaal niet mee eens",
-  "Niet mee eens",
+const agreementLabels = [
+  "Helemaal oneens",
+  "Oneens",
   "Neutraal",
-  "Mee eens",
-  "Helemaal mee eens",
+  "Eens",
+  "Helemaal eens",
+];
+
+const evaluationSections = [
+  { title: "1. Algemene indruk", from: 1, to: 3, helper: "Geef een cijfer van 1 tot 10." },
+  { title: "2. Inhoudelijke beoordeling", from: 4, to: 10, helper: "Geef aan in hoeverre je het eens bent met de stellingen." },
+  { title: "3. Praktische toepasbaarheid", from: 11, to: 15, helper: "Geef aan in hoeverre je het eens bent met de stellingen." },
+  { title: "4. Didactiek en werkvormen", from: 16, to: 22, helper: "Beoordeel de werkvormen, video’s, opdrachten en toetsvragen." },
+  { title: "5. Inzicht en bewustwording", from: 23, to: 24, helper: "Beschrijf wat deze e-learning heeft veranderd in je klinisch redeneren." },
+  { title: "6. Suggesties en verbeterpunten", from: 25, to: 26, helper: "Geef mee wat beter of uitgebreider kan." },
+  { title: "7. Aanbeveling", from: 27, to: 28, helper: "Geef aan of je deze e-learning aan collega’s zou aanraden." },
 ];
 
 type EvaluationPageProps = {
@@ -55,7 +65,7 @@ export default async function CourseEvaluationPage({ params, searchParams }: Eva
   }
 
   const previewState = getReviewerPreviewMode(user.role, Boolean(enrollment));
-  const canView = Boolean(enrollment) || previewState.canViewWithoutEnrollment;
+  const canView = Boolean(enrollment) || previewState.canViewWithoutEnrollment || user.role === "BEHEERDER";
 
   if (!canView) {
     notFound();
@@ -80,29 +90,33 @@ export default async function CourseEvaluationPage({ params, searchParams }: Eva
   });
 
   const answersByQuestionId = new Map(submission?.answers.map((answer) => [answer.evaluationQuestionId, answer]) ?? []);
-  const requiredLiterature = course.activeVersion.literature.filter((reference) => reference.guideline?.toLowerCase().includes("verplichte"));
   const submittedAtLabel = formatDate(submission?.submittedAt);
+  const groupedQuestions = evaluationSections
+    .map((section) => ({
+      ...section,
+      questions: evaluationForm.questions.filter((question) => question.order >= section.from && question.order <= section.to),
+    }))
+    .filter((section) => section.questions.length > 0);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Stap 5 · Evaluatie"
+        eyebrow="Stap 6 · Evaluatie"
         title="Evaluatieformulier"
-        description="Vul na module 4 de evaluatie in. Je feedback wordt opgeslagen zodat Fy-Fit de e-learning en accreditatie-evaluatie kan volgen."
+        description="Vul na de verplichte literatuur het evaluatieformulier in. De vragen volgen het opgestelde evaluatieformulier voor deze PFP e-learning."
       />
 
       <section className="card-surface rounded-[32px] p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap gap-2">
-              <StatusBadge label="Officiële stap 5" tone="brand" />
               <StatusBadge label={submission ? "ingediend" : "nog in te vullen"} tone={submission ? "success" : "warning"} />
             </div>
             <h2 className="mt-3 text-2xl font-semibold text-slate-950">{evaluationForm.title}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--ink-soft)]">
               {submittedAtLabel
                 ? `Laatst ingediend op ${submittedAtLabel}. Je kunt je antwoorden hieronder aanpassen en opnieuw verzenden.`
-                : "Beantwoord de vragen zo volledig mogelijk. De antwoorden worden gekoppeld aan deze e-learning."}
+                : "Beantwoord de vragen zorgvuldig. De antwoorden worden gekoppeld aan deze e-learning."}
             </p>
           </div>
           <Link href={`/lms/courses/${course.id}`} className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
@@ -118,98 +132,91 @@ export default async function CourseEvaluationPage({ params, searchParams }: Eva
         </section>
       ) : null}
 
-      {requiredLiterature.length ? (
-        <section className="rounded-[32px] border border-[var(--border)] bg-[var(--brand-wash)]/55 p-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--brand-deep)]">Verplichte literatuur</p>
-          <h2 className="mt-2 text-xl font-semibold text-slate-950">Lees deze artikelen vóór afronding</h2>
-          <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
-            De onderbouwing blijft per les zichtbaar. Deze twee artikelen zijn daarnaast de expliciete verplichte literatuur bij de zelfstudie.
-          </p>
-          <div className="mt-5 grid gap-3 lg:grid-cols-2">
-            {requiredLiterature.map((reference) => (
-              <a key={reference.id} href={reference.url ?? "#"} target="_blank" rel="noreferrer" className="rounded-[24px] border border-[var(--border)] bg-white p-5 text-sm transition hover:-translate-y-0.5 hover:border-[var(--brand)]">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand-deep)]">Verplicht artikel</span>
-                <span className="mt-2 block font-semibold text-slate-950">{reference.title}</span>
-                <span className="mt-2 block leading-6 text-[var(--ink-soft)]">{reference.source}{reference.year ? ` · ${reference.year}` : ""}</span>
-                <span className="mt-3 inline-flex rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-semibold text-white">Open artikel</span>
-              </a>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <form action={submitCourseEvaluationAction} className="card-surface space-y-6 rounded-[34px] p-5 sm:p-7 lg:p-9">
+      <form action={submitCourseEvaluationAction} className="space-y-6">
         <input type="hidden" name="courseId" value={course.id} />
         <input type="hidden" name="evaluationFormId" value={evaluationForm.id} />
 
-        <label className="block rounded-[26px] border border-[var(--border)] bg-white/85 p-5">
-          <span className="text-sm font-semibold text-slate-950">Werkelijke bestede zelfstudietijd in minuten</span>
-          <span className="mt-1 block text-sm leading-6 text-[var(--ink-soft)]">Optioneel, maar waardevol voor de accreditatie-evaluatie.</span>
-          <input
-            type="number"
-            min="0"
-            name="actualStudyMinutes"
-            defaultValue={submission?.actualStudyMinutes ?? ""}
-            className="mt-3 w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand)]/10"
-            placeholder="Bijvoorbeeld 180"
-          />
-        </label>
+        {groupedQuestions.map((section) => (
+          <section key={section.title} className="card-surface space-y-5 rounded-[34px] p-5 sm:p-7 lg:p-9">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--brand-deep)]">{section.title}</p>
+              <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">{section.helper}</p>
+            </div>
 
-        <div className="space-y-5">
-          {evaluationForm.questions.map((question, index) => {
-            const existingAnswer = answersByQuestionId.get(question.id);
+            <div className="space-y-5">
+              {section.questions.map((question) => {
+                const existingAnswer = answersByQuestionId.get(question.id);
 
-            return (
-              <fieldset key={question.id} className="rounded-[28px] border border-[var(--border)] bg-white/92 p-5">
-                <legend className="px-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand-deep)]">
-                  Vraag {index + 1}{question.isRequired ? " · verplicht" : ""}
-                </legend>
-                <h3 className="mt-3 text-lg font-semibold leading-7 text-slate-950">{question.label}</h3>
+                return (
+                  <fieldset key={question.id} className="rounded-[28px] border border-[var(--border)] bg-white/92 p-5">
+                    <legend className="px-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand-deep)]">
+                      Vraag {question.order}{question.isRequired ? " · verplicht" : " · optioneel"}
+                    </legend>
+                    <h3 className="mt-3 text-lg font-semibold leading-7 text-slate-950">{question.label}</h3>
 
-                {question.type === "SCALE_1_5" ? (
-                  <div className="mt-4 grid gap-3 sm:grid-cols-5">
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <label key={rating} className="flex cursor-pointer flex-col gap-2 rounded-2xl border border-[var(--border)] bg-[var(--brand-wash)]/35 p-3 text-sm transition hover:border-[var(--brand)]">
-                        <span className="text-lg font-semibold text-slate-950">{rating}</span>
-                        <span className="text-xs leading-5 text-[var(--ink-soft)]">{ratingLabels[rating - 1]}</span>
-                        <input
-                          type="radio"
-                          name={`question-${question.id}`}
-                          value={rating}
-                          required={question.isRequired}
-                          defaultChecked={existingAnswer?.rating === rating}
-                          className="mt-auto size-4 border-[var(--border)] text-[var(--brand)] focus:ring-[var(--brand)]"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                ) : question.type === "YES_NO" ? (
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <label className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold">
-                      <input type="radio" name={`question-${question.id}`} value="yes" required={question.isRequired} defaultChecked={existingAnswer?.booleanValue === true} className="mr-2" />
-                      Ja
-                    </label>
-                    <label className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold">
-                      <input type="radio" name={`question-${question.id}`} value="no" required={question.isRequired} defaultChecked={existingAnswer?.booleanValue === false} className="mr-2" />
-                      Nee
-                    </label>
-                  </div>
-                ) : (
-                  <textarea
-                    name={`question-${question.id}`}
-                    required={question.isRequired}
-                    defaultValue={existingAnswer?.text ?? ""}
-                    rows={5}
-                    className="mt-4 w-full rounded-[22px] border border-[var(--border)] bg-white px-4 py-4 text-sm leading-7 outline-none transition focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand)]/10"
-                    placeholder="Schrijf je antwoord hier..."
-                  />
-                )}
-              </fieldset>
-            );
-          })}
-        </div>
+                    {question.type === "SCALE_1_10" ? (
+                      <div className="mt-4 grid gap-2 sm:grid-cols-5 lg:grid-cols-10">
+                        {Array.from({ length: 10 }, (_, index) => index + 1).map((rating) => (
+                          <label key={rating} className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--brand-wash)]/35 p-3 text-sm transition hover:border-[var(--brand)]">
+                            <span className="text-lg font-semibold text-slate-950">{rating}</span>
+                            <span className="text-[0.68rem] leading-4 text-[var(--ink-soft)]">{rating === 1 ? "slecht" : rating === 10 ? "uitstekend" : ""}</span>
+                            <input
+                              type="radio"
+                              name={`question-${question.id}`}
+                              value={rating}
+                              required={question.isRequired}
+                              defaultChecked={existingAnswer?.rating === rating}
+                              className="mt-auto size-4 border-[var(--border)] text-[var(--brand)] focus:ring-[var(--brand)]"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    ) : question.type === "SCALE_1_5" ? (
+                      <div className="mt-4 grid gap-3 sm:grid-cols-5">
+                        {[1, 2, 3, 4, 5].map((rating) => (
+                          <label key={rating} className="flex cursor-pointer flex-col gap-2 rounded-2xl border border-[var(--border)] bg-[var(--brand-wash)]/35 p-3 text-sm transition hover:border-[var(--brand)]">
+                            <span className="text-lg font-semibold text-slate-950">{rating}</span>
+                            <span className="text-xs leading-5 text-[var(--ink-soft)]">{agreementLabels[rating - 1]}</span>
+                            <input
+                              type="radio"
+                              name={`question-${question.id}`}
+                              value={rating}
+                              required={question.isRequired}
+                              defaultChecked={existingAnswer?.rating === rating}
+                              className="mt-auto size-4 border-[var(--border)] text-[var(--brand)] focus:ring-[var(--brand)]"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    ) : question.type === "YES_NO" ? (
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <label className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold">
+                          <input type="radio" name={`question-${question.id}`} value="yes" required={question.isRequired} defaultChecked={existingAnswer?.booleanValue === true} className="mr-2" />
+                          Ja
+                        </label>
+                        <label className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold">
+                          <input type="radio" name={`question-${question.id}`} value="no" required={question.isRequired} defaultChecked={existingAnswer?.booleanValue === false} className="mr-2" />
+                          Nee
+                        </label>
+                      </div>
+                    ) : (
+                      <textarea
+                        name={`question-${question.id}`}
+                        required={question.isRequired}
+                        defaultValue={existingAnswer?.text ?? ""}
+                        rows={4}
+                        className="mt-4 w-full rounded-[22px] border border-[var(--border)] bg-white px-4 py-4 text-sm leading-7 outline-none transition focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand)]/10"
+                        placeholder="Schrijf je antwoord hier..."
+                      />
+                    )}
+                  </fieldset>
+                );
+              })}
+            </div>
+          </section>
+        ))}
 
-        <div className="flex flex-col gap-3 rounded-[26px] border border-[var(--border)] bg-[var(--brand-wash)]/55 p-4 md:flex-row md:items-center md:justify-between">
+        <div className="card-surface flex flex-col gap-3 rounded-[26px] p-4 md:flex-row md:items-center md:justify-between">
           <p className="text-sm leading-6 text-[var(--ink-soft)]">
             Verzenden legt je evaluatie vast voor Fy-Fit. Je kunt later terugkomen en opnieuw verzenden.
           </p>

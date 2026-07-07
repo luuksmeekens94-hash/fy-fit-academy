@@ -183,7 +183,7 @@ function mapCourseDetail(course: {
       questions: {
         id: string;
         label: string;
-        type: "SCALE_1_5" | "TEXT" | "YES_NO";
+        type: "SCALE_1_5" | "SCALE_1_10" | "TEXT" | "YES_NO";
         order: number;
         isRequired: boolean;
       }[];

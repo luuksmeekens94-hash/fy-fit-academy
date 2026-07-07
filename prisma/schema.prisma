@@ -122,6 +122,7 @@ enum WorkForm {
 
 enum EvaluationQuestionType {
   SCALE_1_5
+  SCALE_1_10
   TEXT
   YES_NO
 }

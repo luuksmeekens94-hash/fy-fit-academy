@@ -32,10 +32,11 @@ export function buildEvaluationAnswerRecords(
       requireValue(rawValue, `Vul de vraag "${question.label}" in.`);
     }
 
-    if (question.type === "SCALE_1_5") {
+    if (question.type === "SCALE_1_5" || question.type === "SCALE_1_10") {
       const rating = Number(rawValue);
-      if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-        throw new Error(`Geef bij "${question.label}" een score van 1 tot en met 5.`);
+      const maxRating = question.type === "SCALE_1_10" ? 10 : 5;
+      if (!Number.isInteger(rating) || rating < 1 || rating > maxRating) {
+        throw new Error(`Geef bij "${question.label}" een score van 1 tot en met ${maxRating}.`);
       }
 
       return {

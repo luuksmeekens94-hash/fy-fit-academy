@@ -31,6 +31,7 @@ import {
 import { issueCertificate } from "@/lib/lms/certificates";
 import { buildEvaluationAnswerRecords } from "@/lib/lms/evaluation";
 import { getCourseDetail } from "@/lib/lms/queries";
+import { getRequiredLiteratureProgressLesson, REQUIRED_LITERATURE_STEP_KEY } from "@/lib/lms/required-literature";
 import { canMutateLearnerProgress } from "@/lib/lms/reviewer-preview";
 import { isCourseCompleted } from "@/lib/lms/rules";
 import { AUDIENCE_PROFILES } from "@/lib/audience";
@@ -1807,6 +1808,59 @@ export async function applyStandardEvaluationTemplateAction(formData: FormData) 
     await createCourseNotifications(courseId, "updated");
   }
   await revalidateLearningPaths({ courseId });
+}
+
+export async function markRequiredLiteratureReadAction(formData: FormData) {
+  const user = await requireUser();
+  const courseId = getString(formData, "courseId");
+
+  assert(courseId, "Cursus ontbreekt.");
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    include: {
+      enrollments: {
+        where: { userId: user.id },
+        select: { id: true },
+      },
+      versions: {
+        where: { isActive: true },
+        include: {
+          lessons: { orderBy: { order: "asc" } },
+          literature: true,
+        },
+      },
+    },
+  });
+
+  assert(course, "Cursus niet gevonden.");
+  const activeVersion = course.versions[0] ?? null;
+  assert(activeVersion, "Geen actieve cursusversie gevonden.");
+
+  const canMarkLiterature =
+    user.role === "BEHEERDER" ||
+    (user.role === "REVIEWER" && course.reviewerId === user.id) ||
+    course.enrollments.length > 0;
+  assert(canMarkLiterature, "Je hebt geen toegang tot deze verplichte literatuur.");
+
+  const requiredLiterature = activeVersion.literature.filter((reference) =>
+    reference.guideline?.toLowerCase().includes("verplichte"),
+  );
+  assert(requiredLiterature.length > 0, "Er is geen verplichte literatuur gekoppeld aan deze cursus.");
+
+  const progressLesson = getRequiredLiteratureProgressLesson(activeVersion.lessons);
+  assert(progressLesson, "Geen voortgangsanker gevonden voor de verplichte literatuur.");
+
+  await upsertLessonStepProgress({
+    userId: user.id,
+    lessonId: progressLesson.id,
+    stepKey: REQUIRED_LITERATURE_STEP_KEY,
+  });
+
+  revalidatePath(`/lms/courses/${courseId}`);
+  revalidatePath(`/lms/courses/${courseId}/literature`);
+  revalidatePath("/academy");
+  redirect(`/lms/courses/${courseId}/literature?gelezen=1`);
 }
 
 export async function submitCourseEvaluationAction(formData: FormData) {
