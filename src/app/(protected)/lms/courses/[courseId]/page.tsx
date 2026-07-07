@@ -12,8 +12,8 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getLearnerLmsRedirectPath } from "@/lib/lms/route-access";
 import {
+  buildReviewerModuleStepLinks,
   buildReviewerModuleProgress,
-  buildReviewerTheorySubLessons,
   summarizeReviewerCourseProgress,
 } from "@/lib/lms/reviewer-sublessons";
 import { getReviewerPreviewMode } from "@/lib/lms/reviewer-preview";
@@ -85,9 +85,9 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Accreditatie-review"
+        eyebrow="E-learning"
         title={course.title}
-        description="Doorloop de e-learning stap voor stap. Je voortgang wordt op dit overzicht bijgehouden."
+        description="Doorloop de modules zoals een cursist dat doet. Je kunt altijd direct naar een les, opdracht of kennischeck."
       />
 
       <section className="card-surface rounded-[32px] p-6">
@@ -100,7 +100,7 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
               {courseProgress.isCompleted ? "Alle modules afgerond" : courseProgress.isStarted ? `${courseProgress.percentage}% doorlopen` : "Start bij module 1"}
             </h2>
             <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
-              Open een module, rond de losse lessen af en ga daarna door met de opdracht en kennischeck.
+              Open de volgende stap of spring kort terug naar een specifieke les wanneer je iets opnieuw wilt bekijken.
             </p>
           </div>
           <div className="min-w-[220px]">
@@ -112,9 +112,10 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
       <section className="space-y-4">
         {lessons.map((lesson, index) => {
           const progress = moduleProgress.find((entry) => entry.lessonId === lesson.id) ?? null;
-          const subLessons = buildReviewerTheorySubLessons(lesson.content);
+          const stepLinks = progress ? buildReviewerModuleStepLinks(lesson) : [];
+          const theoryStepCount = stepLinks.filter((step) => step.kind === "theory").length;
           const href = progress
-            ? `/lms/courses/${course.id}/lessons/${lesson.id}${progress.firstSubLessonHrefSuffix}`
+            ? `/lms/courses/${course.id}/lessons/${lesson.id}${progress.nextStepHrefSuffix || progress.firstSubLessonHrefSuffix}`
             : `/lms/courses/${course.id}/lessons/${lesson.id}`;
           const statusLabel = progress?.isCompleted
             ? "Afgerond"
@@ -124,12 +125,20 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
                 ? "Eindtoets"
                 : "Nog te starten";
           const statusTone = progress?.isCompleted ? "success" : progress?.isStarted ? "warning" : "neutral";
+          const description = progress
+            ? `Doorloop ${theoryStepCount} lessen, daarna de opdracht en kennischeck van deze module.`
+            : lesson.type === "ASSESSMENT"
+              ? "Volledige toetsvragenbank bij deze e-learning."
+              : lesson.type === "DOCUMENT"
+                ? "Ondersteunende documenten en bronmateriaal bij deze e-learning."
+                : lesson.description;
+          const displayTitle = lesson.type === "DOCUMENT" ? "Bronmateriaal en ondersteunende documenten" : lesson.title;
+          const primaryLabel = progress?.isCompleted ? "Opnieuw bekijken" : progress?.isStarted ? "Ga verder" : "Open";
 
           return (
-            <Link
+            <article
               key={lesson.id}
-              href={href}
-              className="card-surface flex flex-col gap-4 rounded-[28px] p-5 transition hover:-translate-y-0.5 hover:border-[var(--brand)] lg:flex-row lg:items-center lg:justify-between"
+              className="card-surface flex flex-col gap-4 rounded-[28px] p-5 transition hover:border-[var(--brand)] lg:flex-row lg:items-center lg:justify-between"
             >
               <div className="flex flex-1 gap-4">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-sm font-semibold text-[var(--brand-deep)]">
@@ -138,23 +147,36 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge label={statusLabel} tone={statusTone} />
-                    {progress ? <StatusBadge label={`${subLessons.length} lessen`} tone="neutral" /> : null}
+                    {progress ? <StatusBadge label={`${theoryStepCount} lessen`} tone="neutral" /> : null}
                   </div>
-                  <h3 className="mt-2 text-lg font-semibold text-slate-950">{lesson.title}</h3>
-                  {lesson.description ? (
-                    <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">{lesson.description}</p>
+                  <h3 className="mt-2 text-lg font-semibold text-slate-950">{displayTitle}</h3>
+                  {description ? (
+                    <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">{description}</p>
                   ) : null}
                   {progress ? (
                     <div className="mt-4 max-w-xl">
                       <ProgressBar value={progress.percentage} label={`${progress.completedSteps}/${progress.totalSteps} stappen`} />
                     </div>
                   ) : null}
+                  {stepLinks.length ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {stepLinks.map((step) => (
+                        <Link
+                          key={step.key}
+                          href={`/lms/courses/${course.id}/lessons/${lesson.id}${step.hrefSuffix}`}
+                          className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)] hover:bg-[var(--brand-wash)]"
+                        >
+                          {step.label}
+                        </Link>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </div>
-              <span className="self-start rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white lg:self-center">
-                {progress?.isStarted ? "Ga verder" : "Open"}
-              </span>
-            </Link>
+              <Link href={href} className="self-start rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)] lg:self-center">
+                {primaryLabel}
+              </Link>
+            </article>
           );
         })}
       </section>

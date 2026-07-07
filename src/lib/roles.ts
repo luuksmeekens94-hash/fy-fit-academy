@@ -75,7 +75,7 @@ export function getDashboardLabel(role: Role) {
 
 export function getNavigationItems(role: Role, isOnboarding = false): NavigationItem[] {
   if (role === "REVIEWER") {
-    return [{ href: "/lms", label: "Accreditatie-preview" }];
+    return [{ href: "/lms", label: "E-learning" }];
   }
 
   const items: NavigationItem[] = [{ href: "/", label: getDashboardLabel(role) }];
@@ -84,7 +84,7 @@ export function getNavigationItems(role: Role, isOnboarding = false): Navigation
     items.push({ href: "/academy", label: "Fy-fit Academy" });
     items.push({ href: "/academy/certificates", label: "Certificaten" });
   } else if (canManageAcademy(role) || canReviewAccreditation(role)) {
-    items.push({ href: "/lms", label: canReviewAccreditation(role) && !canManageAcademy(role) ? "Accreditatie-preview" : "LMS cockpit" });
+    items.push({ href: "/lms", label: canReviewAccreditation(role) && !canManageAcademy(role) ? "E-learning" : "LMS cockpit" });
   }
 
   if (canUsePersonalDevelopment(role)) {

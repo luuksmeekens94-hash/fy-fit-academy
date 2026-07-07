@@ -21,12 +21,11 @@ type ReviewerModulePracticeProps = {
   assignmentStepKey: string;
   knowledgeCheckStepKey: string;
   minimumPassPercentage: number;
-  theoryHref: string;
   assignmentHref: string;
   questionsHref: string;
+  previousHref: string;
   nextHref?: string | null;
   courseHref: string;
-  lmsHref: string;
 };
 
 type Responses = Record<string, string[]>;
@@ -79,12 +78,11 @@ export function ReviewerModulePractice({
   assignmentStepKey,
   knowledgeCheckStepKey,
   minimumPassPercentage,
-  theoryHref,
   assignmentHref,
   questionsHref,
+  previousHref,
   nextHref,
   courseHref,
-  lmsHref,
 }: ReviewerModulePracticeProps) {
   const [assignmentText, setAssignmentText] = useState(initialAssignmentText);
   const [assignmentStatus, setAssignmentStatus] = useState<AssignmentStatus>(initialAssignmentText.trim().length ? "saved" : "idle");
@@ -181,13 +179,10 @@ export function ReviewerModulePractice({
       </div>
 
       <div className="flex flex-wrap gap-2 rounded-[24px] border border-[var(--border)] bg-white/82 p-3">
-        <Link href={theoryHref} className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
-          Terug naar theorie
+        <Link href={previousHref} className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
+          {phase === "assignment" ? "Vorige les" : "Terug naar opdracht"}
         </Link>
         <Link href={courseHref} className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
-          Module-overzicht
-        </Link>
-        <Link href={lmsHref} className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
           E-learning overzicht
         </Link>
       </div>
@@ -202,7 +197,7 @@ export function ReviewerModulePractice({
             </div>
             <h3 className="display-font mt-4 text-2xl font-semibold text-slate-950">{assignmentTitle || `Opdracht bij ${moduleTitle}`}</h3>
             <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
-              Je antwoord wordt opgeslagen in de Academy-database, zodat het later door Fy-Fit kan worden ingezien.
+              Werk je antwoord uit en lever het in. Daarna kun je door naar de kennischeck.
             </p>
           </div>
 
@@ -235,7 +230,7 @@ export function ReviewerModulePractice({
                   {assignmentSaved && savedAtLabel
                     ? `Laatst ingeleverd: ${savedAtLabel}. Je kunt je antwoord aanpassen en opnieuw inleveren.`
                     : answerIsLongEnough
-                      ? "Klik op Inleveren om het antwoord vast te leggen in de database."
+                      ? "Klik op Inleveren om je antwoord vast te leggen."
                       : "Minimaal 20 tekens nodig voordat je kunt inleveren."}
                 </p>
                 {assignmentError ? <p className="mt-2 font-semibold text-red-700">{assignmentError}</p> : null}

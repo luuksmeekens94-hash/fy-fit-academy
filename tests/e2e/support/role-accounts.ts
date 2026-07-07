@@ -71,9 +71,9 @@ export const roleAccessMatrix: Record<E2ERole, AccessExpectation> = {
   },
   REVIEWER: {
     label: "Reviewer",
-    allowedRoutes: ["/academybeheer", "/lms"],
+    allowedRoutes: ["/lms"],
     forbiddenRoutes: ["/praktijkbeheer", "/admin"],
-    requiredText: [/academybeheer|review|lms|accreditatie/i],
+    requiredText: [/e-learning|module|leren/i],
   },
 };
 

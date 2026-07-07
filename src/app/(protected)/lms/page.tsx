@@ -84,9 +84,9 @@ export default async function LmsOverviewPage() {
     return (
       <div className="space-y-6">
         <PageHeader
-          eyebrow="Accreditatie-review"
-          title="E-learning reviewomgeving"
-          description="Open de e-learning en doorloop de modules in volgorde."
+          eyebrow="E-learning"
+          title="Mijn e-learning"
+          description="Open de e-learning en doorloop de modules zoals een cursist dat doet."
         />
 
         <section className="grid gap-4">
@@ -107,7 +107,7 @@ export default async function LmsOverviewPage() {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
-                    Beschikbaar voor review
+                    Beschikbaar voor jou
                   </p>
                   <h2 className="mt-2 text-2xl font-semibold text-slate-950">{course.title}</h2>
                   <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">

@@ -60,7 +60,7 @@ export function ReviewerAssessmentPreview({ assessment }: ReviewerAssessmentPrev
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">Toetsing</p>
           <h2 className="display-font mt-3 text-3xl font-semibold text-slate-950 lg:text-4xl">{assessment.title}</h2>
           <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--ink-soft)]">
-            {assessment.description ?? "Beantwoord de vragen zoals een cursist dat zou doen en controleer direct je score."}
+            {assessment.description ?? "Beantwoord de vragen en controleer direct je score."}
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <StatusBadge label={`${assessment.questions.length} vragen`} tone="neutral" />
@@ -188,7 +188,7 @@ export function ReviewerAssessmentPreview({ assessment }: ReviewerAssessmentPrev
             disabled={unanswered > 0}
             className="rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45"
           >
-            Lever toets in voor review
+            Controleer antwoorden
           </button>
         </div>
       </form>

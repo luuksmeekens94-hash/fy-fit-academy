@@ -77,10 +77,10 @@ test("beheerder ziet LMS, Academybeheer en Admin als aparte beheerlagen", () => 
   assert.ok(items.some((item) => item.href === "/admin" && item.label === "Admin"));
 });
 
-test("reviewer ziet alleen de accreditatie-preview als navigatie", () => {
+test("reviewer ziet alleen de e-learning als navigatie", () => {
   const items = getNavigationItems("REVIEWER");
 
-  assert.deepEqual(items, [{ href: "/lms", label: "Accreditatie-preview" }]);
+  assert.deepEqual(items, [{ href: "/lms", label: "E-learning" }]);
 });
 
 test("medewerker ziet certificaten als Academy-route in plaats van LMS-route", () => {

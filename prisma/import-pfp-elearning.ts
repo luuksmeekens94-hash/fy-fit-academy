@@ -666,7 +666,7 @@ async function main() {
         courseVersionId: version.id,
         title: item.title,
         description: index === 0 ? "Nieuw paradigma en homeostasemodel." : index === 1 ? "Diagnostiek, DSDT en LLROM." : index === 2 ? "Behandeling, educatie en belastingsmanagement." : "Samenvatting en klinische kernpunten.",
-        introduction: "Onderdeel van de reviewflow voor de accreditatiecommissie.",
+        introduction: "Onderdeel van de e-learningroute voor de cursist.",
         summary: "Module-inhoud is gekoppeld aan leerdoelen, literatuur en toetsvragen.",
         order: index + 1,
         estimatedMinutes: item.minutes,
@@ -742,7 +742,7 @@ Video bij deze module: ${ASSET_BASE}/klinische-kernpunten-pfp.mp4`;
       slug: slugify(item.title),
       moduleKey: item.key,
       title: item.title,
-      description: "Stap in de reviewflow: module-inhoud inclusief leerdoelen, opdrachten en bronmateriaal.",
+      description: "Doorloop de lessen van deze module en maak daarna de opdracht en kennischeck.",
       type: moduleNumber === 2 || moduleNumber === 4 ? "VIDEO" : "TEXT",
       content,
       minutes: item.minutes,
@@ -751,11 +751,11 @@ Video bij deze module: ${ASSET_BASE}/klinische-kernpunten-pfp.mp4`;
   }
   lessons.push({
     slug: "accreditatiedossier-documenten",
-    title: "Accreditatiedossier en ondersteunende documenten",
-    description: "Alle ondersteunende documenten, formats, literatuur en downloads voor de accreditatiecommissie.",
+    title: "Bronmateriaal en ondersteunende documenten",
+    description: "Ondersteunende documenten, formats, literatuur en downloads bij deze e-learning.",
     type: "DOCUMENT",
     content: [
-      "Deze reviewles bundelt alle accreditatieondersteunende documenten. Open ieder document direct vanuit deze pagina.",
+      "Deze pagina bundelt de ondersteunende documenten en bronmaterialen bij de e-learning. Open ieder document direct vanuit deze pagina.",
       ...dossierDocuments.map(([label, path]) => `${label}: ${path}`),
     ].join("\n\n"),
     minutes: 0,
@@ -764,9 +764,9 @@ Video bij deze module: ${ASSET_BASE}/klinische-kernpunten-pfp.mp4`;
   lessons.push({
     slug: "toets-pfp-review",
     title: "Toetsing: vragenbank Patellofemorale Pijn",
-    description: "Reviewer-preview van de volledige toetsmatrijs: 20 meerkeuzevragen gekoppeld aan moduleleerdoelen.",
+    description: "Volledige toetsvragenbank: 20 meerkeuzevragen gekoppeld aan de moduleleerdoelen.",
     type: "ASSESSMENT",
-    content: "Toetsles voor reviewer-preview. Er worden in previewmodus geen pogingen, scores of certificaten aangemaakt.",
+    content: "Toetsles bij de e-learning Patellofemorale Pijn.",
     minutes: 20,
     required: true,
   });

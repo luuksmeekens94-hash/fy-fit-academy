@@ -26,6 +26,15 @@ export type ReviewerModuleProgress = {
   isStarted: boolean;
   isCompleted: boolean;
   firstSubLessonHrefSuffix: string;
+  nextStepHrefSuffix: string;
+  nextStepLabel: string;
+};
+
+export type ReviewerModuleStepLink = {
+  key: string;
+  label: string;
+  hrefSuffix: string;
+  kind: "theory" | "assignment" | "knowledge-check";
 };
 
 const lessonHeadingPattern = /^\s*Les\s+(\d+\.\d+)\s*:?\s*(.*)$/i;
@@ -129,6 +138,37 @@ export function buildSubLessonHrefSuffix(stepKey: string) {
   return `?les=${encodeURIComponent(stepKey)}`;
 }
 
+export function buildReviewerModuleStepLinks(lesson: ReviewerProgressLessonInput): ReviewerModuleStepLink[] {
+  if (!isReviewerTheoryModule(lesson)) {
+    return [];
+  }
+
+  const moduleNumber = getModuleNumberFromTitle(lesson.title);
+  const media = extractLessonMedia(lesson.content);
+  const subLessons = buildReviewerTheorySubLessons(media.text);
+
+  return [
+    ...subLessons.map((subLesson) => ({
+      key: subLesson.key,
+      label: subLesson.label,
+      hrefSuffix: buildSubLessonHrefSuffix(subLesson.key),
+      kind: "theory" as const,
+    })),
+    {
+      key: getAssignmentStepKey(moduleNumber),
+      label: "Opdracht",
+      hrefSuffix: "?stap=opdracht",
+      kind: "assignment" as const,
+    },
+    {
+      key: getKnowledgeCheckStepKey(moduleNumber),
+      label: "Kennischeck",
+      hrefSuffix: "?stap=toetsvragen",
+      kind: "knowledge-check" as const,
+    },
+  ];
+}
+
 export function buildReviewerModuleProgress(params: {
   lessons: ReviewerProgressLessonInput[];
   completedStepKeysByLessonId: Map<string, Set<string>>;
@@ -138,16 +178,20 @@ export function buildReviewerModuleProgress(params: {
     .filter(isReviewerTheoryModule)
     .map((lesson) => {
       const moduleNumber = getModuleNumberFromTitle(lesson.title) ?? "";
-      const media = extractLessonMedia(lesson.content);
-      const subLessons = buildReviewerTheorySubLessons(media.text);
+      const stepLinks = buildReviewerModuleStepLinks(lesson);
+      const subLessons = stepLinks.filter((step) => step.kind === "theory");
       const completedKeys = params.completedStepKeysByLessonId.get(lesson.id) ?? new Set<string>();
-      const theoryCompleted = subLessons.filter((subLesson) => completedKeys.has(subLesson.key)).length;
-      const assignmentCompleted = params.submittedAssignmentLessonIds.has(lesson.id) || completedKeys.has(getAssignmentStepKey(moduleNumber));
-      const knowledgeCheckCompleted = completedKeys.has(getKnowledgeCheckStepKey(moduleNumber));
-      const totalSteps = subLessons.length + 2;
-      const completedSteps = theoryCompleted + (assignmentCompleted ? 1 : 0) + (knowledgeCheckCompleted ? 1 : 0);
+      const effectiveCompletedKeys = new Set(completedKeys);
+
+      if (params.submittedAssignmentLessonIds.has(lesson.id)) {
+        effectiveCompletedKeys.add(getAssignmentStepKey(moduleNumber));
+      }
+
+      const completedSteps = stepLinks.filter((step) => effectiveCompletedKeys.has(step.key)).length;
+      const totalSteps = stepLinks.length;
       const percentage = totalSteps ? Math.round((completedSteps / totalSteps) * 100) : 0;
       const firstSubLesson = subLessons[0] ?? null;
+      const nextStep = stepLinks.find((step) => !effectiveCompletedKeys.has(step.key)) ?? firstSubLesson ?? stepLinks[0] ?? null;
 
       return {
         lessonId: lesson.id,
@@ -159,6 +203,8 @@ export function buildReviewerModuleProgress(params: {
         isStarted: completedSteps > 0,
         isCompleted: completedSteps >= totalSteps,
         firstSubLessonHrefSuffix: firstSubLesson ? buildSubLessonHrefSuffix(firstSubLesson.key) : "",
+        nextStepHrefSuffix: nextStep?.hrefSuffix ?? "",
+        nextStepLabel: nextStep?.label ?? "Open module",
       };
     });
 }

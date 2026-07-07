@@ -8,6 +8,7 @@ const PROTECTED_PREFIXES = [
   "/academy",
   "/academybeheer",
   "/bibliotheek",
+  "/lms",
   "/onboarding",
   "/ontwikkeling",
   "/team",
