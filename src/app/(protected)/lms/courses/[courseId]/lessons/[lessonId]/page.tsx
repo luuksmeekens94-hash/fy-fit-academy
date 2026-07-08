@@ -18,6 +18,7 @@ import {
   getAssignmentStepKey,
   getKnowledgeCheckStepKey,
 } from "@/lib/lms/reviewer-sublessons";
+import { getRequiredLiteratureStepKey, isRequiredLiteratureReference } from "@/lib/lms/required-literature";
 import { getLearnerLmsRedirectPath } from "@/lib/lms/route-access";
 import { getReviewerPreviewMode } from "@/lib/lms/reviewer-preview";
 import {
@@ -34,7 +35,7 @@ type LmsLessonDetailPageProps = {
   searchParams: Promise<{ stap?: string; les?: string }>;
 };
 
-type ReviewerStep = "theorie" | "opdracht" | "toetsvragen";
+type ReviewerStep = "theorie" | "literatuur" | "opdracht" | "toetsvragen";
 
 function getProgressTone(status: string) {
   if (status === "COMPLETED") {
@@ -49,7 +50,7 @@ function getProgressTone(status: string) {
 }
 
 function getReviewerStep(value: string | undefined): ReviewerStep {
-  if (value === "opdracht" || value === "toetsvragen") {
+  if (value === "literatuur" || value === "opdracht" || value === "toetsvragen") {
     return value;
   }
 
@@ -208,6 +209,14 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
   const moduleQuestions = moduleQuestionPrefix
     ? courseAssessment?.questions.filter((question) => question.objectiveCodes.some((code) => code.startsWith(moduleQuestionPrefix))) ?? []
     : [];
+  const moduleId = moduleNumber
+    ? course.activeVersion.objectives.find((objective) => objective.code.startsWith(`M${moduleNumber}-`))?.moduleId ?? null
+    : null;
+  const moduleLiterature = moduleId
+    ? course.activeVersion.literature.filter((reference) => reference.moduleId === moduleId)
+    : [];
+  const moduleRequiredLiterature = moduleLiterature.filter(isRequiredLiteratureReference);
+  const hasRequiredLiteratureStep = moduleRequiredLiterature.length > 0;
 
   const isReviewer = user.role === "REVIEWER";
   const lessonMedia = isReviewer ? sanitizeReviewerLessonMedia(extractLessonMedia(lesson.content)) : extractLessonMedia(lesson.content);
@@ -228,6 +237,7 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
   const lastTheorySubLesson = theorySubLessons[theorySubLessons.length - 1] ?? null;
   const isLastTheorySubLesson = selectedTheoryIndex >= 0 && selectedTheoryIndex === theorySubLessons.length - 1;
   const assignmentHref = `${lessonBaseHref}?stap=opdracht`;
+  const literatureHref = `${lessonBaseHref}?stap=literatuur`;
   const questionsHref = `${lessonBaseHref}?stap=toetsvragen`;
   const courseHref = `/lms/courses/${courseId}`;
   const nextLessonHref = nextLesson ? `/lms/courses/${courseId}/lessons/${nextLesson.id}` : null;
@@ -238,7 +248,8 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
       ? `/lms/courses/${courseId}/lessons/${previousLesson.id}?stap=toetsvragen`
       : `/lms/courses/${courseId}/lessons/${previousLesson.id}`
     : null;
-  const assignmentPreviousHref = lastTheorySubLesson ? `${lessonBaseHref}${buildSubLessonHrefSuffix(lastTheorySubLesson.key)}` : lessonBaseHref;
+  const lastTheoryHref = lastTheorySubLesson ? `${lessonBaseHref}${buildSubLessonHrefSuffix(lastTheorySubLesson.key)}` : lessonBaseHref;
+  const assignmentPreviousHref = hasRequiredLiteratureStep ? literatureHref : lastTheoryHref;
   const previousTheoryHref = previousTheorySubLesson
     ? `${lessonBaseHref}${buildSubLessonHrefSuffix(previousTheorySubLesson.key)}`
     : previousLessonHref;
@@ -255,12 +266,6 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
         ],
       }
     : lessonMedia;
-  const moduleId = moduleNumber
-    ? course.activeVersion.objectives.find((objective) => objective.code.startsWith(`M${moduleNumber}-`))?.moduleId ?? null
-    : null;
-  const moduleLiterature = moduleId
-    ? course.activeVersion.literature.filter((reference) => reference.moduleId === moduleId)
-    : [];
   const reviewerFigures = isReviewerModuleFlow ? getReviewerFigureItems(moduleNumber) : [];
   const selectedFigureOffset = selectedTheorySubLesson
     ? theorySubLessons.slice(0, Math.max(selectedTheoryIndex, 0)).reduce((total, subLesson) => total + countFigureMarkers(subLesson.text), 0)
@@ -293,20 +298,30 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
       )
     : new Set<string>();
   const assignmentStepKey = getAssignmentStepKey(moduleNumber);
+  const literatureStepKey = getRequiredLiteratureStepKey(moduleNumber);
   const knowledgeCheckStepKey = getKnowledgeCheckStepKey(moduleNumber);
   const currentTheoryCompleted = selectedTheorySubLesson ? reviewerCompletedStepKeys.has(selectedTheorySubLesson.key) : false;
+  const currentLiteratureCompleted = reviewerCompletedStepKeys.has(literatureStepKey);
   const minimumPassPercentage = courseAssessment?.passPercentage ?? 70;
   const stepLabel = isReviewerModuleFlow
     ? reviewerStep === "theorie"
       ? selectedTheorySubLesson?.label ?? "Theorie"
-      : reviewerStep === "opdracht"
-        ? "Opdracht"
-        : "Kennischeck"
+      : reviewerStep === "literatuur"
+        ? "Verplichte literatuur"
+        : reviewerStep === "opdracht"
+          ? "Opdracht"
+          : "Kennischeck"
     : lesson.type === "ASSESSMENT"
       ? "Eindtoets"
       : "Onderdeel";
-  const totalReviewerModuleSteps = Math.max(theorySubLessons.length + 2, 1);
-  const currentReviewerModuleStep = reviewerStep === "theorie" ? Math.max(selectedTheoryIndex, 0) + 1 : reviewerStep === "opdracht" ? theorySubLessons.length + 1 : theorySubLessons.length + 2;
+  const totalReviewerModuleSteps = Math.max(theorySubLessons.length + 2 + (hasRequiredLiteratureStep ? 1 : 0), 1);
+  const currentReviewerModuleStep = reviewerStep === "theorie"
+    ? Math.max(selectedTheoryIndex, 0) + 1
+    : reviewerStep === "literatuur"
+      ? theorySubLessons.length + 1
+      : reviewerStep === "opdracht"
+        ? theorySubLessons.length + (hasRequiredLiteratureStep ? 2 : 1)
+        : theorySubLessons.length + (hasRequiredLiteratureStep ? 3 : 2);
   const progressValue = isReviewerModuleFlow
     ? Math.round((currentReviewerModuleStep / totalReviewerModuleSteps) * 100)
     : Math.round(((Math.max(lessonIndex, 0) + 1) / course.activeVersion.lessons.length) * 100);
@@ -318,9 +333,11 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
     ? isReviewerModuleFlow
       ? reviewerStep === "theorie"
         ? "Lees deze les rustig door. Onder aan de pagina kun je terug of verder naar de volgende stap."
-        : reviewerStep === "opdracht"
-          ? "Werk de opdracht uit zoals een cursist dat zou doen. Daarna ga je door naar de kennischeck."
-          : "Beantwoord de modulevragen en ga daarna verder in de e-learning."
+        : reviewerStep === "literatuur"
+          ? "Lees de verplichte literatuur die bij deze module wordt getoetst. Deze stap telt mee voor de modulevoortgang."
+          : reviewerStep === "opdracht"
+            ? "Werk de opdracht uit zoals een cursist dat zou doen. Daarna ga je door naar de kennischeck."
+            : "Beantwoord de modulevragen en ga daarna verder in de e-learning."
       : lesson.type === "ASSESSMENT"
         ? "Beantwoord de toetsvragen zoals ze in de e-learning staan en controleer direct je score."
         : lesson.type === "DOCUMENT"
@@ -328,7 +345,11 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
           : "Doorloop dit onderdeel rustig en ga daarna verder."
     : lesson.description ?? "Doorloop dit onderdeel rustig en ga daarna verder naar de volgende stap.";
   const lessonDisplayTitle = isReviewer && lesson.type === "DOCUMENT" ? "Bronmateriaal en ondersteunende documenten" : lesson.title;
-  const pageTitle = selectedTheorySubLesson && reviewerStep === "theorie" ? selectedTheorySubLesson.title : lessonDisplayTitle;
+  const pageTitle = isReviewerModuleFlow && reviewerStep === "literatuur"
+    ? `Verplichte literatuur bij module ${moduleNumber}`
+    : selectedTheorySubLesson && reviewerStep === "theorie"
+      ? selectedTheorySubLesson.title
+      : lessonDisplayTitle;
 
   return (
     <div className="space-y-6">
@@ -406,8 +427,8 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
                     courseId={courseId}
                     lessonId={lesson.id}
                     stepKey={selectedTheorySubLesson.key}
-                    nextHref={nextTheorySubLesson ? `${lessonBaseHref}${buildSubLessonHrefSuffix(nextTheorySubLesson.key)}` : assignmentHref}
-                    label={nextTheorySubLesson ? `Ga door met ${nextTheorySubLesson.label}` : "Door met opdracht"}
+                    nextHref={nextTheorySubLesson ? `${lessonBaseHref}${buildSubLessonHrefSuffix(nextTheorySubLesson.key)}` : hasRequiredLiteratureStep ? literatureHref : assignmentHref}
+                    label={nextTheorySubLesson ? `Ga door met ${nextTheorySubLesson.label}` : hasRequiredLiteratureStep ? "Door naar verplichte literatuur" : "Door met opdracht"}
                   />
                 </div>
               </div>
@@ -416,7 +437,68 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
         </section>
       ) : null}
 
-      {isReviewerModuleFlow && reviewerStep !== "theorie" ? (
+      {isReviewerModuleFlow && reviewerStep === "literatuur" && hasRequiredLiteratureStep ? (
+        <section className="overflow-hidden rounded-[38px] border border-[var(--border)] bg-white shadow-[0_28px_80px_-44px_rgba(35,27,18,0.55)]">
+          <div className="academy-gradient-panel px-6 py-6 sm:px-8 lg:px-10">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
+                  Verplichte literatuur
+                </p>
+                <h2 className="display-font mt-2 text-3xl font-semibold leading-tight text-slate-950 lg:text-4xl">
+                  Leesmateriaal bij module {moduleNumber}
+                </h2>
+                <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--ink-soft)]">
+                  Deze literatuur hoort bij de inhoud die in deze module wordt getoetst en telt mee als extra module-stap.
+                </p>
+              </div>
+              {currentLiteratureCompleted ? <StatusBadge label="Literatuur gelezen" tone="success" /> : <StatusBadge label="Nog te lezen" tone="warning" />}
+            </div>
+          </div>
+
+          <div className="grid gap-4 bg-white px-5 py-8 sm:px-8 lg:grid-cols-2 lg:px-12 lg:py-10">
+            {moduleRequiredLiterature.map((reference) => (
+              <article key={reference.id} className="rounded-[28px] border border-[var(--border)] bg-[var(--brand-wash)]/35 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand-deep)]">Verplicht artikel</p>
+                <h3 className="mt-2 text-lg font-semibold leading-7 text-slate-950">{reference.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+                  {[reference.source, reference.year ? String(reference.year) : null].filter(Boolean).join(" · ")}
+                </p>
+                {reference.url ? (
+                  <a href={reference.url} target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
+                    Open artikel
+                  </a>
+                ) : null}
+              </article>
+            ))}
+          </div>
+
+          <div className="border-t border-[var(--border)] bg-[var(--brand-wash)]/45 px-5 py-5 sm:px-8 lg:px-12">
+            <div className="mx-auto flex max-w-[82ch] flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="text-sm leading-6 text-[var(--ink-soft)]">
+                <p className="font-semibold text-slate-950">
+                  {currentLiteratureCompleted ? "Deze literatuurstap is afgerond." : "Rond de literatuur af om je modulevoortgang bij te werken."}
+                </p>
+                <p>Na deze stap ga je door met de moduleopdracht en kennischeck.</p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link href={lastTheoryHref} className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-center text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
+                  Terug naar theorie
+                </Link>
+                <ReviewerLessonProgressButton
+                  courseId={courseId}
+                  lessonId={lesson.id}
+                  stepKey={literatureStepKey}
+                  nextHref={assignmentHref}
+                  label="Door met opdracht"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {isReviewerModuleFlow && (reviewerStep === "opdracht" || reviewerStep === "toetsvragen") ? (
         <ReviewerModulePractice
           courseId={courseId}
           lessonId={lesson.id}
@@ -460,10 +542,10 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
           </Link>
           {isReviewerModuleFlow && reviewerStep !== "theorie" ? (
             <Link
-              href={assignmentPreviousHref}
+              href={reviewerStep === "literatuur" || reviewerStep === "toetsvragen" ? lastTheoryHref : assignmentPreviousHref}
               className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
             >
-              Theorie
+              {reviewerStep === "opdracht" && hasRequiredLiteratureStep ? "Literatuur" : "Theorie"}
             </Link>
           ) : null}
           {isReviewerModuleFlow && reviewerStep === "toetsvragen" ? (

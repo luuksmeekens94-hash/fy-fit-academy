@@ -69,28 +69,13 @@ export default async function AcademyCourseDetailPage({
         <AcademyLessonList lessons={course.lessons} />
       </section>
 
-      {course.requiredLiterature.length ? (
-        <section className="card-surface flex flex-col gap-4 rounded-[24px] p-5 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--brand-deep)]">Stap 5 · Verplichte literatuur</p>
-            <h2 className="mt-2 text-xl font-semibold text-slate-950">Twee artikelen lezen</h2>
-            <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
-              Lees de verplichte literatuur na de modules. Deze stap telt mee voor de voortgang van de e-learning.
-            </p>
-          </div>
-          <Link href={`/lms/courses/${course.id}/literature`} className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">
-            Literatuur openen
-          </Link>
-        </section>
-      ) : null}
-
       {course.evaluationStep ? (
         <section className="card-surface flex flex-col gap-4 rounded-[24px] p-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--brand-deep)]">Stap 6 · Evaluatie</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--brand-deep)]">Evaluatie</p>
             <h2 className="mt-2 text-xl font-semibold text-slate-950">Evaluatieformulier invullen</h2>
             <p className="mt-2 text-sm leading-7 text-[var(--ink-soft)]">
-              Vul na de verplichte literatuur de evaluatie in. Je antwoorden worden opgeslagen voor Fy-Fit.
+              Vul na de modules de evaluatie in. Je antwoorden worden opgeslagen voor Fy-Fit.
             </p>
           </div>
           <Link href={course.evaluationStep.href} className="rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)]">

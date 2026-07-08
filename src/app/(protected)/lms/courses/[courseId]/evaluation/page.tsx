@@ -101,9 +101,9 @@ export default async function CourseEvaluationPage({ params, searchParams }: Eva
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Stap 6 · Evaluatie"
+        eyebrow="Evaluatie"
         title="Evaluatieformulier"
-        description="Vul na de verplichte literatuur het evaluatieformulier in. De vragen volgen het opgestelde evaluatieformulier voor deze PFP e-learning."
+        description="Vul na de modules het evaluatieformulier in. De vragen volgen het opgestelde evaluatieformulier voor deze PFP e-learning."
       />
 
       <section className="card-surface rounded-[32px] p-6">

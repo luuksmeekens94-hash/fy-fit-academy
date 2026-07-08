@@ -24,7 +24,7 @@ import {
   getEnrollmentDetailForUser,
   getLessonProgressForVersion,
 } from "@/lib/lms/queries";
-import { getRequiredLiteratureProgressLesson, REQUIRED_LITERATURE_STEP_KEY } from "@/lib/lms/required-literature";
+import { isRequiredLiteratureReference } from "@/lib/lms/required-literature";
 
 type LmsCourseDetailPageProps = {
   params: Promise<{ courseId: string }>;
@@ -100,23 +100,23 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
     completedStepKeysByLessonId.set(entry.lessonId, current);
   });
 
+  const requiredLiterature = course.activeVersion?.literature.filter(isRequiredLiteratureReference) ?? [];
+  const requiredLiteratureModuleIds = new Set(
+    requiredLiterature
+      .map((reference) => reference.moduleId)
+      .filter((moduleId): moduleId is string => Boolean(moduleId)),
+  );
   const moduleProgress = buildReviewerModuleProgress({
     lessons,
     completedStepKeysByLessonId,
     submittedAssignmentLessonIds: new Set(assignmentSubmissions.map((entry) => entry.lessonId)),
+    requiredLiteratureModuleIds,
   });
   const moduleSummary = summarizeReviewerCourseProgress(moduleProgress);
-  const requiredLiterature = course.activeVersion?.literature.filter((reference) => reference.guideline?.toLowerCase().includes("verplichte")) ?? [];
-  const literatureStepCount = requiredLiterature.length ? 1 : 0;
-  const literatureProgressLesson = getRequiredLiteratureProgressLesson(lessons);
-  const literatureCompleted = Boolean(
-    literatureProgressLesson && completedStepKeysByLessonId.get(literatureProgressLesson.id)?.has(REQUIRED_LITERATURE_STEP_KEY),
-  );
   const evaluationStepCount = evaluationForm ? 1 : 0;
-  const completedLiteratureSteps = literatureCompleted ? 1 : 0;
   const completedEvaluationSteps = evaluationSubmission ? 1 : 0;
-  const totalCourseSteps = moduleSummary.totalSteps + literatureStepCount + evaluationStepCount;
-  const completedCourseSteps = moduleSummary.completedSteps + completedLiteratureSteps + completedEvaluationSteps;
+  const totalCourseSteps = moduleSummary.totalSteps + evaluationStepCount;
+  const completedCourseSteps = moduleSummary.completedSteps + completedEvaluationSteps;
   const coursePercentage = totalCourseSteps ? Math.round((completedCourseSteps / totalCourseSteps) * 100) : moduleSummary.percentage;
   const moduleLessonIds = new Set(moduleProgress.map((entry) => entry.lessonId));
   const supportingLessons = lessons.filter((lesson) => !moduleLessonIds.has(lesson.id));
@@ -152,12 +152,16 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
         {moduleProgress.map((progress, index) => {
           const lesson = lessons.find((entry) => entry.id === progress.lessonId);
           if (!lesson) return null;
-          const stepLinks = buildReviewerModuleStepLinks(lesson);
+          const hasRequiredLiterature = Boolean(lesson.moduleId && requiredLiteratureModuleIds.has(lesson.moduleId));
+          const stepLinks = buildReviewerModuleStepLinks(lesson, { hasRequiredLiterature });
           const theoryStepCount = stepLinks.filter((step) => step.kind === "theory").length;
           const href = `/lms/courses/${course.id}/lessons/${lesson.id}${progress.nextStepHrefSuffix || progress.firstSubLessonHrefSuffix}`;
           const statusLabel = progress.isCompleted ? "Afgerond" : progress.isStarted ? `${progress.percentage}% doorlopen` : "Nog te starten";
           const statusTone = progress.isCompleted ? "success" : progress.isStarted ? "warning" : "neutral";
           const primaryLabel = progress.isCompleted ? "Opnieuw bekijken" : progress.isStarted ? "Ga verder" : "Open";
+          const moduleDescription = hasRequiredLiterature
+            ? `Doorloop ${theoryStepCount} lessen, lees daarna de verplichte literatuur en maak vervolgens de opdracht en kennischeck van deze module.`
+            : `Doorloop ${theoryStepCount} lessen, daarna de opdracht en kennischeck van deze module.`;
 
           return (
             <article key={lesson.id} className="card-surface flex flex-col gap-4 rounded-[28px] p-5 transition hover:border-[var(--brand)] lg:flex-row lg:items-center lg:justify-between">
@@ -169,7 +173,7 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
                     <StatusBadge label={`${theoryStepCount} lessen`} tone="neutral" />
                   </div>
                   <h3 className="mt-2 text-lg font-semibold text-slate-950">{lesson.title}</h3>
-                  <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">Doorloop {theoryStepCount} lessen, daarna de opdracht en kennischeck van deze module.</p>
+                  <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">{moduleDescription}</p>
                   <div className="mt-4 max-w-xl">
                     <ProgressBar value={progress.percentage} label={`${progress.completedSteps}/${progress.totalSteps} stappen`} />
                   </div>
@@ -189,38 +193,16 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
           );
         })}
 
-        {requiredLiterature.length ? (
+        {evaluationForm ? (
           <article className="card-surface flex flex-col gap-4 rounded-[28px] p-5 transition hover:border-[var(--brand)] lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-1 gap-4">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-sm font-semibold text-[var(--brand-deep)]">{moduleProgress.length + 1}</span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <StatusBadge label={literatureCompleted ? "Gelezen" : "Nog te lezen"} tone={literatureCompleted ? "success" : "warning"} />
-                  <StatusBadge label="verplichte literatuur" tone="brand" />
-                </div>
-                <h3 className="mt-2 text-lg font-semibold text-slate-950">Verplichte literatuur</h3>
-                <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">Lees de twee verplichte artikelen. Deze stap telt mee voor de voortgang van de e-learning.</p>
-                <div className="mt-4 max-w-xl">
-                  <ProgressBar value={literatureCompleted ? 100 : 0} label={literatureCompleted ? "Literatuur gelezen" : "Nog niet gelezen"} />
-                </div>
-              </div>
-            </div>
-            <Link href={`/lms/courses/${course.id}/literature`} className="self-start rounded-full bg-[var(--brand)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-deep)] lg:self-center">
-              {literatureCompleted ? "Bekijken" : "Openen"}
-            </Link>
-          </article>
-        ) : null}
-
-        {evaluationForm ? (
-          <article className="card-surface flex flex-col gap-4 rounded-[28px] p-5 transition hover:border-[var(--brand)] lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-1 gap-4">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-sm font-semibold text-[var(--brand-deep)]">{moduleProgress.length + literatureStepCount + 1}</span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge label={evaluationSubmission ? "Ingevuld" : "Nog in te vullen"} tone={evaluationSubmission ? "success" : "warning"} />
                 </div>
                 <h3 className="mt-2 text-lg font-semibold text-slate-950">Evaluatieformulier</h3>
-                <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">Vul na de verplichte literatuur de evaluatie in. De antwoorden worden opgeslagen voor Fy-Fit.</p>
+                <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--ink-soft)]">Vul na de modules de evaluatie in. De antwoorden worden opgeslagen voor Fy-Fit.</p>
                 <div className="mt-4 max-w-xl">
                   <ProgressBar value={evaluationSubmission ? 100 : 0} label={evaluationSubmission ? "Evaluatie ingevuld" : "Nog niet ingevuld"} />
                 </div>
@@ -243,7 +225,7 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
           return (
             <article key={lesson.id} className="card-surface flex flex-col gap-4 rounded-[28px] p-5 transition hover:border-[var(--brand)] lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-1 gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-sm font-semibold text-[var(--brand-deep)]">{moduleProgress.length + literatureStepCount + evaluationStepCount + index + 1}</span>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-sm font-semibold text-[var(--brand-deep)]">{moduleProgress.length + evaluationStepCount + index + 1}</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge label={lesson.type === "DOCUMENT" ? "Naslagwerk" : "Naslag"} tone="neutral" />

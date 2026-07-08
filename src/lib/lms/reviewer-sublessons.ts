@@ -1,4 +1,5 @@
 import { extractLessonMedia } from "@/lib/lms/lesson-media";
+import { getRequiredLiteratureStepKey } from "@/lib/lms/required-literature";
 
 export type ReviewerTheorySubLesson = {
   key: string;
@@ -14,6 +15,7 @@ export type ReviewerProgressLessonInput = {
   content?: string | null;
   order: number;
   type?: string;
+  moduleId?: string | null;
 };
 
 export type ReviewerModuleProgress = {
@@ -34,7 +36,7 @@ export type ReviewerModuleStepLink = {
   key: string;
   label: string;
   hrefSuffix: string;
-  kind: "theory" | "assignment" | "knowledge-check";
+  kind: "theory" | "literature" | "assignment" | "knowledge-check";
 };
 
 const lessonHeadingPattern = /^\s*Les\s+(\d+\.\d+)\s*:?\s*(.*)$/i;
@@ -138,7 +140,10 @@ export function buildSubLessonHrefSuffix(stepKey: string) {
   return `?les=${encodeURIComponent(stepKey)}`;
 }
 
-export function buildReviewerModuleStepLinks(lesson: ReviewerProgressLessonInput): ReviewerModuleStepLink[] {
+export function buildReviewerModuleStepLinks(
+  lesson: ReviewerProgressLessonInput,
+  options: { hasRequiredLiterature?: boolean } = {},
+): ReviewerModuleStepLink[] {
   if (!isReviewerTheoryModule(lesson)) {
     return [];
   }
@@ -146,6 +151,16 @@ export function buildReviewerModuleStepLinks(lesson: ReviewerProgressLessonInput
   const moduleNumber = getModuleNumberFromTitle(lesson.title);
   const media = extractLessonMedia(lesson.content);
   const subLessons = buildReviewerTheorySubLessons(media.text);
+  const literatureStep = options.hasRequiredLiterature
+    ? [
+        {
+          key: getRequiredLiteratureStepKey(moduleNumber),
+          label: "Literatuur",
+          hrefSuffix: "?stap=literatuur",
+          kind: "literature" as const,
+        },
+      ]
+    : [];
 
   return [
     ...subLessons.map((subLesson) => ({
@@ -154,6 +169,7 @@ export function buildReviewerModuleStepLinks(lesson: ReviewerProgressLessonInput
       hrefSuffix: buildSubLessonHrefSuffix(subLesson.key),
       kind: "theory" as const,
     })),
+    ...literatureStep,
     {
       key: getAssignmentStepKey(moduleNumber),
       label: "Opdracht",
@@ -173,12 +189,14 @@ export function buildReviewerModuleProgress(params: {
   lessons: ReviewerProgressLessonInput[];
   completedStepKeysByLessonId: Map<string, Set<string>>;
   submittedAssignmentLessonIds: Set<string>;
+  requiredLiteratureModuleIds?: Set<string>;
 }): ReviewerModuleProgress[] {
   return params.lessons
     .filter(isReviewerTheoryModule)
     .map((lesson) => {
       const moduleNumber = getModuleNumberFromTitle(lesson.title) ?? "";
-      const stepLinks = buildReviewerModuleStepLinks(lesson);
+      const hasRequiredLiterature = Boolean(lesson.moduleId && params.requiredLiteratureModuleIds?.has(lesson.moduleId));
+      const stepLinks = buildReviewerModuleStepLinks(lesson, { hasRequiredLiterature });
       const subLessons = stepLinks.filter((step) => step.kind === "theory");
       const completedKeys = params.completedStepKeysByLessonId.get(lesson.id) ?? new Set<string>();
       const effectiveCompletedKeys = new Set(completedKeys);

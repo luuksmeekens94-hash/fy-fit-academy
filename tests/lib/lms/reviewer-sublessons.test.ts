@@ -8,6 +8,7 @@ import {
   getAssignmentStepKey,
   getKnowledgeCheckStepKey,
 } from "../../../src/lib/lms/reviewer-sublessons.ts";
+import { getRequiredLiteratureStepKey } from "../../../src/lib/lms/required-literature.ts";
 
 test("buildReviewerTheorySubLessons splitst modulecontent in losse lesstappen", () => {
   const subLessons = buildReviewerTheorySubLessons(`Intro module 1
@@ -88,4 +89,32 @@ test("buildReviewerModuleProgress telt ingeleverde opdracht mee", () => {
 
   assert.equal(progress[0].completedSteps, 3);
   assert.equal(progress[0].isCompleted, true);
+});
+
+test("buildReviewerModuleProgress kan verplichte literatuur als module-stap meetellen", () => {
+  const lesson = {
+    id: "lesson-1",
+    moduleId: "module-1-id",
+    title: "Module 1: PFP begrijpen",
+    order: 1,
+    type: "TEXT",
+    content: "Les 1.1: homeostase\nTekst",
+  };
+  const progress = buildReviewerModuleProgress({
+    lessons: [lesson],
+    completedStepKeysByLessonId: new Map([[lesson.id, new Set(["les-1-1", getRequiredLiteratureStepKey("1")])]]),
+    submittedAssignmentLessonIds: new Set(),
+    requiredLiteratureModuleIds: new Set(["module-1-id"]),
+  });
+  const links = buildReviewerModuleStepLinks(lesson, { hasRequiredLiterature: true });
+
+  assert.deepEqual(links.map((link) => [link.label, link.hrefSuffix]), [
+    ["Les 1.1", "?les=les-1-1"],
+    ["Literatuur", "?stap=literatuur"],
+    ["Opdracht", "?stap=opdracht"],
+    ["Kennischeck", "?stap=toetsvragen"],
+  ]);
+  assert.equal(progress[0].completedSteps, 2);
+  assert.equal(progress[0].totalSteps, 4);
+  assert.equal(progress[0].nextStepLabel, "Opdracht");
 });

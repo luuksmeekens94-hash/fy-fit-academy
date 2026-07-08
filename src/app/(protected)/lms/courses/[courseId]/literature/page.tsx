@@ -67,9 +67,9 @@ export default async function RequiredLiteraturePage({ params, searchParams }: L
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Stap 5 · Verplichte literatuur"
+        eyebrow="Verplichte literatuur"
         title="Verplichte literatuur lezen"
-        description="Lees de twee verplichte artikelen als onderdeel van de zelfstudie. De onderbouwing per les blijft daarnaast gewoon beschikbaar."
+        description="Lees de verplichte artikelen als onderdeel van de zelfstudie. In de e-learning staan ze nu per module op de plek waar ze worden getoetst."
       />
 
       <section className="card-surface rounded-[32px] p-6">
