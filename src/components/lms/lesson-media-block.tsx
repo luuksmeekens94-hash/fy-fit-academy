@@ -55,19 +55,31 @@ function MediaImage({ src, caption = "Afbeelding bij lesmateriaal" }: { src: str
   );
 }
 
+function isOfficeDownload(src: string) {
+  return /\.(docx|xlsx|pptx)(?:$|[?#])/i.test(src);
+}
+
+function fileNameFromSrc(src: string) {
+  const pathPart = src.split(/[?#]/)[0] ?? "";
+  return decodeURIComponent(pathPart.split("/").filter(Boolean).pop() ?? "document");
+}
+
 function MediaDocument({ src, label }: { src: string; label: string }) {
+  const shouldDownload = isOfficeDownload(src);
+
   return (
     <a
       href={src}
-      target="_blank"
-      rel="noreferrer"
+      target={shouldDownload ? undefined : "_blank"}
+      rel={shouldDownload ? undefined : "noreferrer"}
+      download={shouldDownload ? fileNameFromSrc(src) : undefined}
       className="my-5 flex items-center justify-between gap-4 rounded-[24px] border border-[var(--border)] bg-white px-5 py-4 text-sm font-semibold text-[var(--foreground)] shadow-[0_18px_50px_-44px_rgba(35,27,18,0.7)] transition hover:-translate-y-0.5 hover:border-[var(--teal)]"
     >
       <span className="flex min-w-0 flex-col gap-1">
         <span className="text-[0.72rem] uppercase tracking-[0.18em] text-[var(--teal)]">Document</span>
         <span className="truncate">{label}</span>
       </span>
-      <span className="shrink-0 rounded-full bg-[var(--sage-soft)] px-3 py-1 text-xs text-slate-700">Openen</span>
+      <span className="shrink-0 rounded-full bg-[var(--sage-soft)] px-3 py-1 text-xs text-slate-700">{shouldDownload ? "Downloaden" : "Openen"}</span>
     </a>
   );
 }

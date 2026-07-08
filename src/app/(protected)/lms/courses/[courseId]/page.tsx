@@ -160,7 +160,7 @@ async function ReviewerCourseFlow({ course, userId }: { course: NonNullable<Awai
           const statusTone = progress.isCompleted ? "success" : progress.isStarted ? "warning" : "neutral";
           const primaryLabel = progress.isCompleted ? "Opnieuw bekijken" : progress.isStarted ? "Ga verder" : "Open";
           const moduleDescription = hasRequiredLiterature
-            ? `Doorloop ${theoryStepCount} lessen, lees daarna de verplichte literatuur en maak vervolgens de opdracht en kennischeck van deze module.`
+            ? `Lees eerst de verplichte literatuur, doorloop daarna ${theoryStepCount} lessen en maak vervolgens de opdracht en kennischeck van deze module.`
             : `Doorloop ${theoryStepCount} lessen, daarna de opdracht en kennischeck van deze module.`;
 
           return (

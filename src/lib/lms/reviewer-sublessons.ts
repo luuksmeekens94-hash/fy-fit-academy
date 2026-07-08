@@ -163,13 +163,13 @@ export function buildReviewerModuleStepLinks(
     : [];
 
   return [
+    ...literatureStep,
     ...subLessons.map((subLesson) => ({
       key: subLesson.key,
       label: subLesson.label,
       hrefSuffix: buildSubLessonHrefSuffix(subLesson.key),
       kind: "theory" as const,
     })),
-    ...literatureStep,
     {
       key: getAssignmentStepKey(moduleNumber),
       label: "Opdracht",

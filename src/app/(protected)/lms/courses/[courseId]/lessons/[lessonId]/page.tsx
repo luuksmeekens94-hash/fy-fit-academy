@@ -238,6 +238,7 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
   const isLastTheorySubLesson = selectedTheoryIndex >= 0 && selectedTheoryIndex === theorySubLessons.length - 1;
   const assignmentHref = `${lessonBaseHref}?stap=opdracht`;
   const literatureHref = `${lessonBaseHref}?stap=literatuur`;
+  const firstTheoryHref = theorySubLessons[0] ? `${lessonBaseHref}${buildSubLessonHrefSuffix(theorySubLessons[0].key)}` : lessonBaseHref;
   const questionsHref = `${lessonBaseHref}?stap=toetsvragen`;
   const courseHref = `/lms/courses/${courseId}`;
   const nextLessonHref = nextLesson ? `/lms/courses/${courseId}/lessons/${nextLesson.id}` : null;
@@ -249,10 +250,12 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
       : `/lms/courses/${courseId}/lessons/${previousLesson.id}`
     : null;
   const lastTheoryHref = lastTheorySubLesson ? `${lessonBaseHref}${buildSubLessonHrefSuffix(lastTheorySubLesson.key)}` : lessonBaseHref;
-  const assignmentPreviousHref = hasRequiredLiteratureStep ? literatureHref : lastTheoryHref;
+  const assignmentPreviousHref = lastTheoryHref;
   const previousTheoryHref = previousTheorySubLesson
     ? `${lessonBaseHref}${buildSubLessonHrefSuffix(previousTheorySubLesson.key)}`
-    : previousLessonHref;
+    : hasRequiredLiteratureStep
+      ? literatureHref
+      : previousLessonHref;
   const practicePreviousHref = reviewerStep === "opdracht" ? assignmentPreviousHref : assignmentHref;
   const currentTheoryMedia = selectedTheorySubLesson
     ? {
@@ -315,13 +318,14 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
       ? "Eindtoets"
       : "Onderdeel";
   const totalReviewerModuleSteps = Math.max(theorySubLessons.length + 2 + (hasRequiredLiteratureStep ? 1 : 0), 1);
+  const reviewerLiteratureOffset = hasRequiredLiteratureStep ? 1 : 0;
   const currentReviewerModuleStep = reviewerStep === "theorie"
-    ? Math.max(selectedTheoryIndex, 0) + 1
+    ? reviewerLiteratureOffset + Math.max(selectedTheoryIndex, 0) + 1
     : reviewerStep === "literatuur"
-      ? theorySubLessons.length + 1
+      ? 1
       : reviewerStep === "opdracht"
-        ? theorySubLessons.length + (hasRequiredLiteratureStep ? 2 : 1)
-        : theorySubLessons.length + (hasRequiredLiteratureStep ? 3 : 2);
+        ? reviewerLiteratureOffset + theorySubLessons.length + 1
+        : reviewerLiteratureOffset + theorySubLessons.length + 2;
   const progressValue = isReviewerModuleFlow
     ? Math.round((currentReviewerModuleStep / totalReviewerModuleSteps) * 100)
     : Math.round(((Math.max(lessonIndex, 0) + 1) / course.activeVersion.lessons.length) * 100);
@@ -420,15 +424,15 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
                 <div className="flex flex-wrap gap-3">
                   {previousTheoryHref ? (
                     <Link href={previousTheoryHref} className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-center text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
-                      {previousTheorySubLesson ? "Vorige les" : "Vorige module"}
+                      {previousTheorySubLesson ? "Vorige les" : hasRequiredLiteratureStep ? "Literatuur" : "Vorige module"}
                     </Link>
                   ) : null}
                   <ReviewerLessonProgressButton
                     courseId={courseId}
                     lessonId={lesson.id}
                     stepKey={selectedTheorySubLesson.key}
-                    nextHref={nextTheorySubLesson ? `${lessonBaseHref}${buildSubLessonHrefSuffix(nextTheorySubLesson.key)}` : hasRequiredLiteratureStep ? literatureHref : assignmentHref}
-                    label={nextTheorySubLesson ? `Ga door met ${nextTheorySubLesson.label}` : hasRequiredLiteratureStep ? "Door naar verplichte literatuur" : "Door met opdracht"}
+                    nextHref={nextTheorySubLesson ? `${lessonBaseHref}${buildSubLessonHrefSuffix(nextTheorySubLesson.key)}` : assignmentHref}
+                    label={nextTheorySubLesson ? `Ga door met ${nextTheorySubLesson.label}` : "Door met opdracht"}
                   />
                 </div>
               </div>
@@ -479,18 +483,18 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
                 <p className="font-semibold text-slate-950">
                   {currentLiteratureCompleted ? "Deze literatuurstap is afgerond." : "Rond de literatuur af om je modulevoortgang bij te werken."}
                 </p>
-                <p>Na deze stap ga je door met de moduleopdracht en kennischeck.</p>
+                <p>Na deze stap start je met de theorielessen van deze module.</p>
               </div>
               <div className="flex flex-wrap gap-3">
-                <Link href={lastTheoryHref} className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-center text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
-                  Terug naar theorie
+                <Link href={courseHref} className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-center text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
+                  Terug naar overzicht
                 </Link>
                 <ReviewerLessonProgressButton
                   courseId={courseId}
                   lessonId={lesson.id}
                   stepKey={literatureStepKey}
-                  nextHref={assignmentHref}
-                  label="Door met opdracht"
+                  nextHref={firstTheoryHref}
+                  label={theorySubLessons[0] ? `Start met ${theorySubLessons[0].label}` : "Door naar theorie"}
                 />
               </div>
             </div>
@@ -542,10 +546,10 @@ export default async function LmsLessonDetailPage({ params, searchParams }: LmsL
           </Link>
           {isReviewerModuleFlow && reviewerStep !== "theorie" ? (
             <Link
-              href={reviewerStep === "literatuur" || reviewerStep === "toetsvragen" ? lastTheoryHref : assignmentPreviousHref}
+              href={reviewerStep === "literatuur" ? firstTheoryHref : assignmentPreviousHref}
               className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]"
             >
-              {reviewerStep === "opdracht" && hasRequiredLiteratureStep ? "Literatuur" : "Theorie"}
+              Theorie
             </Link>
           ) : null}
           {isReviewerModuleFlow && reviewerStep === "toetsvragen" ? (

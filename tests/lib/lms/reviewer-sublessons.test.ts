@@ -91,7 +91,7 @@ test("buildReviewerModuleProgress telt ingeleverde opdracht mee", () => {
   assert.equal(progress[0].isCompleted, true);
 });
 
-test("buildReviewerModuleProgress kan verplichte literatuur als module-stap meetellen", () => {
+test("buildReviewerModuleProgress zet verplichte literatuur vóór de theorielessen", () => {
   const lesson = {
     id: "lesson-1",
     moduleId: "module-1-id",
@@ -102,19 +102,20 @@ test("buildReviewerModuleProgress kan verplichte literatuur als module-stap meet
   };
   const progress = buildReviewerModuleProgress({
     lessons: [lesson],
-    completedStepKeysByLessonId: new Map([[lesson.id, new Set(["les-1-1", getRequiredLiteratureStepKey("1")])]]),
+    completedStepKeysByLessonId: new Map([[lesson.id, new Set([getRequiredLiteratureStepKey("1")])]]),
     submittedAssignmentLessonIds: new Set(),
     requiredLiteratureModuleIds: new Set(["module-1-id"]),
   });
   const links = buildReviewerModuleStepLinks(lesson, { hasRequiredLiterature: true });
 
   assert.deepEqual(links.map((link) => [link.label, link.hrefSuffix]), [
-    ["Les 1.1", "?les=les-1-1"],
     ["Literatuur", "?stap=literatuur"],
+    ["Les 1.1", "?les=les-1-1"],
     ["Opdracht", "?stap=opdracht"],
     ["Kennischeck", "?stap=toetsvragen"],
   ]);
-  assert.equal(progress[0].completedSteps, 2);
+  assert.equal(progress[0].completedSteps, 1);
   assert.equal(progress[0].totalSteps, 4);
-  assert.equal(progress[0].nextStepLabel, "Opdracht");
+  assert.equal(progress[0].nextStepLabel, "Les 1.1");
+  assert.equal(progress[0].nextStepHrefSuffix, "?les=les-1-1");
 });
