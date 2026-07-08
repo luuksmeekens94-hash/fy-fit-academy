@@ -33,7 +33,7 @@ type LessonMediaBlockProps = {
 function MediaVideo({ src }: { src: string }) {
   return (
     <div className="my-8 overflow-hidden rounded-[30px] border border-slate-900/10 bg-slate-950 shadow-[0_28px_70px_-42px_rgba(15,23,42,0.85)]">
-      <video src={src} controls preload="metadata" className="w-full" />
+      <video src={src} controls preload="none" className="w-full" />
     </div>
   );
 }
@@ -46,7 +46,7 @@ function MediaImage({ src, caption = "Afbeelding bij lesmateriaal" }: { src: str
       </div>
       <div className="bg-white p-3 sm:p-5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={caption} className="mx-auto max-h-[560px] w-full rounded-[20px] object-contain" />
+        <img src={src} alt={caption} loading="lazy" decoding="async" className="mx-auto max-h-[560px] w-full rounded-[20px] object-contain" />
       </div>
       <figcaption className="border-t border-[var(--border)] bg-white px-5 py-4 text-sm leading-6 text-[var(--ink-soft)]">
         {caption}

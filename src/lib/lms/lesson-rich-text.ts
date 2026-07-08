@@ -36,6 +36,10 @@ function isStandaloneHeadingLine(line: string) {
   return /^(Module\s+\d+|Focus|Leerdoelen|Even voorstellen:?|Les\s+\d+(?:\.\d+)?:?.*|Figuur\s+\d+.*|Literatuur:?|Toetsvragen\s+Module\s+\d+|Casus:?|Samenvatting:?|Kernpunten:?|Reflectie:?)$/i.test(line);
 }
 
+function isFigureCaptionLine(line: string) {
+  return /^Figuur\s+\d+\b/i.test(line);
+}
+
 function splitParagraphs(text: string) {
   const lines = normalizePdfBullets(text).split("\n").map((line) => line.trim());
   const paragraphs: string[] = [];
@@ -74,6 +78,23 @@ function splitParagraphs(text: string) {
       continue;
     }
 
+    if (isFigureCaptionLine(line)) {
+      flush();
+      const captionLines = [line];
+
+      while (index + 1 < lines.length) {
+        const next = lines[index + 1]?.trim() ?? "";
+        if (!next || isStandaloneHeadingLine(next) || /^[-*•●▪▫‣◦]\s+/.test(next)) {
+          break;
+        }
+        captionLines.push(next);
+        index += 1;
+      }
+
+      paragraphs.push(captionLines.join(" ").replace(/\s+/g, " ").trim());
+      continue;
+    }
+
     if (isStandaloneHeadingLine(line)) {
       flush();
       paragraphs.push(line);
@@ -103,11 +124,6 @@ function parseLabelledBullet(paragraph: string) {
   };
 }
 
-function looksLikeContinuation(text: string) {
-  const trimmed = text.trim();
-  return Boolean(trimmed) && !parseExplicitBullet(trimmed) && !isStandaloneHeadingLine(trimmed);
-}
-
 export function parseLessonRichText(text: string): LessonRichTextBlock[] {
   const paragraphs = splitParagraphs(text);
   const blocks: LessonRichTextBlock[] = [];
@@ -126,11 +142,6 @@ export function parseLessonRichText(text: string): LessonRichTextBlock[] {
 
         const lines = [item];
         index += 1;
-
-        while (index < paragraphs.length && looksLikeContinuation(paragraphs[index])) {
-          lines.push(paragraphs[index]);
-          index += 1;
-        }
 
         items.push({ text: lines.join(" ").replace(/\s+/g, " ").trim() });
       }
