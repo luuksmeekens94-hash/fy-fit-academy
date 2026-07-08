@@ -73,7 +73,7 @@ test("buildReviewerCoursePreviewSummary exposes all courses without enrollment d
   assert.equal(summary.items[0].displayAccreditationRegister, "KRF NL");
   assert.equal(summary.items[0].evidenceComplete, true);
   assert.equal(summary.items[0].canFreelyNavigate, true);
-  assert.match(summary.items[0].reviewerChecklist.join("\n"), /Geen voortgang, evaluatie, toetspoging of certificaatmutatie/);
+  assert.match(summary.items[0].reviewerChecklist.join("\n"), /Reviewflow module voor module beschikbaar/);
   assert.equal(summary.items[1].displayAccreditationRegister, "Niet vastgelegd");
   assert.equal(summary.items[1].evidenceComplete, false);
   assert.deepEqual(summary.items[1].evidenceMissingLabels, ["register", "activiteit-ID", "aanbieder", "ondertekenaar", "vraagminimum"]);

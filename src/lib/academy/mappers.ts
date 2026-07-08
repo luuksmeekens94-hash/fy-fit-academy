@@ -231,8 +231,10 @@ export function buildAcademyCourseDetailView(params: {
     },
   ];
 
-  const evaluationForm = params.course.activeVersion?.evaluationForms.find((form) => form.isRequired) ?? params.course.activeVersion?.evaluationForms[0] ?? null;
-  const requiredLiterature = params.course.activeVersion?.literature.filter((reference) => reference.guideline?.toLowerCase().includes("verplichte")) ?? [];
+  const evaluationForms = params.course.activeVersion?.evaluationForms ?? [];
+  const literature = params.course.activeVersion?.literature ?? [];
+  const evaluationForm = evaluationForms.find((form) => form.isRequired) ?? evaluationForms[0] ?? null;
+  const requiredLiterature = literature.filter((reference) => reference.guideline?.toLowerCase().includes("verplichte"));
 
   return {
     id: params.course.id,
