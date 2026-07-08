@@ -120,11 +120,11 @@ export default async function RequiredLiteraturePage({ params, searchParams }: L
           Deze bestanden onderbouwen hoe de verplichte literatuur meetelt in de zelfstudie en accreditatie.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
-          <a href="/lms/pfp/zelfstudie-onderdelen.docx" target="_blank" rel="noreferrer" className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
-            Open zelfstudie-onderdelen
+          <a href="/lms/pfp/zelfstudie-onderdelen.docx" download="zelfstudie-onderdelen.docx" className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
+            Download zelfstudie-onderdelen
           </a>
-          <a href="/lms/pfp/zelfstudie-literatuur.xlsx" target="_blank" rel="noreferrer" className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
-            Open zelfstudie-literatuur
+          <a href="/lms/pfp/zelfstudie-literatuur.xlsx" download="zelfstudie-literatuur.xlsx" className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--brand)]">
+            Download zelfstudie-literatuur
           </a>
         </div>
       </section>

@@ -23,6 +23,11 @@ const allowedFiles = new Set([
   "klinische-kernpunten-pfp.mp4",
 ]);
 
+const legacyFileRedirects: Record<string, string> = {
+  "zelfstudie-onderdelen.doc": "zelfstudie-onderdelen.docx",
+  "zelfstudie-literatuur.xls": "zelfstudie-literatuur.xlsx",
+};
+
 const contentTypes: Record<string, string> = {
   ".pdf": "application/pdf",
   ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -34,13 +39,24 @@ type PfpAssetRouteProps = {
   params: Promise<{ file: string }>;
 };
 
-export async function GET(_request: Request, { params }: PfpAssetRouteProps) {
+export async function GET(request: Request, { params }: PfpAssetRouteProps) {
   await requireUser();
 
   const { file } = await params;
-  const safeFile = path.basename(file);
+  const requestedFile = path.basename(file);
 
-  if (safeFile !== file || !allowedFiles.has(safeFile)) {
+  if (requestedFile !== file) {
+    notFound();
+  }
+
+  const redirectedFile = legacyFileRedirects[requestedFile];
+  if (redirectedFile) {
+    return Response.redirect(new URL(`/lms/pfp/${redirectedFile}`, request.url), 307);
+  }
+
+  const safeFile = requestedFile;
+
+  if (!allowedFiles.has(safeFile)) {
     notFound();
   }
 

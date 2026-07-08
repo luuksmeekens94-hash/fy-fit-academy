@@ -12,10 +12,10 @@ export type LessonMedia = {
   blocks: LessonMediaBlock[];
 };
 
-const mediaPathPattern = /(?:https?:\/\/[^\s)]+|\/lms\/[^\s)]+)\.(?:mp4|png|jpg|jpeg|webp|pdf|doc|docx|ppt|pptx|xls|xlsx)/gi;
-const mediaReferenceLinePattern = /^\s*(?:[-•]\s*)?(?:(?:[A-Za-zÀ-ÿ\d][^:]{0,80}):\s*)?(?:https?:\/\/[^\s)]+|\/lms\/[^\s)]+)\.(?:mp4|png|jpg|jpeg|webp|pdf|doc|docx|ppt|pptx|xls|xlsx)\s*$/i;
+const mediaPathPattern = /(?:https?:\/\/[^\s)]+|\/lms\/[^\s)]+)\.(?:mp4|png|jpg|jpeg|webp|pdf|docx?|pptx?|xlsx?)(?:[?#][^\s)]*)?(?=[\s)]|$)/gi;
+const mediaReferenceLinePattern = /^\s*(?:[-•]\s*)?(?:(?:[A-Za-zÀ-ÿ\d][^:]{0,80}):\s*)?(?:https?:\/\/[^\s)]+|\/lms\/[^\s)]+)\.(?:mp4|png|jpg|jpeg|webp|pdf|docx?|pptx?|xlsx?)(?:[?#][^\s)]*)?\s*$/i;
 const mediaIntroLinePattern = /^\s*(?:Afbeeldingen bij deze les|Media bij deze les|Video bij deze les|Bekijk de video bij deze module)\s*:?\s*$/i;
-const documentExtensionPattern = /\.(pdf|doc|docx|ppt|pptx|xls|xlsx)$/i;
+const documentExtensionPattern = /\.(pdf|docx?|pptx?|xlsx?)(?:[?#].*)?$/i;
 
 function normalizeText(text: string) {
   return text.replace(/\n{3,}/g, "\n\n").trim();

@@ -56,7 +56,7 @@ function MediaImage({ src, caption = "Afbeelding bij lesmateriaal" }: { src: str
 }
 
 function isOfficeDownload(src: string) {
-  return /\.(docx|xlsx|pptx)(?:$|[?#])/i.test(src);
+  return /\.(docx?|xlsx?|pptx?)(?:$|[?#])/i.test(src);
 }
 
 function fileNameFromSrc(src: string) {

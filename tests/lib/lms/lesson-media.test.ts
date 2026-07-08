@@ -84,3 +84,17 @@ test("extractLessonMedia accepts external media urls and preserves safe document
     { type: "video", src: "https://video.example.nl/uitleg.mp4" },
   ]);
 });
+
+test("extractLessonMedia behoudt volledige Office-extensies voor PFP-bijlagen", () => {
+  const media = extractLessonMedia(`Zelfstudie-onderdelen format: /lms/pfp/zelfstudie-onderdelen.docx
+Onderbouwing zelfstudie/literatuur: /lms/pfp/zelfstudie-literatuur.xlsx`);
+
+  assert.deepEqual(media.documents, [
+    "/lms/pfp/zelfstudie-onderdelen.docx",
+    "/lms/pfp/zelfstudie-literatuur.xlsx",
+  ]);
+  assert.deepEqual(media.blocks, [
+    { type: "document", src: "/lms/pfp/zelfstudie-onderdelen.docx", label: "Zelfstudie-onderdelen format" },
+    { type: "document", src: "/lms/pfp/zelfstudie-literatuur.xlsx", label: "Onderbouwing zelfstudie/literatuur" },
+  ]);
+});
