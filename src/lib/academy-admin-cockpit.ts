@@ -27,6 +27,12 @@ export type AcademyAdminCockpit = {
     reason: string;
     href: string;
   }>;
+  submissionLinks: Array<{
+    id: string;
+    title: string;
+    evaluationHref: string;
+    assignmentHref: string;
+  }>;
 };
 
 export function canAccessAcademyAdminCockpit(role: Role) {
@@ -94,6 +100,12 @@ export function buildAcademyAdminCockpit(input: { courses: CourseSummary[] }): A
         reason: getCourseAttentionReason(course),
         href: `/lms/courses/${course.id}`,
       })),
+    submissionLinks: input.courses.map((course) => ({
+      id: course.id,
+      title: course.title,
+      evaluationHref: `/lms/courses/${course.id}#evaluatieantwoorden`,
+      assignmentHref: `/lms/courses/${course.id}#opdrachtantwoorden`,
+    })),
   };
 }
 

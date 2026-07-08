@@ -402,7 +402,7 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
 
       {user.role === "BEHEERDER" ? (
         <>
-        <section className="card-surface overflow-hidden rounded-[32px]">
+        <section id="opdrachtantwoorden" className="card-surface overflow-hidden rounded-[32px]">
           <div className="academy-gradient-panel px-6 py-6 sm:px-8">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
               Community-opdrachten
@@ -439,7 +439,7 @@ export default async function LmsCourseDetailPage({ params }: LmsCourseDetailPag
           </div>
         </section>
 
-        <section className="card-surface overflow-hidden rounded-[32px]">
+        <section id="evaluatieantwoorden" className="card-surface overflow-hidden rounded-[32px]">
           <div className="academy-gradient-panel px-6 py-6 sm:px-8">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--brand-deep)]">
               Evaluatiedata

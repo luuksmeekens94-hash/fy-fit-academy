@@ -35,6 +35,11 @@ test("academy-admin cockpit bundelt toetsvragen, evaluaties, accreditatie en ver
   );
   assert.equal(cockpit.workflows.every((workflow) => workflow.href.startsWith("/academybeheer")), true);
   assert.deepEqual(cockpit.coursesNeedingAttention.map((course) => course.id), ["c2", "c3"]);
+  assert.deepEqual(cockpit.submissionLinks.map((course) => [course.id, course.evaluationHref, course.assignmentHref]), [
+    ["c1", "/lms/courses/c1#evaluatieantwoorden", "/lms/courses/c1#opdrachtantwoorden"],
+    ["c2", "/lms/courses/c2#evaluatieantwoorden", "/lms/courses/c2#opdrachtantwoorden"],
+    ["c3", "/lms/courses/c3#evaluatieantwoorden", "/lms/courses/c3#opdrachtantwoorden"],
+  ]);
 });
 
 function course(
@@ -56,6 +61,9 @@ function course(
     studyLoadMinutes: 60,
     accreditationRegister,
     accreditationKind: "VAKINHOUDELIJK",
+    accreditationActivityId: null,
+    providerName: null,
+    providerSignatureName: null,
     visibleToAll: true,
     visibleToRoles: [],
     visibleToAudienceProfiles: [],

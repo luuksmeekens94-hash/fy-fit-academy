@@ -108,6 +108,36 @@ export default async function AcademyAdminPage() {
         </div>
       </section>
 
+      <section className="card-surface rounded-[32px] p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <StatusBadge label="Inzendingen" tone="brand" />
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em] text-slate-950">Open antwoorden bekijken</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--ink-soft)]">
+              Evaluatieformulieren en community-opdrachten komen binnen op de LMS-cursuspagina. Gebruik hieronder direct de juiste sectie per cursus.
+            </p>
+          </div>
+          <Link href="/lms" className="rounded-full border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:border-[var(--brand)]">
+            Naar LMS cockpit
+          </Link>
+        </div>
+        <div className="mt-5 grid gap-3 lg:grid-cols-2">
+          {cockpit.submissionLinks.map((course) => (
+            <article key={course.id} className="rounded-[24px] border border-[var(--border)] bg-white/85 p-4">
+              <p className="font-semibold text-slate-950">{course.title}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link href={course.evaluationHref} className="rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[var(--brand-deep)]">
+                  Evaluatie-antwoorden
+                </Link>
+                <Link href={course.assignmentHref} className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold text-slate-950 transition hover:border-[var(--brand)]">
+                  Opdrachtantwoorden
+                </Link>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="grid gap-6 xl:grid-cols-2">
         <div id="toetsvragen" className="card-surface overflow-hidden rounded-[34px]">
           <div className="bg-[var(--brand-soft)]/65 p-6">
