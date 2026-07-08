@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import type { LessonMedia } from "@/lib/lms/lesson-media";
 import { parseLessonRichText } from "@/lib/lms/lesson-rich-text";
+import { getLocalVideoPosterPath } from "@/lib/lms/video-rendering";
 
 const headingPattern = /^(Module\s+\d+|Les\s+\d+\.|\d+(?:\.\d+)?\s+|\d+(?:\.\d+)?[A-ZÀ-ÿ]|Focus$|Leerdoelen$|Even voorstellen:?$|Casus:?$|Samenvatting:?$|Kernpunten:?$|Reflectie:?$)/i;
 const urlPattern = /(https?:\/\/[^\s)]+)(?=[\s)]|$)/g;
@@ -31,10 +32,33 @@ type LessonMediaBlockProps = {
 };
 
 function MediaVideo({ src }: { src: string }) {
+  const poster = getLocalVideoPosterPath(src);
+
   return (
-    <div className="my-8 overflow-hidden rounded-[30px] border border-slate-900/10 bg-slate-950 shadow-[0_28px_70px_-42px_rgba(15,23,42,0.85)]">
-      <video src={src} controls preload="none" className="w-full" />
-    </div>
+    <figure className="my-8 overflow-hidden rounded-[30px] border border-slate-900/10 bg-slate-950 shadow-[0_28px_70px_-42px_rgba(15,23,42,0.85)]">
+      <div className="flex flex-col gap-2 border-b border-white/10 bg-slate-900 px-5 py-4 text-white sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-white text-sm font-black text-slate-950 shadow-[0_12px_30px_-18px_rgba(255,255,255,0.9)]">▶</span>
+          <span>
+            <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-white/65">Video</span>
+            <span className="block text-sm font-semibold">Klik op play om de video te starten</span>
+          </span>
+        </div>
+        <p className="text-xs leading-5 text-white/70">Gebruik daarna het fullscreen-icoon rechtsonder om de video groter te bekijken.</p>
+      </div>
+      <video
+        src={src}
+        controls
+        preload="none"
+        poster={poster ?? undefined}
+        playsInline
+        aria-label="Videodemonstratie: klik op play om te laden en af te spelen"
+        className="aspect-video w-full bg-slate-950 object-cover"
+      />
+      <figcaption className="border-t border-white/10 bg-slate-900 px-5 py-3 text-xs leading-5 text-white/65">
+        De thumbnail is alvast zichtbaar; het videobestand zelf wordt pas geladen wanneer je op play klikt. Zo blijft de les sneller.
+      </figcaption>
+    </figure>
   );
 }
 

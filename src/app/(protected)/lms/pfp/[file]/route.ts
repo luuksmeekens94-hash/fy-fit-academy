@@ -20,7 +20,9 @@ const allowedFiles = new Set([
   "module-3.pdf",
   "module-4.pdf",
   "llrom-dsdt.mp4",
+  "llrom-dsdt-poster.jpg",
   "klinische-kernpunten-pfp.mp4",
+  "klinische-kernpunten-pfp-poster.jpg",
 ]);
 
 const legacyFileRedirects: Record<string, string> = {
@@ -33,6 +35,8 @@ const contentTypes: Record<string, string> = {
   ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ".mp4": "video/mp4",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
 };
 
 type PfpAssetRouteProps = {
@@ -78,7 +82,7 @@ export async function GET(request: Request, { params }: PfpAssetRouteProps) {
       "Content-Type": contentTypes[extension] ?? "application/octet-stream",
       "Content-Disposition": disposition,
       "X-Content-Type-Options": "nosniff",
-      "Cache-Control": "private, max-age=0, must-revalidate",
+      "Cache-Control": "private, max-age=86400, stale-while-revalidate=604800",
     },
   });
 }
