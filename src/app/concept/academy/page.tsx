@@ -286,6 +286,25 @@ export default function AcademyConceptPage() {
         </section>
       </div>
 
+      <nav className={styles.mobileBottomNav} aria-label="Mobiele hoofdnavigatie">
+        <button type="button" className={styles.mobileBottomNavActive} aria-current="page" onClick={() => showNotice("Je bent op het Academy-overzicht.")}>
+          <LayoutDashboard size={20} strokeWidth={1.8} aria-hidden="true" />
+          <span>Overzicht</span>
+        </button>
+        <button type="button" onClick={() => showNotice("Hier openen straks je e-learnings.")}>
+          <GraduationCap size={20} strokeWidth={1.8} aria-hidden="true" />
+          <span>E-learnings</span>
+        </button>
+        <button type="button" onClick={() => showNotice("Hier opent straks je planning.")}>
+          <CalendarDays size={20} strokeWidth={1.8} aria-hidden="true" />
+          <span>Planning</span>
+        </button>
+        <button type="button" aria-label="Meer navigatie openen" onClick={() => setMobileMenuOpen(true)}>
+          <Menu size={20} strokeWidth={1.8} aria-hidden="true" />
+          <span>Meer</span>
+        </button>
+      </nav>
+
       {notice ? <div className={styles.toast} role="status" aria-live="polite">{notice}</div> : null}
     </main>
   );

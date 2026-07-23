@@ -44,13 +44,14 @@ Het volledige Fy-fit-logo en de kleurvariabelen zijn rechtstreeks overgenomen ui
 
 ## Belangrijkste keuzes
 
-- Donkere Fy-fit-zijbalk met het echte logo op een scherp, licht merkvlak
+- Donkere Fy-fit-zijbalk met het echte logo links uitgelijnd op een compact licht merkvlak
 - Compacte productheader met het echte logo op mobiel
 - Zakelijke interne tekst: `Mijn Academy`, `Goedemorgen, Luuk`, `Onboarding Fy-fit`
 - Eén rustige `Ga verder`-kaart
 - E-learnings als compacte lijst in plaats van een drukke kaartencatalogus
 - Planning en afgeronde onderdelen als secundaire informatie
-- Mobiel menu zonder extra vaste ondernavigatie
+- Op telefoon een vaste ondernavigatie met `Overzicht`, `E-learnings`, `Planning` en `Meer`
+- De mobiele topbar bevat alleen het logo, Academy-label en profiel; notificaties en hamburger zijn daar verwijderd
 
 ## V3-professionaliseringslaag
 
