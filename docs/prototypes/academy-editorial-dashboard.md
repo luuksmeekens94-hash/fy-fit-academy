@@ -1,4 +1,4 @@
-# Fy-fit Editorial Academy — dashboardprototype
+# Fy-fit Academy — rustig dashboardprototype
 
 ## Status
 
@@ -6,35 +6,57 @@ Review-safe visueel prototype op branch `design/academy-editorial-prototype`.
 
 - Geen databasekoppeling
 - Geen authenticatie of productieaccount nodig
-- Geen wijziging aan de bestaande Academy-routes
-- Geen wijziging aan de PFP-accreditatieomgeving
+- Geen wijziging aan bestaande Academy-routes
+- Geen wijziging aan PFP-accreditatieomgeving
 - Niet naar `main` of Vercel productie gepusht
 
 ## Route
 
-Lokaal: `http://127.0.0.1:3101/concept/academy`
+Lokaal: `/concept/academy`
 
 De route is statisch gegenereerd en gebruikt uitsluitend voorbeeldinhoud.
 
-## Design stance
+## Designrichting
 
-Primair een **Monitor**-oppervlak met **Explore** als tweede taak: de medewerker ziet direct waar die verder kan en kan daarna passend leeraanbod verkennen.
+Primair een rustig intern productdashboard. De gebruiker ziet direct:
 
-Belangrijkste keuzes:
+1. waar die gebleven is;
+2. welke e-learnings beschikbaar zijn;
+3. wat er gepland staat;
+4. welke onderdelen zijn afgerond.
 
-- Compacte donkergroene productnavigatie in plaats van een decoratieve hero op elke pagina
-- Warm off-white canvas, terracotta hoofdactie en diep groen als merkanker
-- Fraunces voor redactionele koppen; Plus Jakarta Sans voor product-UI
-- Eén dominante `Ga verder`-kaart
-- Cursuskaarten met duur, modules, voortgang en één duidelijke actie
-- Ontwikkelplanning, POP en certificaten als secundaire context
-- Mobiele drawer plus compacte vaste ondernavigatie
-- Geen gradients/glassmorphism als algemene kaartstijl
+De zijbalk blijft het belangrijkste navigatieanker. Marketingachtige koppen, verkooppraat, grote promotieblokken en onnodige statistieken zijn verwijderd.
 
-## Interacties in het prototype
+## Fy-fit merkbron
 
-- Cursusfilters `Voor jou`, `Alles` en `Afgerond`
-- Klikbare primaire en secundaire acties met prototype-feedback
+Het volledige Fy-fit-logo en de kleurvariabelen zijn rechtstreeks overgenomen uit de aangeleverde website-inspiratie:
+
+- Orange: `#cd662d`
+- Orange action: `#a94e22`
+- Orange on dark: `#f3a06f`
+- Orange soft: `#f4ddcf`
+- Canvas/paper: `#fbf8f3`
+- Cream: `#f4eee7`
+- Dark/forest: `#1f2b26`
+- Ink: `#1c1c1a`
+- Muted: `#62625d`
+- Line: `rgba(28, 28, 26, 0.11)`
+
+## Belangrijkste keuzes
+
+- Donkere Fy-fit-zijbalk met het echte logo
+- Compacte productheader
+- Zakelijke interne tekst: `Mijn Academy`, `Goedemorgen, Luuk`, `Onboarding Fy-fit`
+- Eén rustige `Ga verder`-kaart
+- E-learnings als compacte lijst in plaats van een drukke kaartencatalogus
+- Planning en afgeronde onderdelen als secundaire informatie
+- Mobiel menu zonder extra vaste ondernavigatie
+- Solide kleuren en dunne randen; geen algemene gradients of glassmorphism
+
+## Interacties
+
+- Filters `Alles`, `Bezig` en `Afgerond`
+- Klikbare acties met prototypefeedback
 - Responsive mobiel menu
 - Desktop- en mobiele lay-out zonder horizontale overflow
 
@@ -42,7 +64,7 @@ Belangrijkste keuzes:
 
 - `npm run lint`
 - `npm run build`
-- Statische route `/concept/academy` wordt succesvol gebouwd
+- Statische route `/concept/academy` succesvol gebouwd
 - Playwright op 1440px en 390px
 - Filters, feedback-toast en mobiel menu werken
 - Geen consolefouten of mislukte netwerkrequests
