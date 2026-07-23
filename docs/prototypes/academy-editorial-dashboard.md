@@ -44,14 +44,25 @@ Het volledige Fy-fit-logo en de kleurvariabelen zijn rechtstreeks overgenomen ui
 
 ## Belangrijkste keuzes
 
-- Donkere Fy-fit-zijbalk met het echte logo
-- Compacte productheader
+- Donkere Fy-fit-zijbalk met het echte logo op een scherp, licht merkvlak
+- Compacte productheader met het echte logo op mobiel
 - Zakelijke interne tekst: `Mijn Academy`, `Goedemorgen, Luuk`, `Onboarding Fy-fit`
 - Eén rustige `Ga verder`-kaart
 - E-learnings als compacte lijst in plaats van een drukke kaartencatalogus
 - Planning en afgeronde onderdelen als secundaire informatie
 - Mobiel menu zonder extra vaste ondernavigatie
-- Solide kleuren en dunne randen; geen algemene gradients of glassmorphism
+
+## V3-professionaliseringslaag
+
+- `lucide-react` als consistente professionele lijniconset
+- Uniforme `1.8px` icon-stroke en vaste optische maten
+- Subtiele merkgradients die uitsluitend uit de Fy-fit-kleuren zijn opgebouwd
+- Donkergroene sidebargradient, warme oranje actiegradient en lichte crème oppervlaktegraduenten
+- Gradientgebruik beperkt tot merkdragers, voortgang en primaire acties; normale contentvlakken blijven rustig
+- Strakkere vierkante controls met beperkte radius in plaats van overal pillvormen
+- Verfijnde borders, states, schaduwen en 44px mobiele touch targets
+- Full-resolution Fy-fit-logo met `quality={100}` op desktop en mobiel
+- Geen algemene glassmorphism, felle techgradients of decoratieve dashboardstatistieken
 
 ## Interacties
 
