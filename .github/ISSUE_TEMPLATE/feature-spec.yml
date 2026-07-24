@@ -1,0 +1,62 @@
+name: Feature specification
+description: Leg een Academy-wijziging eerst scherp vast voor de Luuk Dev Loop.
+title: "[Spec] "
+labels:
+  - spec-draft
+body:
+  - type: markdown
+    attributes:
+      value: |
+        De build start pas nadat Luuk de spec expliciet heeft goedgekeurd en het label `agent-ready` is toegevoegd.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Doel
+      description: Welk probleem lossen we op en welk resultaat moet dit opleveren?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Voor welke gebruikers, situatie en bestaande Academy-flow geldt dit?
+    validations:
+      required: true
+  - type: textarea
+    id: questions
+    attributes:
+      label: Open vragen en beslissingen
+      description: Noteer de antwoorden uit het spec-interview en resterende keuzes.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptatiecriteria
+      description: Maak ieder criterium afzonderlijk controleerbaar.
+      placeholder: |
+        - [ ] Als ..., dan ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risico's en impact
+      description: Denk aan privacy, beveiliging, database, authenticatie, Vercel en bestaande gebruikers.
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Expliciete non-goals
+      description: Wat bouwen of wijzigen we nadrukkelijk niet in deze ronde?
+    validations:
+      required: true
+  - type: checkboxes
+    id: approval
+    attributes:
+      label: Goedkeuring
+      options:
+        - label: Luuk heeft deze specificatie expliciet goedgekeurd voordat de build start.
+          required: true
