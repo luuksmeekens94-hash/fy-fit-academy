@@ -1,83 +1,91 @@
-# Fy-fit Academy — rustig dashboardprototype
+# Fy-fit Academy — volledige route-integratie
 
 ## Status
 
-Review-safe visueel prototype op branch `design/academy-editorial-prototype`.
+De goedgekeurde dashboardrichting is geïntegreerd op de echte beschermde route `/academy`.
 
-- Geen databasekoppeling
-- Geen authenticatie of productieaccount nodig
-- Geen wijziging aan bestaande Academy-routes
-- Geen wijziging aan PFP-accreditatieomgeving
-- Niet naar `main` of Vercel productie gepusht
+- De aparte route `/concept/academy` is verwijderd.
+- De pagina gebruikt echte cursus-, voortgangs-, deadline- en zichtbaarheidsdata.
+- Bestaande cursus-, les- en certificaatroutes blijven op dezelfde URL’s beschikbaar.
+- Authenticatie en autorisatie blijven server-side actief.
+- De reviewerflow onder `/lms` gebruikt bewust de bestaande shell en is niet gewijzigd.
+- Er zijn geen databasewijzigingen, seeds, imports of migraties nodig voor deze UI-uitrol.
 
-## Route
+## Architectuur
 
-Lokaal: `/concept/academy`
+De Academy-routes staan in de routegroep `src/app/(academy)/academy` en gebruiken een eigen route-specifieke layout:
 
-De route is statisch gegenereerd en gebruikt uitsluitend voorbeeldinhoud.
+- `src/app/(academy)/layout.tsx`
+- `src/components/academy/academy-app-shell.tsx`
+- `src/components/academy/academy-shell.module.css`
+
+Hierdoor krijgt de volledige persoonlijke Academy-flow de nieuwe zijbalk, topbar en mobiele ondernavigatie zonder de revieweromgeving onder `/lms` te wijzigen.
+
+De dashboardpagina behoudt de bestaande functionele bronnen:
+
+- `requireUser()` voor de actieve sessie;
+- `canUsePersonalLms()` voor roltoegang;
+- `getMyAcademyCourses()` voor echte cursussen, voortgang en contentzichtbaarheid;
+- `buildAcademyOverview()` voor doelgroepgerichte copy en groepering;
+- `buildAcademyDashboardModel()` voor de primaire vervolgactie zonder dubbele cursusweergave.
+
+## Ondersteunde rollen en doelgroepen
+
+De route is gecontroleerd voor de persoonlijke Academy-rollen:
+
+- medewerker;
+- teamleider;
+- praktijkhouder.
+
+De doelgroepgerichte inhoud is gecontroleerd voor:
+
+- fysiotherapeut;
+- praktijkondersteuner;
+- fitcoach.
+
+De technische labels `Need to know` en `Nice to know` worden in de interface vertaald naar `Verplicht` en `Verdieping`.
 
 ## Designrichting
 
-Primair een rustig intern productdashboard. De gebruiker ziet direct:
+- Donkere Fy-fit-zijbalk met het echte logo links uitgelijnd op een compact licht merkvlak.
+- Warm off-white canvas met Fy-fit-oranje en diepgroen.
+- Eén rustige primaire cursuskaart met echte voortgang en echte CTA.
+- E-learnings als compacte, scanbare lijst met echte status en studielast.
+- Zoekfunctie op de echte cursuscollectie.
+- Certificaten en persoonlijke totalen als secundaire informatie.
+- Lucide als consistente professionele lijniconset.
+- Subtiele merkgradients alleen op primaire acties, actieve navigatie, voortgang en beperkte merkvlakken.
+- Geen verkoopcopy, gamification, fictieve planning of voorbeeldstatistieken.
 
-1. waar die gebleven is;
-2. welke e-learnings beschikbaar zijn;
-3. wat er gepland staat;
-4. welke onderdelen zijn afgerond.
+## Mobiel
 
-De zijbalk blijft het belangrijkste navigatieanker. Marketingachtige koppen, verkooppraat, grote promotieblokken en onnodige statistieken zijn verwijderd.
+- Compacte topbar met Fy-fit-logo, Academy-label en profiel.
+- Vaste ondernavigatie met `Overzicht`, `Bewijzen`, rolafhankelijk `Ontwikkeling` of `Bibliotheek`, en `Meer`.
+- `Meer` opent de volledige navigatielade.
+- Content heeft veilige onderruimte en wordt niet door de navigatie bedekt.
+- Geen horizontale overflow op 390px.
 
-## Fy-fit merkbron
+## Reviewerbescherming
 
-Het volledige Fy-fit-logo en de kleurvariabelen zijn rechtstreeks overgenomen uit de aangeleverde website-inspiratie:
+De reviewer gebruikt de bestaande route `/lms` en valt niet onder de persoonlijke Academy-layout. Gecontroleerd:
 
-- Orange: `#cd662d`
-- Orange action: `#a94e22`
-- Orange on dark: `#f3a06f`
-- Orange soft: `#f4ddcf`
-- Canvas/paper: `#fbf8f3`
-- Cream: `#f4eee7`
-- Dark/forest: `#1f2b26`
-- Ink: `#1c1c1a`
-- Muted: `#62625d`
-- Line: `rgba(28, 28, 26, 0.11)`
+- reviewer kan inloggen;
+- `/lms` blijft bereikbaar;
+- de PFP-e-learning blijft zichtbaar;
+- de bestaande reviewershell blijft actief;
+- geen reviewerprogressie of accreditatiedata is gewijzigd.
 
-## Belangrijkste keuzes
+## Verificatie
 
-- Donkere Fy-fit-zijbalk met het echte logo links uitgelijnd op een compact licht merkvlak
-- Compacte productheader met het echte logo op mobiel
-- Zakelijke interne tekst: `Mijn Academy`, `Goedemorgen, Luuk`, `Onboarding Fy-fit`
-- Eén rustige `Ga verder`-kaart
-- E-learnings als compacte lijst in plaats van een drukke kaartencatalogus
-- Planning en afgeronde onderdelen als secundaire informatie
-- Op telefoon een vaste ondernavigatie met `Overzicht`, `E-learnings`, `Planning` en `Meer`
-- De mobiele topbar bevat alleen het logo, Academy-label en profiel; notificaties en hamburger zijn daar verwijderd
-
-## V3-professionaliseringslaag
-
-- `lucide-react` als consistente professionele lijniconset
-- Uniforme `1.8px` icon-stroke en vaste optische maten
-- Subtiele merkgradients die uitsluitend uit de Fy-fit-kleuren zijn opgebouwd
-- Donkergroene sidebargradient, warme oranje actiegradient en lichte crème oppervlaktegraduenten
-- Gradientgebruik beperkt tot merkdragers, voortgang en primaire acties; normale contentvlakken blijven rustig
-- Strakkere vierkante controls met beperkte radius in plaats van overal pillvormen
-- Verfijnde borders, states, schaduwen en 44px mobiele touch targets
-- Full-resolution Fy-fit-logo met `quality={100}` op desktop en mobiel
-- Geen algemene glassmorphism, felle techgradients of decoratieve dashboardstatistieken
-
-## Interacties
-
-- Filters `Alles`, `Bezig` en `Afgerond`
-- Klikbare acties met prototypefeedback
-- Responsive mobiel menu
-- Desktop- en mobiele lay-out zonder horizontale overflow
-
-## Gecontroleerd
-
-- `npm run lint`
-- `npm run build`
-- Statische route `/concept/academy` succesvol gebouwd
-- Playwright op 1440px en 390px
-- Filters, feedback-toast en mobiel menu werken
-- Geen consolefouten of mislukte netwerkrequests
-- Geen horizontale overflow
+- test-first dashboardmodel met selectie, deduplicatie, zoekgedrag, immutability en labelvertaling;
+- volledige ESLint-run;
+- 156 unit tests geslaagd;
+- Next.js productiebuild en TypeScript geslaagd;
+- echte desktoproute getest op 1440px;
+- echte mobiele route getest op 390px;
+- cursusdetailroute gecontroleerd binnen de nieuwe Academy-shell;
+- medewerker, teamleider en praktijkhouder gecontroleerd;
+- fysiotherapeut, praktijkondersteuner en fitcoach gecontroleerd;
+- reviewerlogin, `/lms` en PFP-weergave gecontroleerd;
+- geen consolefouten of niet-afgebroken netwerkfouten;
+- `/concept/academy` geeft 404.

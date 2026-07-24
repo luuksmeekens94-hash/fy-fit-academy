@@ -154,7 +154,7 @@ export function buildAcademyOverview(
       sections.push({
         id: "recommended",
         title: "Aanbevolen voor jou",
-        description: "Need to know-content die past bij jouw doelgroep en nu handig is om op te pakken.",
+        description: "Verplichte en aanbevolen e-learnings die voor jouw werk relevant zijn.",
         courses: cloneCourses(recommendedCourses),
       });
     }
@@ -172,7 +172,7 @@ export function buildAcademyOverview(
       sections.push({
         id: "all",
         title: "Verder beschikbaar",
-        description: "Nice to know-verdieping die voor jou zichtbaar is wanneer je extra wilt doorpakken.",
+        description: "Extra verdieping die voor jou beschikbaar is wanneer je meer wilt bekijken.",
         courses: cloneCourses(niceToKnowCourses),
       });
     } else if (sections.length === 0 && visibleCourses.length > 0) {
